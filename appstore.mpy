@@ -1,0 +1,238 @@
+
+import lvgl as lv
+import time
+from machine import Pin, SPI
+#from st7789 import ST7789
+import st7789 
+import lcd_bus
+from micropython import const
+import machine
+import task_handler  # NOQA
+import cst816s  # NOQA
+import i2c  # NOQA
+
+# Initialize LVGL
+lv.init()
+
+# Display configuration
+TFT_HOR_RES = 320
+TFT_VER_RES = 240
+DRAW_BUF_SIZE = TFT_HOR_RES * TFT_VER_RES // 10
+
+# Pin configuration
+LCD_SCLK = 39
+LCD_MOSI = 38
+LCD_MISO = 40
+LCD_DC = 42
+LCD_CS = 45
+LCD_BL = 1
+
+spi_bus = machine.SPI.Bus(
+    host=2,
+    mosi=38,
+    miso=40,
+    sck=39
+)
+
+display_bus = lcd_bus.SPIBus(
+    spi_bus=spi_bus,
+    freq=40000000,
+    dc=42,
+    cs=45,
+)
+
+
+display = st7789.ST7789(
+    data_bus=display_bus,
+    display_width=240,
+    display_height=320,
+    backlight_pin=1,
+    color_space=lv.COLOR_FORMAT.RGB565,
+    color_byte_order=st7789.BYTE_ORDER_BGR,
+    rgb565_byte_swap=True,
+)
+
+display.set_power(True)
+display.init()
+display.set_backlight(100)
+
+#define TP_SDA   48
+#define TP_SCL   47
+
+i2c_bus = i2c.I2C.Bus(host=0, scl=47, sda=48, freq=100000, use_locks=False)
+touch_dev = i2c.I2C.Device(bus=i2c_bus, dev_id=0x15, reg_bits=8)
+indev = cst816s.CST816S(touch_dev)
+
+#touch_dev = machine.SPI.Device(spi_bus=spi_bus,freq=40000000,cs=-1)
+
+
+th = task_handler.TaskHandler()
+
+scrn = lv.screen_active()
+scrn.set_style_bg_color(lv.color_hex(0x000000), 0)
+
+slider = lv.slider(scrn)
+slider.set_size(300, 50)
+slider.center()
+
+label = lv.label(scrn)
+label.set_text('HELLO WORLD!')
+label.align(lv.ALIGN.CENTER, 0, -50)
+
+label = lv.label(scrn)
+label.set_text('HELLO WORLD again!')
+label.align(lv.ALIGN.CENTER, 0, -100)
+
+scr = lv.screen_active()
+
+# Label 1: Red
+label1 = lv.label(scr)
+label1.set_text("Red Text")
+label1.set_style_text_color(lv.color_make(255, 0, 0), 0)  # RGB: Red
+label1.align(lv.ALIGN.TOP_LEFT, 10, 10)
+
+# Label 2: Green
+label2 = lv.label(scr)
+label2.set_text("Green Text")
+label2.set_style_text_color(lv.color_make(0, 255, 0), 0)  # RGB: Green
+label2.align(lv.ALIGN.TOP_LEFT, 10, 40)
+
+# Label 3: Blue
+label3 = lv.label(scr)
+label3.set_text("Blue Text")
+label3.set_style_text_color(lv.color_make(0, 0, 255), 0)  # RGB: Blue
+label3.align(lv.ALIGN.TOP_LEFT, 10, 70)
+
+# Label 4: White
+label4 = lv.label(scr)
+label4.set_text("White Text")
+label4.set_style_text_color(lv.color_make(255, 255, 255), 0)  # RGB: White
+label4.align(lv.ALIGN.TOP_LEFT, 10, 100)
+
+# Label 5: Yellow
+label5 = lv.label(scr)
+label5.set_text("Yellow Text")
+label5.set_style_text_color(lv.color_make(255, 255, 0), 0)  # RGB: Yellow
+label5.align(lv.ALIGN.TOP_LEFT, 10, 130)
+
+
+
+# Create a button (using lv.obj as a base)
+btn = lv.obj(scr)
+btn.set_size(100, 50)
+btn.align(lv.ALIGN.CENTER, 0, 0)
+
+# Add button style
+style = lv.style_t()
+style.init()
+style.set_bg_color(lv.palette_main(lv.PALETTE.BLUE))
+style.set_border_width(2)
+style.set_border_color(lv.palette_darken(lv.PALETTE.BLUE, 3))
+btn.add_style(style, 0)
+
+# Add a label to the button
+label = lv.label(btn)
+label.set_text("Click Me")
+label.center()
+
+# Button event callback
+def btn_event_cb(evt):
+    if evt.get_code() == lv.EVENT.CLICKED:
+        print("Button clicked!")
+
+# Register the event callback
+btn.add_event_cb(btn_event_cb, lv.EVENT.CLICKED, None)
+
+
+
+
+# Create a slider
+slider = lv.slider(scr)
+slider.set_size(200, 20)
+slider.set_range(0, 100)
+slider.set_value(50, lv.ANIM.OFF)
+slider.align(lv.ALIGN.BOTTOM_MID, 0, -40)
+
+# Style for the slider background
+bg_style = lv.style_t()
+bg_style.init()
+bg_style.set_bg_color(lv.palette_main(lv.PALETTE.GREY))
+bg_style.set_border_width(1)
+bg_style.set_border_color(lv.color_make(50, 50, 50))
+bg_style.set_radius(10)
+slider.add_style(bg_style, lv.PART.MAIN)
+
+# Style for the slider indicator (track)
+indic_style = lv.style_t()
+indic_style.init()
+indic_style.set_bg_color(lv.palette_main(lv.PALETTE.BLUE))
+indic_style.set_radius(10)
+slider.add_style(indic_style, lv.PART.INDICATOR)
+
+# Style for the slider knob
+knob_style = lv.style_t()
+knob_style.init()
+knob_style.set_bg_color(lv.palette_main(lv.PALETTE.RED))
+knob_style.set_border_width(2)
+knob_style.set_border_color(lv.color_make(50, 50, 50))
+knob_style.set_radius(100)  # Circular knob
+knob_style.set_pad_all(5)
+slider.add_style(knob_style, lv.PART.KNOB)
+
+
+import network
+sta_if = network.WLAN(network.STA_IF);
+sta_if.active(True)
+sta_if.scan()                         
+sta_if.connect("SSIDHERE", "PASSWORDHERE")
+sta_if.isconnected()           
+
+
+import network
+import urequests
+
+
+# Fetch Bitcoin block height from mempool.space
+def get_block_height():
+    try:
+        response = urequests.get("https://mempool.space/api/blocks/tip/height")
+        if response.status_code == 200:
+            height = response.text.strip()  # Returns plain text (e.g., "853123")
+            response.close()
+            return height
+        else:
+            response.close()
+            return "Error: HTTP " + str(response.status_code)
+    except Exception as e:
+        return "Error: " + str(e)
+
+
+
+# Create a label for block height
+label = lv.label(scr)
+label.set_text("Bitcoin Block Height: Fetching...")
+label.set_style_text_color(lv.color_make(0, 255, 0), 0)  # Green text
+label.set_style_text_font(lv.font_montserrat_16, 0)  # Larger font (if available)
+label.center()
+
+# Style for label background
+style = lv.style_t()
+style.init()
+style.set_bg_color(lv.palette_main(lv.PALETTE.DARK))  # Dark background
+style.set_border_width(2)
+style.set_border_color(lv.color_make(255, 255, 255))  # White border
+style.set_pad_all(10)
+style.set_radius(10)
+label.add_style(style, 0)
+
+# Load the screen
+lv.scr_load(scr)
+
+# Connect to Wi-Fi and fetch block height
+if connect_wifi():
+    height = get_block_height()
+    label.set_text(f"Bitcoin Block Height: {height}")
+else:
+    label.set_text("Bitcoin Block Height: Wi-Fi Error")
+
+
