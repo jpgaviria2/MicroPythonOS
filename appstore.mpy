@@ -27,6 +27,28 @@ def get_block_height():
     except Exception as e:
         return "Error: " + str(e)
 
+def show_block_height():
+	# Create a label for block height
+	label = lv.label(scr)
+	label.set_text("Bitcoin Block Height: Fetching...")
+	label.set_style_text_color(lv.color_make(0, 255, 0), 0)  # Green text
+	label.set_style_text_font(lv.font_montserrat_16, 0)  # Larger font (if available)
+	label.align(lv.ALIGN.TOP_LEFT, 10, 200)
+	#label.center()
+	
+	# Style for label background
+	style = lv.style_t()
+	style.init()
+	style.set_bg_color(lv.palette_main(lv.PALETTE.DARK))  # Dark background
+	style.set_border_width(2)
+	style.set_border_color(lv.color_make(255, 255, 255))  # White border
+	style.set_pad_all(10)
+	style.set_radius(10)
+	label.add_style(style, 0)
+	
+	height = get_block_height()
+	label.set_text(f"Block Height: {height}")
+	
 
 # Connect to Wi-Fi
 def connect_wifi():
@@ -91,6 +113,7 @@ display = st7789.ST7789(
 
 display.set_power(True)
 display.init()
+display.set_rotation(lv.DISPLAY_ROTATION._90)
 display.set_backlight(100)
 
 
@@ -166,28 +189,10 @@ knob_style.set_pad_all(5)
 slider.add_style(knob_style, lv.PART.KNOB)
 
 
-# Create a label for block height
-label = lv.label(scr)
-label.set_text("Bitcoin Block Height: Fetching...")
-label.set_style_text_color(lv.color_make(0, 255, 0), 0)  # Green text
-label.set_style_text_font(lv.font_montserrat_16, 0)  # Larger font (if available)
-label.align(lv.ALIGN.TOP_LEFT, 10, 200)
-#label.center()
-
-# Style for label background
-style = lv.style_t()
-style.init()
-style.set_bg_color(lv.palette_main(lv.PALETTE.DARK))  # Dark background
-style.set_border_width(2)
-style.set_border_color(lv.color_make(255, 255, 255))  # White border
-style.set_pad_all(10)
-style.set_radius(10)
-label.add_style(style, 0)
+show_block_height()
 
 # Connect to Wi-Fi and fetch block height
 if connect_wifi():
-    height = get_block_height()
-    label.set_text(f"Block Height: {height}")
 else:
     label.set_text("Block Height: Wi-Fi Error")
 
@@ -203,10 +208,9 @@ try:
             print(line.rstrip())  # Remove trailing newlines for clean output
 except OSError as e:
     print("Error reading /boot.py:", e)
-    
 
-with open('/block_height.txt', 'w') as f:
-    f.write('853123')
+#with open('/block_height.txt', 'w') as f:
+#    f.write('853123')
 
 
 # Color palette
