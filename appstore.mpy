@@ -11,6 +11,45 @@ import task_handler  # NOQA
 import cst816s  # NOQA
 import i2c  # NOQA
 
+
+
+import network
+import urequests
+
+
+# Fetch Bitcoin block height from mempool.space
+def get_block_height():
+    try:
+        response = urequests.get("https://mempool.space/api/blocks/tip/height")
+        if response.status_code == 200:
+            height = response.text.strip()  # Returns plain text (e.g., "853123")
+            response.close()
+            return height
+        else:
+            response.close()
+            return "Error: HTTP " + str(response.status_code)
+    except Exception as e:
+        return "Error: " + str(e)
+
+
+# Connect to Wi-Fi
+def connect_wifi():
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    wlan.connect("SSIDHERE", "PASSWORDHERE")
+    print("Connecting to Wi-Fi...", end="")
+    for _ in range(30):  # Wait up to 30 seconds
+        if wlan.isconnected():
+            print(" Connected!")
+            print("IP:", wlan.ifconfig()[0])
+            return True
+        time.sleep(1)
+        print(".", end="")
+    print(" Failed to connect!")
+    return False
+    
+
+
 # Initialize LVGL
 lv.init()
 
@@ -71,9 +110,6 @@ th = task_handler.TaskHandler()
 scrn = lv.screen_active()
 scrn.set_style_bg_color(lv.color_hex(0x000000), 0)
 
-slider = lv.slider(scrn)
-slider.set_size(300, 50)
-slider.center()
 
 label = lv.label(scrn)
 label.set_text('HELLO WORLD!')
@@ -180,40 +216,13 @@ knob_style.set_pad_all(5)
 slider.add_style(knob_style, lv.PART.KNOB)
 
 
-import network
-sta_if = network.WLAN(network.STA_IF);
-sta_if.active(True)
-sta_if.scan()                         
-sta_if.connect("SSIDHERE", "PASSWORDHERE")
-sta_if.isconnected()           
-
-
-import network
-import urequests
-
-
-# Fetch Bitcoin block height from mempool.space
-def get_block_height():
-    try:
-        response = urequests.get("https://mempool.space/api/blocks/tip/height")
-        if response.status_code == 200:
-            height = response.text.strip()  # Returns plain text (e.g., "853123")
-            response.close()
-            return height
-        else:
-            response.close()
-            return "Error: HTTP " + str(response.status_code)
-    except Exception as e:
-        return "Error: " + str(e)
-
-
-
 # Create a label for block height
 label = lv.label(scr)
 label.set_text("Bitcoin Block Height: Fetching...")
 label.set_style_text_color(lv.color_make(0, 255, 0), 0)  # Green text
 label.set_style_text_font(lv.font_montserrat_16, 0)  # Larger font (if available)
-label.center()
+label.align(lv.ALIGN.TOP_LEFT, 10, 200)
+#label.center()
 
 # Style for label background
 style = lv.style_t()
