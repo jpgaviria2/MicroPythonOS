@@ -131,7 +131,7 @@ scr.set_style_bg_color(lv.color_hex(0x000000), 0)
 # Create a button (using lv.obj as a base)
 btn = lv.obj(scr)
 btn.set_size(100, 50)
-btn.align(lv.ALIGN.LEFT, 20, 20)
+btn.align(lv.ALIGN.LEFT, 40, 40)
 
 # Add button style
 style = lv.style_t()
