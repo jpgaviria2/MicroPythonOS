@@ -284,10 +284,9 @@ create_notification_bar()
 
 
 
-i2c_bus = i2c.I2C.Bus(host=0, scl=47, sda=48, freq=100000, use_locks=False)
-touch_dev = i2c.I2C.Device(bus=i2c_bus, dev_id=0x15, reg_bits=8)
-#indev = cst816s.CST816S(touch_dev)
-indev=cst816s.CST816S(touch_dev,startup_rotation=lv.DISPLAY_ROTATION._90)
+indev._write_reg(0xEC,0x06)
+indev._write_reg(0xFA,0x50)
+irq_pin=machine.Pin(46,machine.Pin.IN,machine.Pin.PULL_UP)
 
 # gesture id:
 # 0: press
@@ -297,7 +296,7 @@ indev=cst816s.CST816S(touch_dev,startup_rotation=lv.DISPLAY_ROTATION._90)
 # 4: bottom to top
 # 5: release
 # 12: long press
-def check_swipe(timer):
+def handle_gesture(pin):
     indev._read_reg(0x01)
     gesture_id=indev._rx_buf[0]
     indev._read_reg(0x02)
@@ -316,9 +315,5 @@ def check_swipe(timer):
     if gesture_id==0x01:print("Swipe Up Detected")
     elif gesture_id==0x02:print("Swipe Down Detected")
 
-lv.timer_create(check_swipe,100,None)
 
-
-#indev._write_reg(0xEC,0x06)
-#indev._write_reg(0xFA,0x50)
-#irq_pin=machine.Pin(46,machine.Pin.IN,machine.Pin.PULL_UP)
+irq_pin.irq(trigger=machine.Pin.IRQ_FALLING,handler=handle_gesture)
