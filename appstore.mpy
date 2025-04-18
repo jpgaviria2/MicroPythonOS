@@ -207,3 +207,71 @@ except OSError as e:
 
 with open('/block_height.txt', 'w') as f:
     f.write('853123')
+
+
+# Color palette
+DARKPINK = lv.color_hex(0xEC048C)
+MEDIUMPINK = lv.color_hex(0xF480C5)
+LIGHTPINK = lv.color_hex(0xF9E9F2)
+DARKYELLOW = lv.color_hex(0xFBDC05)
+LIGHTYELLOW = lv.color_hex(0xFBE499)
+PUREBLACK = lv.color_hex(0x000000)
+
+COLOR_NOTIF_BAR_BG = DARKPINK
+COLOR_TEXT_WHITE = LIGHTPINK
+
+# Constants
+NOTIFICATION_BAR_HEIGHT = 40
+PADDING_TINY = 5
+PADDING_SMALL = 10
+OFFSET_WIFI_ICON = -40
+OFFSET_BATTERY_ICON = -20
+TIME_UPDATE_INTERVAL = 1000
+
+def create_notification_bar():
+    # Create notification bar object
+    notification_bar = lv.obj(lv.screen_active())
+    notification_bar.set_style_bg_color(COLOR_NOTIF_BAR_BG, 0)
+    notification_bar.set_size(320, NOTIFICATION_BAR_HEIGHT)
+    notification_bar.set_pos(0, 0)
+    notification_bar.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
+    notification_bar.set_scroll_dir(lv.DIR.VER)
+    notification_bar.set_style_border_width(0, 0)
+    notification_bar.set_style_radius(0, 0)
+    # Time label
+    time_label = lv.label(notification_bar)
+    time_label.set_text("12:00")
+    time_label.align(lv.ALIGN.LEFT_MID, PADDING_TINY, 0)
+    time_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
+    # Notification icon (bell)
+    notif_icon = lv.label(notification_bar)
+    notif_icon.set_text(lv.SYMBOL.BELL)
+    notif_icon.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_SMALL, 0)
+    notif_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
+    # WiFi icon
+    wifi_icon = lv.label(notification_bar)
+    wifi_icon.set_text(lv.SYMBOL.WIFI)
+    wifi_icon.align(lv.ALIGN.RIGHT_MID, OFFSET_WIFI_ICON, 0)
+    wifi_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
+    # Battery icon
+    battery_icon = lv.label(notification_bar)
+    battery_icon.set_text(lv.SYMBOL.BATTERY_FULL)
+    battery_icon.align(lv.ALIGN.RIGHT_MID, OFFSET_BATTERY_ICON, 0)
+    battery_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
+    # Battery percentage
+    battery_label = lv.label(notification_bar)
+    battery_label.set_text("100%")
+    battery_label.align(lv.ALIGN.RIGHT_MID, 0, 0)
+    battery_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
+    # Timer to update time every second
+    def update_time(timer):
+        ticks = time.ticks_ms()
+        hours = (ticks // 3600000) % 24
+        minutes = (ticks // 60000) % 60
+        time_label.set_text(f"{hours:02d}:{minutes:02d}")
+    lv.timer_create(update_time, TIME_UPDATE_INTERVAL, None)
+
+
+
+# Create the notification bar
+create_notification_bar()
