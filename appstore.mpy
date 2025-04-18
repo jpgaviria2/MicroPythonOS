@@ -12,6 +12,48 @@ import i2c  # NOQA
 import network
 import urequests
 
+# Pin configuration
+LCD_SCLK = 39
+LCD_MOSI = 38
+LCD_MISO = 40
+LCD_DC = 42
+LCD_CS = 45
+LCD_BL = 1
+TP_SDA = 48
+TP_SCL = 47
+
+
+TFT_HOR_RES=320
+TFT_VER_RES=240
+
+NOTIFICATION_BAR_HEIGHT=24
+BUTTON_WIDTH=100
+BUTTON_HEIGHT=40
+PADDING_TINY=5
+PADDING_SMALL=10
+PADDING_MEDIUM=20
+DRAWER_BUTTON_Y_OFFSET=60
+DRAWER_ANIM_DURATION=300
+SLIDER_MIN_VALUE=1
+SLIDER_MAX_VALUE=100
+SLIDER_DEFAULT_VALUE=80
+
+DARKPINK=lv.color_hex(0xEC048C)
+MEDIUMPINK=lv.color_hex(0xF480C5)
+LIGHTPINK=lv.color_hex(0xF9E9F2)
+DARKYELLOW=lv.color_hex(0xFBDC05)
+PUREBLACK=lv.color_hex(0x000000)
+COLOR_DRAWER_BG=MEDIUMPINK
+COLOR_TEXT_WHITE=LIGHTPINK
+COLOR_DRAWER_BUTTON_BG=DARKYELLOW
+COLOR_DRAWER_BUTTONTEXT=PUREBLACK
+COLOR_SLIDER_BG=LIGHTPINK
+COLOR_SLIDER_KNOB=DARKYELLOW
+COLOR_SLIDER_INDICATOR=LIGHTPINK
+
+drawer=None
+wifi_screen=None
+drawer_open=False
 
 # Fetch Bitcoin block height from mempool.space
 def get_block_height():
@@ -71,19 +113,6 @@ def connect_wifi():
 # Initialize LVGL
 lv.init()
 
-# Display configuration
-TFT_HOR_RES = 320
-TFT_VER_RES = 240
-
-# Pin configuration
-LCD_SCLK = 39
-LCD_MOSI = 38
-LCD_MISO = 40
-LCD_DC = 42
-LCD_CS = 45
-LCD_BL = 1
-TP_SDA = 48
-TP_SCL = 47
 
 
 spi_bus = machine.SPI.Bus(
@@ -312,8 +341,101 @@ def handle_gesture(pin):
     y_l=indev._rx_buf[0]
     y=((y_h&0x0F)<<8)|y_l
     print(f"GestureID={gesture_id},FingerNum={finger_num},X={x},Y={y}")
-    if gesture_id==0x01:print("Swipe Up Detected")
-    elif gesture_id==0x02:print("Swipe Down Detected")
+    if gesture_id==0x01:
+        print("Swipe Up Detected")
+        close_drawer()
+    elif gesture_id==0x02:
+        print("Swipe Down Detected")
+        open_drawer()
+
+
+
+
+def create_drawer():
+    global drawer,wifi_screen
+    drawer=lv.obj(lv.screen_active())
+    drawer.set_size(TFT_HOR_RES,TFT_VER_RES-NOTIFICATION_BAR_HEIGHT)
+    drawer.set_pos(0,NOTIFICATION_BAR_HEIGHT)
+    drawer.set_style_bg_color(COLOR_DRAWER_BG,0)
+    //drawer.clear_flag(lv.OBJ_FLAG.SCROLLABLE)
+    drawer.add_flag(lv.OBJ_FLAG.HIDDEN)
+    slider=lv.slider(drawer)
+    slider.set_range(SLIDER_MIN_VALUE,SLIDER_MAX_VALUE)
+    slider.set_value(SLIDER_DEFAULT_VALUE,False)
+    slider.set_width(TFT_HOR_RES-PADDING_MEDIUM)
+    slider.align(lv.ALIGN.TOP_MID,0,PADDING_SMALL)
+    slider.set_style_bg_color(COLOR_SLIDER_BG,lv.PART.MAIN)
+    slider.set_style_bg_color(COLOR_SLIDER_INDICATOR,lv.PART.INDICATOR)
+    slider.set_style_bg_color(COLOR_SLIDER_KNOB,lv.PART.KNOB)
+    slider_label=lv.label(drawer)
+    slider_label.set_text("80%")
+    slider_label.set_style_text_color(COLOR_TEXT_WHITE,0)
+    slider_label.align_to(slider,lv.ALIGN.OUT_TOP_MID,0,-5)
+    def slider_event(e):
+        slider=e.get_target()
+        label=e.get_user_data()
+        value=slider.get_value()
+        label.set_text(f"{value}%")
+        display.set_backlight(value)
+    slider.add_event_cb(slider_event,lv.EVENT.VALUE_CHANGED,slider_label)
+    wifi_btn=lv.btn(drawer)
+    wifi_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
+    wifi_btn.align(lv.ALIGN.TOP_LEFT,PADDING_SMALL,DRAWER_BUTTON_Y_OFFSET)
+    wifi_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
+    wifi_label=lv.label(wifi_btn)
+    wifi_label.set_text(lv.SYMBOL.WIFI+" WiFi")
+    wifi_label.center()
+    wifi_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
+    def wifi_event(e):
+        global drawer_open
+        //wifi_screen.clear_flag(lv.OBJ_FLAG.HIDDEN)
+        drawer.add_flag(lv.OBJ_FLAG.HIDDEN)
+        drawer_open=False
+    wifi_btn.add_event_cb(wifi_event,lv.EVENT.CLICKED,None)
+    settings_btn=lv.btn(drawer)
+    settings_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
+    settings_btn.align(lv.ALIGN.TOP_RIGHT,-PADDING_SMALL,DRAWER_BUTTON_Y_OFFSET)
+    settings_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
+    settings_label=lv.label(settings_btn)
+    settings_label.set_text(lv.SYMBOL.SETTINGS+" Settings")
+    settings_label.center()
+    settings_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
+    def settings_event(e):
+        global drawer_open
+        drawer.add_flag(lv.OBJ_FLAG.HIDDEN)
+        drawer_open=False
+    settings_btn.add_event_cb(settings_event,lv.EVENT.CLICKED,None)
+
+def open_drawer():
+    global drawer_open
+    if not drawer_open:
+        drawer.clear_flag(lv.OBJ_FLAG.HIDDEN)
+        a=lv.anim_t()
+        a.init()
+        a.set_var(drawer)
+        a.set_values(-TFT_VER_RES+NOTIFICATION_BAR_HEIGHT,NOTIFICATION_BAR_HEIGHT)
+        a.set_time(DRAWER_ANIM_DURATION)
+        a.set_path_cb(lv.anim_path_ease_in_out)
+        a.set_exec_cb(lambda a,value:drawer.set_y(value))
+        a.start()
+        drawer_open=True
+
+def close_drawer():
+    global drawer_open
+    if drawer_open:
+        a=lv.anim_t()
+        a.init()
+        a.set_var(drawer)
+        a.set_values(NOTIFICATION_BAR_HEIGHT,-TFT_VER_RES+NOTIFICATION_BAR_HEIGHT)
+        a.set_time(DRAWER_ANIM_DURATION)
+        a.set_path_cb(lv.anim_path_ease_in_out)
+        a.set_exec_cb(lambda a,value:drawer.set_y(value))
+        a.set_completed_cb(lambda a:drawer.add_flag(lv.OBJ_FLAG.HIDDEN))
+        a.start()
+        drawer_open=False
+
 
 
 irq_pin.irq(trigger=machine.Pin.IRQ_FALLING,handler=handle_gesture)
+
+create_drawer()
