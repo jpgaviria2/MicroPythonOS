@@ -192,3 +192,18 @@ else:
     label.set_text("Block Height: Wi-Fi Error")
 
 
+
+print(os.listdir('/')) 
+
+try:
+    with open('/boot.py', 'r') as file:
+        print("Contents of /boot.py:")
+        print("-" * 20)
+        for line in file:
+            print(line.rstrip())  # Remove trailing newlines for clean output
+except OSError as e:
+    print("Error reading /boot.py:", e)
+    
+
+with open('/block_height.txt', 'w') as f:
+    f.write('853123')
