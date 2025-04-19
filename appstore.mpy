@@ -144,11 +144,9 @@ display.init()
 display.set_power(True)
 display.set_backlight(100)
 
-i2c_bus = i2c.I2C.Bus(host=0, scl=47, sda=48, freq=100000, use_locks=False)
-touch_dev = i2c.I2C.Device(bus=i2c_bus, dev_id=0x15, reg_bits=8)
-#indev = cst816s.CST816S(touch_dev) # button in bottom right corner iso top left
-#indev=cst816s.CST816S(touch_dev,startup_rotation=lv.DISPLAY_ROTATION._90) # button in bottom right iso top left
-indev=cst816s.CST816S(touch_dev,startup_rotation=lv.DISPLAY_ROTATION._180) # button in top left, good
+#i2c_bus = i2c.I2C.Bus(host=0, scl=47, sda=48, freq=100000, use_locks=False)
+#touch_dev = i2c.I2C.Device(bus=i2c_bus, dev_id=0x15, reg_bits=8)
+#indev=cst816s.CST816S(touch_dev,startup_rotation=lv.DISPLAY_ROTATION._180) # button in top left, good
 
 th = task_handler.TaskHandler()
 
@@ -161,12 +159,11 @@ display.set_rotation(lv.DISPLAY_ROTATION._90)
 import lvgl as lv
 import _thread
 import utime
-
+import gc
 
 # Create a list and lock for scheduling LVGL tasks
 lvgl_task_queue = []
 queue_lock = _thread.allocate_lock()
-
 
 # Function to process LVGL tasks from the queue in the main thread
 def process_lvgl_tasks():
@@ -180,23 +177,21 @@ def process_lvgl_tasks():
         try:
             print("Processing task")  # Debug: confirm task execution
             task()
+            print("Task completed")  # Debug: confirm task success
         except Exception as e:
             print("LVGL task error:", e)
-
 
 # Create a subwindow (container) for the child script
 screen = lv.screen_active()
 subwindow = lv.obj(screen)
-subwindow.set_size(80, 60)  # Further reduced to minimize memory
+subwindow.set_size(100, 80)  # Slightly larger for visibility
 subwindow.align(lv.ALIGN.TOP_LEFT, 10, 10)
 subwindow.set_style_bg_color(lv.color_hex(0xDDDDDD), lv.PART.MAIN)
-
 
 # Create a label on the main screen for parent updates
 parent_label = lv.label(screen)
 parent_label.set_text("Parent: 0")
 parent_label.align(lv.ALIGN.BOTTOM_MID, 0, -10)
-
 
 # Function to execute the child script in a separate thread
 def execute_script(script_source, lvgl_obj):
@@ -205,7 +200,7 @@ def execute_script(script_source, lvgl_obj):
             # Define a function to schedule LVGL tasks from the child thread
             def schedule_lvgl_task(task):
                 with queue_lock:
-                    print("Queuing task")  # Debug: confirm task queuing
+                    print("Queuing task")  # Debug
                     lvgl_task_queue.append(task)
             # Create a dictionary for the script's globals
             script_globals = {
@@ -214,53 +209,53 @@ def execute_script(script_source, lvgl_obj):
                 'schedule_lvgl_task': schedule_lvgl_task,
                 'utime': utime
             }
-            print("Child thread: Executing script")  # Debug: confirm thread start
+            print("Child thread: Executing script")
             exec(script_source, script_globals)
         except Exception as e:
             print("Child thread error:", e)
     # Start the thread with smaller stack size
     try:
-        _thread.stack_size(4096)  # Conserve memory
+        _thread.stack_size(4096)
         _thread.start_new_thread(thread_func, ())
         print("Child thread started")
     except Exception as e:
         print("Error starting child thread:", e)
 
-
 # Child script buffer: updates a label in the subwindow every 2 seconds
 script_buffer = """
 def update_child():
-    print("Child thread: Creating label")  # Debug
+    print("Child thread: Creating label")
     label = lv.label(subwindow)
     label.set_text("Child: 0")
     label.align(lv.ALIGN.CENTER, 0, 0)
     count = 0
     while True:
         count += 1
-        print("Child thread: Preparing update", count)  # Debug: confirm loop
+        print("Child thread: Preparing update", count)
         def set_label_text():
-            print("Child task: Updating label to", count)  # Debug
+            print("Child task: Updating label to", count)
             label.set_text(f"Child: {count}")
         schedule_lvgl_task(set_label_text)
-        utime.sleep_ms(2000)  # Slower updates to reduce queue pressure
-
+        utime.sleep_ms(2000)
 schedule_lvgl_task(update_child)
 """
-
 execute_script(script_buffer, subwindow)
 
-
 # Main loop: update parent label every second and process LVGL tasks
+gc.collect()
+print("Free memory before loop:", gc.mem_free())  # Debug: check SRAM
 count = 0
 while True:
     count += 1
-    print("Main thread: Updating parent to", count)  # Debug: confirm loop
+    print("Main thread: Updating parent to", count)
     try:
         parent_label.set_text(f"Parent: {count}")
     except Exception as e:
         print("Parent label error:", e)
     process_lvgl_tasks()
-    utime.sleep_ms(50)  # Further reduced to 50ms for faster task processing
+    gc.collect()
+    print("Free memory:", gc.mem_free())  # Debug: monitor memory
+    utime.sleep_ms(50)
 
 
 
