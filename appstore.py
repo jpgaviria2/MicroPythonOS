@@ -5,9 +5,9 @@ import st7789
 import lcd_bus
 from micropython import const
 import machine
-import task_handler  # NOQA
-import cst816s  # NOQA
-import i2c  # NOQA
+import task_handler
+import cst816s
+import i2c
 import network
 import urequests
 
