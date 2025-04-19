@@ -279,8 +279,13 @@ def connect_wifi():
 import time
 
 
-# Constants
+# Redefined from above
 
+TFT_HOR_RES=320
+TFT_VER_RES=240
+
+
+# Constants
 NOTIFICATION_BAR_HEIGHT=24
 BUTTON_WIDTH=100
 BUTTON_HEIGHT=40
@@ -459,6 +464,12 @@ def create_notification_bar():
     battery_label.set_text("100%")
     battery_label.align(lv.ALIGN.RIGHT_MID, 0, 0)
     battery_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
+    openbutton = lv.button(notification_bar)
+    openbutton.align(lv.ALIGN.TOP_MID, -20, -14)
+    openbutton.add_event_cb(lambda event: open_drawer(), lv.EVENT.CLICKED, None)
+    closebutton = lv.button(notification_bar)
+    closebutton.align(lv.ALIGN.TOP_MID, 20, -14)
+    closebutton.add_event_cb(lambda event: close_drawer(), lv.EVENT.CLICKED, None)
     # Timer to update time every second
     def update_time(timer):
         ticks = time.ticks_ms()
