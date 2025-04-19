@@ -215,65 +215,6 @@ except Exception as e:
 
 
 
-
-
-# Fetch Bitcoin block height from mempool.space
-def get_block_height():
-    try:
-        response = urequests.get("https://mempool.space/api/blocks/tip/height")
-        if response.status_code == 200:
-            height = response.text.strip()  # Returns plain text (e.g., "853123")
-            response.close()
-            return height
-        else:
-            response.close()
-            return "Error: HTTP " + str(response.status_code)
-    except Exception as e:
-        return "Error: " + str(e)
-
-def show_block_height():
-	# Create a label for block height
-	label = lv.label(scr)
-	label.set_text("Bitcoin Block Height: Fetching...")
-	label.set_style_text_color(lv.color_make(0, 255, 0), 0)  # Green text
-	label.set_style_text_font(lv.font_montserrat_16, 0)  # Larger font (if available)
-	label.align(lv.ALIGN.TOP_LEFT, 10, 200)
-	#label.center()
-	
-	# Style for label background
-	style = lv.style_t()
-	style.init()
-	style.set_bg_color(lv.palette_main(lv.PALETTE.DARK))  # Dark background
-	style.set_border_width(2)
-	style.set_border_color(lv.color_make(255, 255, 255))  # White border
-	style.set_pad_all(10)
-	style.set_radius(10)
-	label.add_style(style, 0)
-	
-	height = get_block_height()
-	label.set_text(f"Block Height: {height}")
-	
-
-# Connect to Wi-Fi
-def connect_wifi():
-    wlan = network.WLAN(network.STA_IF)
-    wlan.active(True)
-    wlan.connect("SSIDHERE", "PASSWORDHERE")
-    print("Connecting to Wi-Fi...", end="")
-    for _ in range(30):  # Wait up to 30 seconds
-        if wlan.isconnected():
-            print(" Connected!")
-            print("IP:", wlan.ifconfig()[0])
-            return True
-        time.sleep(1)
-        print(".", end="")
-    print(" Failed to connect!")
-    return False
-
-
-
-
-
 # Below works at https://sim.lvgl.io/v9.0/micropython/ports/webassembly/index.html
 
 import time
@@ -486,41 +427,6 @@ create_notification_bar()
 
 
 
-indev._write_reg(0xEC,0x06)
-indev._write_reg(0xFA,0x50)
-irq_pin=machine.Pin(46,machine.Pin.IN,machine.Pin.PULL_UP)
-
-# gesture id:
-# 0: press
-# 1: swipe from left to USB port
-# 2: swipe from USB port to left
-# 3: top to bottom
-# 4: bottom to top
-# 5: release
-# 12: long press
-def handle_gesture(pin):
-    indev._read_reg(0x01)
-    gesture_id=indev._rx_buf[0]
-    indev._read_reg(0x02)
-    finger_num=indev._rx_buf[0]
-    indev._read_reg(0x03)
-    x_h=indev._rx_buf[0]
-    indev._read_reg(0x04)
-    x_l=indev._rx_buf[0]
-    x=((x_h&0x0F)<<8)|x_l
-    indev._read_reg(0x05)
-    y_h=indev._rx_buf[0]
-    indev._read_reg(0x06)
-    y_l=indev._rx_buf[0]
-    y=((y_h&0x0F)<<8)|y_l
-    print(f"GestureID={gesture_id},FingerNum={finger_num},X={x},Y={y}")
-    if gesture_id==0x04:
-        print("Swipe Up Detected")
-        close_drawer()
-    elif gesture_id==0x03:
-        print("Swipe Down Detected")
-        open_drawer()
-
 
 
 def create_drawer():
@@ -601,6 +507,106 @@ def close_drawer():
         drawer_open=False
 
 
-irq_pin.irq(trigger=machine.Pin.IRQ_FALLING,handler=handle_gesture)
 
 create_drawer()
+
+
+
+
+indev._write_reg(0xEC,0x06)
+indev._write_reg(0xFA,0x50)
+irq_pin=machine.Pin(46,machine.Pin.IN,machine.Pin.PULL_UP)
+
+# gesture id:
+# 0: press
+# 1: swipe from left to USB port
+# 2: swipe from USB port to left
+# 3: top to bottom
+# 4: bottom to top
+# 5: release
+# 12: long press
+def handle_gesture(pin):
+    indev._read_reg(0x01)
+    gesture_id=indev._rx_buf[0]
+    indev._read_reg(0x02)
+    finger_num=indev._rx_buf[0]
+    indev._read_reg(0x03)
+    x_h=indev._rx_buf[0]
+    indev._read_reg(0x04)
+    x_l=indev._rx_buf[0]
+    x=((x_h&0x0F)<<8)|x_l
+    indev._read_reg(0x05)
+    y_h=indev._rx_buf[0]
+    indev._read_reg(0x06)
+    y_l=indev._rx_buf[0]
+    y=((y_h&0x0F)<<8)|y_l
+    print(f"GestureID={gesture_id},FingerNum={finger_num},X={x},Y={y}")
+    if gesture_id==0x04:
+        print("Swipe Up Detected")
+        close_drawer()
+    elif gesture_id==0x03:
+        print("Swipe Down Detected")
+        open_drawer()
+
+
+irq_pin.irq(trigger=machine.Pin.IRQ_FALLING,handler=handle_gesture)
+
+
+
+
+
+
+# Fetch Bitcoin block height from mempool.space
+def get_block_height():
+    try:
+        response = urequests.get("https://mempool.space/api/blocks/tip/height")
+        if response.status_code == 200:
+            height = response.text.strip()  # Returns plain text (e.g., "853123")
+            response.close()
+            return height
+        else:
+            response.close()
+            return "Error: HTTP " + str(response.status_code)
+    except Exception as e:
+        return "Error: " + str(e)
+
+def show_block_height():
+	# Create a label for block height
+	label = lv.label(scr)
+	label.set_text("Bitcoin Block Height: Fetching...")
+	label.set_style_text_color(lv.color_make(0, 255, 0), 0)  # Green text
+	label.set_style_text_font(lv.font_montserrat_16, 0)  # Larger font (if available)
+	label.align(lv.ALIGN.TOP_LEFT, 10, 200)
+	#label.center()
+	
+	# Style for label background
+	style = lv.style_t()
+	style.init()
+	style.set_bg_color(lv.palette_main(lv.PALETTE.DARK))  # Dark background
+	style.set_border_width(2)
+	style.set_border_color(lv.color_make(255, 255, 255))  # White border
+	style.set_pad_all(10)
+	style.set_radius(10)
+	label.add_style(style, 0)
+	
+	height = get_block_height()
+	label.set_text(f"Block Height: {height}")
+	
+
+# Connect to Wi-Fi
+def connect_wifi():
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    wlan.connect("SSIDHERE", "PASSWORDHERE")
+    print("Connecting to Wi-Fi...", end="")
+    for _ in range(30):  # Wait up to 30 seconds
+        if wlan.isconnected():
+            print(" Connected!")
+            print("IP:", wlan.ifconfig()[0])
+            return True
+        time.sleep(1)
+        print(".", end="")
+    print(" Failed to connect!")
+    return False
+
+
