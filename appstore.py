@@ -1,7 +1,6 @@
 import lvgl as lv
 import time
 from machine import Pin, SPI
-#from st7789 import ST7789
 import st7789 
 import lcd_bus
 from micropython import const
@@ -21,7 +20,6 @@ LCD_CS = 45
 LCD_BL = 1
 TP_SDA = 48
 TP_SCL = 47
-
 
 TFT_HOR_RES=320
 TFT_VER_RES=240
@@ -54,6 +52,193 @@ COLOR_SLIDER_INDICATOR=LIGHTPINK
 drawer=None
 wifi_screen=None
 drawer_open=False
+
+lv.init()
+spi_bus = machine.SPI.Bus(
+    host=2,
+    mosi=38,
+    miso=40,
+    sck=39
+)
+display_bus = lcd_bus.SPIBus(
+    spi_bus=spi_bus,
+    freq=40000000,
+    dc=42,
+    cs=45,
+)
+display = st7789.ST7789(
+    data_bus=display_bus,
+    display_width=240,
+    display_height=320,
+    backlight_pin=1,
+    color_space=lv.COLOR_FORMAT.RGB565,
+    color_byte_order=st7789.BYTE_ORDER_BGR,
+    rgb565_byte_swap=True,
+)
+display.init()
+display.set_power(True)
+display.set_backlight(100)
+
+i2c_bus = i2c.I2C.Bus(host=0, scl=47, sda=48, freq=100000, use_locks=False)
+touch_dev = i2c.I2C.Device(bus=i2c_bus, dev_id=0x15, reg_bits=8)
+indev=cst816s.CST816S(touch_dev,startup_rotation=lv.DISPLAY_ROTATION._180) # button in top left, good
+
+th = task_handler.TaskHandler()
+display.set_rotation(lv.DISPLAY_ROTATION._90)
+
+
+
+
+
+
+
+
+
+import lvgl as lv
+import uasyncio as asyncio
+import utime
+import gc
+
+# Create a subwindow for the child script (half the 320x240 display)
+screen = lv.screen_active()
+subwindow = lv.obj(screen)
+subwindow.set_size(160, 240)  # Half width, full height
+subwindow.align(lv.ALIGN.LEFT_MID, 0, 0)  # Left side
+subwindow.set_style_bg_color(lv.color_hex(0xDDDDDD), lv.PART.MAIN)
+
+# Create a label for parent updates
+parent_label = lv.label(screen)
+parent_label.set_text("Parent: 0")
+parent_label.set_style_text_font(lv.font_montserrat_12, 0)
+parent_label.align(lv.ALIGN.TOP_RIGHT, -10, 10)
+
+# Create a parent button
+parent_button = lv.button(screen)
+parent_button.set_size(80, 40)
+parent_button.align(lv.ALIGN.BOTTOM_RIGHT, -10, -50)
+parent_button_label = lv.label(parent_button)
+parent_button_label.set_text("Parent Btn")
+parent_button_label.set_style_text_font(lv.font_montserrat_12, 0)
+
+# Create a parent slider
+parent_slider = lv.slider(screen)
+parent_slider.set_size(100, 10)
+parent_slider.set_range(0, 100)
+parent_slider.align(lv.ALIGN.BOTTOM_RIGHT, -10, -10)
+
+# Parent button callback
+def parent_button_cb(e):
+    print("Parent button clicked")
+
+parent_button.add_event_cb(parent_button_cb, lv.EVENT.CLICKED, None)
+
+# Parent slider callback
+def parent_slider_cb(e):
+    value = parent_slider.get_value()
+    print("Parent slider value:", value)
+
+parent_slider.add_event_cb(parent_slider_cb, lv.EVENT.VALUE_CHANGED, None)
+
+# Function to execute the child script as a coroutine
+async def execute_script(script_source, lvgl_obj):
+    try:
+        script_globals = {
+            'lv': lv,
+            'subwindow': lvgl_obj,
+            'asyncio': asyncio,
+            'utime': utime
+        }
+        print("Child script: Compiling")
+        code = compile(script_source, "<string>", "exec")
+        exec(code, script_globals)
+        update_child = script_globals.get('update_child')
+        if update_child:
+            print("Child script: Starting update_child")
+            await update_child()
+        else:
+            print("Child script error: No update_child function defined")
+    except Exception as e:
+        print("Child script error:", e)
+
+# Child script buffer: updates label, adds button and slider
+script_buffer = """
+import asyncio
+async def update_child():
+    print("Child coroutine: Creating UI")
+    # Label
+    label = lv.label(subwindow)
+    label.set_text("Child: 0")
+    label.set_style_text_font(lv.font_montserrat_12, 0)
+    label.align(lv.ALIGN.TOP_MID, 0, 10)
+    # Button
+    button = lv.button(subwindow)
+    button.set_size(80, 40)
+    button.align(lv.ALIGN.BOTTOM_MID, 0, -50)
+    button_label = lv.label(button)
+    button_label.set_text("Child Btn")
+    button_label.set_style_text_font(lv.font_montserrat_12, 0)
+    # Slider
+    slider = lv.slider(subwindow)
+    slider.set_size(100, 10)
+    slider.set_range(0, 100)
+    slider.align(lv.ALIGN.BOTTOM_MID, 0, -10)
+    # Button callback
+    def button_cb(e):
+        print("Child button clicked")
+    button.add_event_cb(button_cb, lv.EVENT.CLICKED, None)
+    # Slider callback
+    def slider_cb(e):
+        value = slider.get_value()
+        print("Child slider value:", value)
+    slider.add_event_cb(slider_cb, lv.EVENT.VALUE_CHANGED, None)
+    # Update loop
+    count = 0
+    while True:
+        count += 1
+        print("Child coroutine: Updating label to", count)
+        label.set_text(f"Child: {count}")
+        await asyncio.sleep_ms(2000)  # Update every 2s
+"""
+
+# Parent coroutine: updates parent label every 1 second
+async def update_parent():
+    count = 0
+    while True:
+        count += 1
+        print("Parent coroutine: Updating label to", count)
+        parent_label.set_text(f"Parent: {count}")
+        gc.collect()
+        print("Parent coroutine: Free memory:", gc.mem_free())
+        await asyncio.sleep_ms(1000)  # Update every 1s
+
+# Main async function to run all tasks
+async def main():
+    print("Main: Starting tasks")
+    asyncio.create_task(update_parent())
+    asyncio.create_task(execute_script(script_buffer, subwindow))
+    while True:
+        await asyncio.sleep_ms(100)
+
+# Run the event loop
+gc.collect()
+print("Free memory before loop:", gc.mem_free())
+try:
+    asyncio.run(main())
+except Exception as e:
+    print("Main error:", e)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Fetch Bitcoin block height from mempool.space
 def get_block_height():
@@ -107,149 +292,6 @@ def connect_wifi():
         print(".", end="")
     print(" Failed to connect!")
     return False
-    
-
-
-# Initialize LVGL
-lv.init()
-
-
-
-spi_bus = machine.SPI.Bus(
-    host=2,
-    mosi=38,
-    miso=40,
-    sck=39
-)
-
-display_bus = lcd_bus.SPIBus(
-    spi_bus=spi_bus,
-    freq=40000000,
-    dc=42,
-    cs=45,
-)
-
-
-display = st7789.ST7789(
-    data_bus=display_bus,
-    display_width=240,
-    display_height=320,
-    backlight_pin=1,
-    color_space=lv.COLOR_FORMAT.RGB565,
-    color_byte_order=st7789.BYTE_ORDER_BGR,
-    rgb565_byte_swap=True,
-)
-
-display.init()
-display.set_power(True)
-display.set_backlight(100)
-
-#i2c_bus = i2c.I2C.Bus(host=0, scl=47, sda=48, freq=100000, use_locks=False)
-#touch_dev = i2c.I2C.Device(bus=i2c_bus, dev_id=0x15, reg_bits=8)
-#indev=cst816s.CST816S(touch_dev,startup_rotation=lv.DISPLAY_ROTATION._180) # button in top left, good
-
-th = task_handler.TaskHandler()
-display.set_rotation(lv.DISPLAY_ROTATION._90)
-
-
-
-
-
-
-
-
-
-
-import lvgl as lv
-import uasyncio as asyncio
-import utime
-import gc
-
-# Create a subwindow for the child script
-screen = lv.screen_active()
-subwindow = lv.obj(screen)
-subwindow.set_size(120, 100)
-subwindow.align(lv.ALIGN.TOP_LEFT, 10, 10)
-subwindow.set_style_bg_color(lv.color_hex(0xDDDDDD), lv.PART.MAIN)
-
-# Create a label for parent updates
-parent_label = lv.label(screen)
-parent_label.set_text("Parent: 0")
-parent_label.align(lv.ALIGN.BOTTOM_MID, 0, -10)
-
-# Function to execute the child script as a coroutine
-async def execute_script(script_source, lvgl_obj):
-    try:
-        # Create globals for the script
-        script_globals = {
-            'lv': lv,
-            'subwindow': lvgl_obj,
-            'asyncio': asyncio,
-            'utime': utime
-        }
-        print("Child script: Compiling")
-        # Compile and execute the script
-        code = compile(script_source, "<string>", "exec")
-        exec(code, script_globals)
-        # Assume the script defines an async function 'update_child'
-        update_child = script_globals.get('update_child')
-        if update_child:
-            print("Child script: Starting update_child")
-            await update_child()
-        else:
-            print("Child script error: No update_child function defined")
-    except Exception as e:
-        print("Child script error:", e)
-
-# Child script buffer: updates a label every 2 seconds
-script_buffer = """
-import asyncio
-async def update_child():
-    print("Child coroutine: Creating label")
-    label = lv.label(subwindow)
-    label.set_text("Child: 0")
-    label.set_style_text_font(lv.font_montserrat_12, 0)  # Smaller font
-    label.align(lv.ALIGN.CENTER, 0, 0)
-    count = 0
-    while True:
-        count += 1
-        print("Child coroutine: Updating label to", count)
-        label.set_text(f"Child: {count}")
-        await asyncio.sleep_ms(2000)  # Update every 2s
-"""
-
-# Parent coroutine: updates parent label every 1 second
-async def update_parent():
-    count = 0
-    while True:
-        count += 1
-        print("Parent coroutine: Updating label to", count)
-        parent_label.set_text(f"Parent: {count}")
-        gc.collect()
-        print("Parent coroutine: Free memory:", gc.mem_free())
-        await asyncio.sleep_ms(1000)  # Update every 1s
-
-# Main async function to run all tasks
-async def main():
-    print("Main: Starting tasks")
-    # Start parent and child tasks
-    asyncio.create_task(update_parent())
-    asyncio.create_task(execute_script(script_buffer, subwindow))
-    # Keep the event loop running
-    while True:
-        await asyncio.sleep_ms(100)  # Yield to other tasks
-
-# Run the event loop
-gc.collect()
-print("Free memory before loop:", gc.mem_free())
-try:
-    asyncio.run(main())
-except Exception as e:
-    print("Main error:", e)
-
-
-
-
 
 scr = lv.screen_active()
 scr.set_style_bg_color(lv.color_hex(0x000000), 0)
