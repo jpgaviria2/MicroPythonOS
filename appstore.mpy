@@ -140,8 +140,8 @@ display = st7789.ST7789(
     rgb565_byte_swap=True,
 )
 
-display.set_power(True)
 display.init()
+display.set_power(True)
 display.set_backlight(100)
 
 i2c_bus = i2c.I2C.Bus(host=0, scl=47, sda=48, freq=100000, use_locks=False)
@@ -158,9 +158,9 @@ scr = lv.screen_active()
 scr.set_style_bg_color(lv.color_hex(0x000000), 0)
 
 # Create a button (using lv.obj as a base)
-btn = lv.obj(scr)
+btn = lv.button(scr)
 btn.set_size(100, 50)
-btn.align(lv.ALIGN.LEFT, 40, 40)
+btn.align(lv.ALIGN.LEFT, 60, 60)
 
 # Add button style
 style = lv.style_t()
@@ -192,6 +192,21 @@ slider.set_size(200, 20)
 slider.set_range(0, 100)
 slider.set_value(50, lv.ANIM.OFF)
 slider.align(lv.ALIGN.BOTTOM_MID, 0, -40)
+
+slider_label=lv.label(scr)
+slider_label.set_text("80%")
+slider_label.set_style_text_color(COLOR_TEXT_WHITE,0)
+slider_label.align_to(slider,lv.ALIGN.OUT_TOP_MID,0,-5)
+
+def slider_event(e):
+    value=slider.get_value()
+    print("slider value:")
+    print(value)
+    slider_label.set_text(f"{value}%")
+    display.set_backlight(value)
+
+slider.add_event_cb(slider_event,lv.EVENT.VALUE_CHANGED,None)
+
 
 # Style for the slider background
 bg_style = lv.style_t()
@@ -384,9 +399,8 @@ def create_drawer():
         label.set_text(f"{value}%")
         display.set_backlight(value)
     # this crashes it: slider.add_event_cb(slider_event,lv.EVENT.VALUE_CHANGED,slider_label)
-
-def add_later():
-    wifi_btn=lv.btn(drawer)
+    # this crashes it: slider.add_event_cb(slider_event,lv.EVENT.VALUE_CHANGED,slider_label)
+    wifi_btn=lv.button(drawer)
     wifi_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
     wifi_btn.align(lv.ALIGN.TOP_LEFT,PADDING_SMALL,DRAWER_BUTTON_Y_OFFSET)
     wifi_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
@@ -396,11 +410,11 @@ def add_later():
     wifi_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
     def wifi_event(e):
         global drawer_open
-        wifi_screen.set_y(0)
-        drawer.set_y(-TFT_VER_RES+NOTIFICATION_BAR_HEIGHT)
+        #wifi_screen.set_y(0) # TODO: make this
+        close_drawer()
         drawer_open=False
     wifi_btn.add_event_cb(wifi_event,lv.EVENT.CLICKED,None)
-    settings_btn=lv.btn(drawer)
+    settings_btn=lv.button(drawer)
     settings_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
     settings_btn.align(lv.ALIGN.TOP_RIGHT,-PADDING_SMALL,DRAWER_BUTTON_Y_OFFSET)
     settings_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
@@ -411,7 +425,7 @@ def add_later():
     print('40')
     def settings_event(e):
         global drawer_open
-        drawer.set_y(-TFT_VER_RES+NOTIFICATION_BAR_HEIGHT)
+        close_drawer()
         drawer_open=False
     settings_btn.add_event_cb(settings_event,lv.EVENT.CLICKED,None)
 
