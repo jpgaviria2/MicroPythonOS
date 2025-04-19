@@ -475,7 +475,9 @@ print("Child coroutine: Exiting")
 gc.collect()
 print("Free memory before loop:", gc.mem_free())
 try:
-    _thread.stack_size(131072) # 168KB maximum at startup but 136KB after loading display, drivers, LVGL gui etc so let's go for 128KB for now, still a lot...
+    # 168KB maximum at startup but 136KB after loading display, drivers, LVGL gui etc so let's go for 128KB for now, still a lot...
+    # But then no additional threads can be created. So 32KB seems like a good balance, allowing for 4 threads in apps...
+    _thread.stack_size(32768) 
     _thread.start_new_thread(execute_script, (script_buffer, False, subwindow))
     print("Event loop started in background thread")
 except Exception as e:
