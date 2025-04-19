@@ -409,22 +409,16 @@ create_drawer()
 
 
 
-# uasyncio isn't available on web
+# uasyncio and _thread aren't available on web
 
-import lvgl as lv
-import uasyncio as asyncio
-import utime
-import gc
 import _thread
 
 # Function to execute the child script as a coroutine
-async def execute_script(script_source, lvgl_obj):
+def execute_script(script_source, lvgl_obj):
     try:
         script_globals = {
             'lv': lv,
             'subwindow': lvgl_obj,
-            'asyncio': asyncio,
-            'utime': utime
         }
         print("Child script: Compiling")
         code = compile(script_source, "<string>", "exec")
@@ -432,16 +426,18 @@ async def execute_script(script_source, lvgl_obj):
         app_main = script_globals.get('app_main')
         if app_main:
             print("Child script: Starting app_main")
-            await app_main()
+            app_main()
+            print("Script finished!")
         else:
             print("Child script error: No app_main function defined")
     except Exception as e:
         print("Child script error:", e)
 
+
 # Child script buffer: updates label, adds button and slider
 script_buffer = """
-import asyncio
-async def app_main():
+import time
+def app_main():
     print("Child coroutine: Creating UI")
     # Label
     label = lv.label(subwindow)
@@ -478,27 +474,9 @@ async def app_main():
         count += 1
         print("Child coroutine: Updating label to", count)
         label.set_text(f"Child: {count}")
-        await asyncio.sleep_ms(1000)
+        time.sleep_ms(1000)
     print("Child coroutine: Exiting")
 """
-
-# Async main function to run the child script
-async def main():
-    print("Main: Starting child script")
-    task = asyncio.create_task(execute_script(script_buffer, subwindow))
-    while not task.done():
-        await asyncio.sleep_ms(100)
-    print("Main stopped")
-
-
-# Function to run the event loop in a background thread
-def run_app():
-    try:
-        asyncio.run(main())
-        print("Event loop stopped")
-        subwindow.delete()
-    except Exception as e:
-        print("Event loop error:", e)
 
 
 # Start the event loop in a background thread
@@ -506,9 +484,8 @@ gc.collect()
 print("Free memory before loop:", gc.mem_free())
 try:
     _thread.stack_size(8192)
-    _thread.start_new_thread(run_app, ())
+    _thread.start_new_thread(execute_script, (script_buffer, subwindow))
     print("Event loop started in background thread")
 except Exception as e:
     print("Error starting event loop thread:", e)
 
-print("REPL is now available")
