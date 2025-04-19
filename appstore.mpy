@@ -158,6 +158,8 @@ display.set_rotation(lv.DISPLAY_ROTATION._90)
 
 
 # trying out script running
+
+import lvgl as lv
 import _thread
 import utime
 
@@ -169,10 +171,7 @@ queue_lock = _thread.allocate_lock()
 
 # Function to process LVGL tasks from the queue in the main thread
 def process_lvgl_tasks():
-	print('process_lvgl_tasks begins')
     while True:
-        print('process_lvgl_tasks')
-        utime.sleep_ms(500)
         task = None
         with queue_lock:
             if lvgl_task_queue:
@@ -180,24 +179,24 @@ def process_lvgl_tasks():
         if task is None:
             break
         task()  # Execute the LVGL task
-        
 
-
-# Main LVGL task handler (called periodically)
-#def main_task_handler():1
- #   lv.task_handler()
-    
 
 # Create a subwindow (container) for the child script
 screen = lv.screen_active()
 subwindow = lv.obj(screen)
 subwindow.set_size(200, 150)
 subwindow.align(lv.ALIGN.TOP_LEFT, 10, 10)
-subwindow.set_style_bg_color(lv.color_hex(0xFF0000), lv.PART.MAIN)
+subwindow.set_style_bg_color(lv.color_hex(0xDDDDDD), lv.PART.MAIN)
 
 
-# Function to execute a script in a separate thread
-def execute_script(script_source, is_file, lvgl_obj):
+# Create a label on the main screen for parent updates
+parent_label = lv.label(screen)
+parent_label.set_text("Parent: 0")
+parent_label.align(lv.ALIGN.BOTTOM_MID, 0, -10)
+
+
+# Function to execute the child script in a separate thread
+def execute_script(script_source, lvgl_obj):
     def thread_func():
         try:
             # Define a function to schedule LVGL tasks from the child thread
@@ -208,47 +207,50 @@ def execute_script(script_source, is_file, lvgl_obj):
             script_globals = {
                 'lv': lv,
                 'subwindow': lvgl_obj,
-                'schedule_lvgl_task': schedule_lvgl_task
+                'schedule_lvgl_task': schedule_lvgl_task,
+                'utime': utime
             }
-            # Execute the script
-            if is_file:
-                with open(script_source, 'r') as f:
-                    code = f.read()
-                exec(code, script_globals)
-            else:
-                exec(script_source, script_globals)
+            # Execute the script from buffer
+            exec(script_source, script_globals)
         except Exception as e:
             print("Child thread error:", e)
     # Start the thread
     _thread.start_new_thread(thread_func, ())
 
 
-# Example 1: Execute a script from a file
-#script_file = "child_script.py"
-#execute_script(script_file, True, subwindow)
-
-
-# Example 2: Execute a script from a buffer
+# Child script buffer: updates a label in the subwindow every second
 script_buffer = """
-def create_ui():
+def update_child():
     label = lv.label(subwindow)
-    label.set_text("Hello from buffer again!")
-    label.align(lv.ALIGN.LEFT_MID, 100, 100)
-schedule_lvgl_task(create_ui)
+    label.set_text("Child: 0")
+    label.align(lv.ALIGN.CENTER, 0, 0)
+    count = 0
+    while True:
+        count += 1
+        def set_label_text():
+            label.set_text(f"Child: {count}")
+        schedule_lvgl_task(set_label_text)
+        utime.sleep_ms(1000)
+
+
+schedule_lvgl_task(update_child)
 """
 
 
-process_lvgl_tasks()
+execute_script(script_buffer, subwindow)
 
 
-execute_script(script_buffer, False, subwindow)
-
-# Main loop to keep parent running and handle LVGL tasks
-#while True:
-#	print('process_lvgl_tasks')   
- #   utime.sleep_ms(500)
-
-
+# Main loop: update parent label every second and process LVGL tasks
+count = 0
+while True:
+    print('main loop')
+    count += 1
+    parent_label.set_text(f"Parent: {count}")
+    process_lvgl_tasks()
+    utime.sleep_ms(1000)
+    
+    
+    
 
 
 
