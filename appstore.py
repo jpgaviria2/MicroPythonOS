@@ -411,13 +411,11 @@ create_drawer()
 
 # uasyncio isn't available on web
 
-
 import lvgl as lv
 import uasyncio as asyncio
 import utime
 import gc
 import _thread
-
 
 # Function to execute the child script as a coroutine
 async def execute_script(script_source, lvgl_obj):
@@ -488,22 +486,27 @@ async def app_main():
 async def main():
     print("Main: Starting child script")
     task = asyncio.create_task(execute_script(script_buffer, subwindow))
-    while True:
+    while not task.done():
         await asyncio.sleep_ms(100)
+    print("Main stopped")
+
 
 # Function to run the event loop in a background thread
-def run_event_loop():
+def run_app():
     try:
         asyncio.run(main())
+        print("Event loop stopped")
+        subwindow.delete()
     except Exception as e:
         print("Event loop error:", e)
+
 
 # Start the event loop in a background thread
 gc.collect()
 print("Free memory before loop:", gc.mem_free())
 try:
     _thread.stack_size(8192)
-    _thread.start_new_thread(run_event_loop, ())
+    _thread.start_new_thread(run_app, ())
     print("Event loop started in background thread")
 except Exception as e:
     print("Error starting event loop thread:", e)
