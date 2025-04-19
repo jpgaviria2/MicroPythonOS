@@ -320,19 +320,21 @@ def create_notification_bar():
 create_notification_bar()
 
 
+# Subwindow is created before drawer so that drawer is on top
+screen = lv.screen_active()
+subwindow = lv.obj(screen)
+subwindow.set_size(TFT_HOR_RES, TFT_VER_RES - NOTIFICATION_BAR_HEIGHT)
+subwindow.set_pos(0, NOTIFICATION_BAR_HEIGHT)
+subwindow.set_style_border_width(0, 0)
+subwindow.set_style_pad_all(0, 0)
 
 
 
 def create_drawer():
-    print('-1')
     global drawer,wifi_screen
-    print('0')
     drawer=lv.obj(lv.screen_active())
-    print('1')
     drawer.set_size(TFT_HOR_RES,TFT_VER_RES-NOTIFICATION_BAR_HEIGHT)
-    print('2')
     drawer.set_pos(0,-TFT_VER_RES+NOTIFICATION_BAR_HEIGHT)
-    print('3')
     drawer.set_style_bg_color(COLOR_DRAWER_BG,0)
     drawer.set_scroll_dir(lv.DIR.NONE)
     slider=lv.slider(drawer)
@@ -343,12 +345,10 @@ def create_drawer():
     slider.set_style_bg_color(COLOR_SLIDER_BG,lv.PART.MAIN)
     slider.set_style_bg_color(COLOR_SLIDER_INDICATOR,lv.PART.INDICATOR)
     slider.set_style_bg_color(COLOR_SLIDER_KNOB,lv.PART.KNOB)
-    print('4')
     slider_label=lv.label(drawer)
     slider_label.set_text("80%")
     slider_label.set_style_text_color(COLOR_TEXT_WHITE,0)
     slider_label.align_to(slider,lv.ALIGN.OUT_TOP_MID,0,-5)
-    print('5')
     # works here
     def slider_event(e):
         slider=e.get_target()
@@ -380,7 +380,6 @@ def create_drawer():
     settings_label.set_text(lv.SYMBOL.SETTINGS+" Settings")
     settings_label.center()
     settings_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
-    print('40')
     def settings_event(e):
         global drawer_open
         close_drawer()
@@ -410,19 +409,15 @@ create_drawer()
 
 
 
-# Subwindow doesn't work in web because of asyncio
+# uasyncio isn't available on web
+
+
 import lvgl as lv
 import uasyncio as asyncio
 import utime
 import gc
 import _thread
 
-screen = lv.screen_active()
-subwindow = lv.obj(screen)
-subwindow.set_size(TFT_HOR_RES, TFT_VER_RES - NOTIFICATION_BAR_HEIGHT)
-subwindow.set_pos(0, NOTIFICATION_BAR_HEIGHT)
-subwindow.set_style_border_width(0, 0)
-subwindow.set_style_pad_all(0, 0)
 
 # Function to execute the child script as a coroutine
 async def execute_script(script_source, lvgl_obj):
@@ -466,10 +461,13 @@ async def app_main():
     slider = lv.slider(subwindow)
     slider.set_range(0, 100)
     slider.align(lv.ALIGN.BOTTOM_MID, 0, -30)
+    # Quit flag
+    should_continue = True
     # Button callback
     def button_cb(e):
+        nonlocal should_continue
         print("Quit button clicked, exiting child")
-        raise asyncio.CancelledError
+        should_continue = False
     button.add_event_cb(button_cb, lv.EVENT.CLICKED, None)
     # Slider callback
     def slider_cb(e):
@@ -478,21 +476,18 @@ async def app_main():
     slider.add_event_cb(slider_cb, lv.EVENT.VALUE_CHANGED, None)
     # Update loop
     count = 0
-    try:
-        while True:
-            count += 1
-            print("Child coroutine: Updating label to", count)
-            label.set_text(f"Child: {count}")
-            await asyncio.sleep_ms(1000)
-    except asyncio.CancelledError:
-        print("Child coroutine: Exiting")
-        raise
+    while should_continue:
+        count += 1
+        print("Child coroutine: Updating label to", count)
+        label.set_text(f"Child: {count}")
+        await asyncio.sleep_ms(1000)
+    print("Child coroutine: Exiting")
 """
 
 # Async main function to run the child script
 async def main():
     print("Main: Starting child script")
-    asyncio.create_task(execute_script(script_buffer, subwindow))
+    task = asyncio.create_task(execute_script(script_buffer, subwindow))
     while True:
         await asyncio.sleep_ms(100)
 
