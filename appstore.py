@@ -411,7 +411,6 @@ create_drawer()
 
 
 # Subwindow doesn't work in web because of asyncio
-
 import lvgl as lv
 import uasyncio as asyncio
 import utime
@@ -444,7 +443,7 @@ async def execute_script(script_source, lvgl_obj):
         else:
             print("Child script error: No app_main function defined")
     except Exception as e:
-        print(" detoxifyChild script error:", e)
+        print("Child script error:", e)
 
 # Child script buffer: updates label, adds button and slider
 script_buffer = """
@@ -461,7 +460,7 @@ async def app_main():
     button.set_size(80, 40)
     button.align(lv.ALIGN.CENTER, 0, 0)
     button_label = lv.label(button)
-    button_label.set_text("Child Btn")
+    button_label.set_text("Quit")
     button_label.set_style_text_font(lv.font_montserrat_12, 0)
     # Slider
     slider = lv.slider(subwindow)
@@ -469,7 +468,8 @@ async def app_main():
     slider.align(lv.ALIGN.BOTTOM_MID, 0, -30)
     # Button callback
     def button_cb(e):
-        print("Child button clicked")
+        print("Quit button clicked, exiting child")
+        raise asyncio.CancelledError
     button.add_event_cb(button_cb, lv.EVENT.CLICKED, None)
     # Slider callback
     def slider_cb(e):
@@ -478,11 +478,15 @@ async def app_main():
     slider.add_event_cb(slider_cb, lv.EVENT.VALUE_CHANGED, None)
     # Update loop
     count = 0
-    while True:
-        count += 1
-        print("Child coroutine: Updating label to", count)
-        label.set_text(f"Child: {count}")
-        await asyncio.sleep_ms(1000)
+    try:
+        while True:
+            count += 1
+            print("Child coroutine: Updating label to", count)
+            label.set_text(f"Child: {count}")
+            await asyncio.sleep_ms(1000)
+    except asyncio.CancelledError:
+        print("Child coroutine: Exiting")
+        raise
 """
 
 # Async main function to run the child script
