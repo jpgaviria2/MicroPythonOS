@@ -414,26 +414,23 @@ create_drawer()
 import _thread
 
 # Function to execute the child script as a coroutine
-def execute_script(script_source, lvgl_obj):
-    print(f"Thread identifier: {_thread.get_ident()}")
+def execute_script(script_source, is_file, lvgl_obj):
+    thread_id = _thread.get_ident();
+    print(f"Thread {thread_id}: executing script")
     try:
         script_globals = {
             'lv': lv,
             'subwindow': lvgl_obj,
         }
-        print("Child script: Compiling")
-        code = compile(script_source, "<string>", "exec")
-        exec(code, script_globals)
-        app_main = script_globals.get('app_main')
-        if app_main:
-            print("Child script: Starting app_main")
-            app_main()
-            print("Script finished!")
-        else:
-            print("Child script error: No app_main function defined")
+        if is_file:
+            print(f"Thread {thread_id}: reading script from file: {script_source}")
+	        with open(script_source, 'r') as f:
+                script_source = f.read()
+        print(f"Thread {thread_id}: starting script")
+        exec(script_source, script_globals)
+        print(f"Thread {thread_id}: script finished")
     except Exception as e:
-        print("Child script error:", e)
-
+        print(f"Thread {thread_id}: error ", e)
 
 # Child script buffer: updates label, adds button and slider
 script_buffer = """
@@ -477,6 +474,8 @@ def app_main():
         label.set_text(f"Child: {count}")
         time.sleep_ms(1000)
     print("Child coroutine: Exiting")
+
+app_main()    
 """
 
 
@@ -485,7 +484,7 @@ gc.collect()
 print("Free memory before loop:", gc.mem_free())
 try:
     _thread.stack_size(131072) # 168KB maximum at startup but 136KB after loading display, drivers, LVGL gui etc so let's go for 128KB for now, still a lot...
-    _thread.start_new_thread(execute_script, (script_buffer, subwindow))
+    _thread.start_new_thread(execute_script, (script_buffer, False, subwindow))
     print("Event loop started in background thread")
 except Exception as e:
     print("Error starting event loop thread:", e)
