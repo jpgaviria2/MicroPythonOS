@@ -1,9 +1,8 @@
 import lvgl as lv
-import time
 from machine import Pin, SPI
 import st7789 
 import lcd_bus
-from micropython import const
+#from micropython import const
 import machine
 import task_handler
 import cst816s
@@ -30,35 +29,6 @@ TP_REGBITS = 8
 
 TFT_HOR_RES=320
 TFT_VER_RES=240
-
-NOTIFICATION_BAR_HEIGHT=24
-BUTTON_WIDTH=100
-BUTTON_HEIGHT=40
-PADDING_TINY=5
-PADDING_SMALL=10
-PADDING_MEDIUM=20
-DRAWER_BUTTON_Y_OFFSET=60
-DRAWER_ANIM_DURATION=300
-SLIDER_MIN_VALUE=1
-SLIDER_MAX_VALUE=100
-SLIDER_DEFAULT_VALUE=80
-
-DARKPINK=lv.color_hex(0xEC048C)
-MEDIUMPINK=lv.color_hex(0xF480C5)
-LIGHTPINK=lv.color_hex(0xF9E9F2)
-DARKYELLOW=lv.color_hex(0xFBDC05)
-PUREBLACK=lv.color_hex(0x000000)
-COLOR_DRAWER_BG=MEDIUMPINK
-COLOR_TEXT_WHITE=LIGHTPINK
-COLOR_DRAWER_BUTTON_BG=DARKYELLOW
-COLOR_DRAWER_BUTTONTEXT=PUREBLACK
-COLOR_SLIDER_BG=LIGHTPINK
-COLOR_SLIDER_KNOB=DARKYELLOW
-COLOR_SLIDER_INDICATOR=LIGHTPINK
-
-drawer=None
-wifi_screen=None
-drawer_open=False
 
 lv.init()
 spi_bus = machine.SPI.Bus(
@@ -300,13 +270,64 @@ def connect_wifi():
     print(" Failed to connect!")
     return False
 
+
+
+
+
+# Below works at https://sim.lvgl.io/v9.0/micropython/ports/webassembly/index.html
+
+import time
+
+
+# Constants
+
+NOTIFICATION_BAR_HEIGHT=24
+BUTTON_WIDTH=100
+BUTTON_HEIGHT=40
+PADDING_TINY=5
+PADDING_SMALL=10
+PADDING_MEDIUM=20
+PADDING_LARGE=30
+DRAWER_BUTTON_Y_OFFSET=60
+DRAWER_ANIM_DURATION=300
+SLIDER_MIN_VALUE=1
+SLIDER_MAX_VALUE=100
+SLIDER_DEFAULT_VALUE=80
+OFFSET_WIFI_ICON = -60
+OFFSET_BATTERY_ICON = -40
+TIME_UPDATE_INTERVAL = 1000
+
+
+# Color palette
+DARKPINK = lv.color_hex(0xEC048C)
+MEDIUMPINK = lv.color_hex(0xF480C5)
+LIGHTPINK = lv.color_hex(0xF9E9F2)
+DARKYELLOW = lv.color_hex(0xFBDC05)
+LIGHTYELLOW = lv.color_hex(0xFBE499)
+PUREBLACK = lv.color_hex(0x000000)
+
+COLOR_DRAWER_BG=MEDIUMPINK
+COLOR_TEXT_WHITE=LIGHTPINK
+COLOR_NOTIF_BAR_BG = DARKPINK
+COLOR_DRAWER_BUTTON_BG=DARKYELLOW
+COLOR_DRAWER_BUTTONTEXT=PUREBLACK
+COLOR_SLIDER_BG=LIGHTPINK
+COLOR_SLIDER_KNOB=DARKYELLOW
+COLOR_SLIDER_INDICATOR=LIGHTPINK
+
+
+
+drawer=None
+wifi_screen=None
+drawer_open=False
+
 scr = lv.screen_active()
 scr.set_style_bg_color(lv.color_hex(0x000000), 0)
 
 # Create a button (using lv.obj as a base)
 btn = lv.button(scr)
 btn.set_size(100, 50)
-btn.align(lv.ALIGN.LEFT, 60, 60)
+#btn.align(lv.ALIGN.LEFT_MID, 60, 60) doesnt work in web version?
 
 # Add button style
 style = lv.style_t()
@@ -349,7 +370,7 @@ def slider_event(e):
     print("slider value:")
     print(value)
     slider_label.set_text(f"{value}%")
-    display.set_backlight(value)
+    #display.set_backlight(value) doesnt do anything and doesnt work in web version
 
 slider.add_event_cb(slider_event,lv.EVENT.VALUE_CHANGED,None)
 
@@ -390,39 +411,18 @@ slider.add_style(knob_style, lv.PART.KNOB)
 
 
 
-print(os.listdir('/')) 
-
-try:
-    with open('/boot.py', 'r') as file:
-        print("Contents of /boot.py:")
-        print("-" * 20)
-        for line in file:
-            print(line.rstrip())  # Remove trailing newlines for clean output
-except OSError as e:
-    print("Error reading /boot.py:", e)
-
+#print(os.listdir('/')) 
+#try:
+#    with open('/boot.py', 'r') as file:
+#        print("Contents of /boot.py:")
+#        print("-" * 20)
+#        for line in file:
+#            print(line.rstrip())  # Remove trailing newlines for clean output
+#except OSError as e:
+#    print("Error reading /boot.py:", e)
 #with open('/block_height.txt', 'w') as f:
 #    f.write('853123')
 
-
-# Color palette
-DARKPINK = lv.color_hex(0xEC048C)
-MEDIUMPINK = lv.color_hex(0xF480C5)
-LIGHTPINK = lv.color_hex(0xF9E9F2)
-DARKYELLOW = lv.color_hex(0xFBDC05)
-LIGHTYELLOW = lv.color_hex(0xFBE499)
-PUREBLACK = lv.color_hex(0x000000)
-
-COLOR_NOTIF_BAR_BG = DARKPINK
-COLOR_TEXT_WHITE = LIGHTPINK
-
-# Constants
-NOTIFICATION_BAR_HEIGHT = 40
-PADDING_TINY = 5
-PADDING_SMALL = 10
-OFFSET_WIFI_ICON = -40
-OFFSET_BATTERY_ICON = -20
-TIME_UPDATE_INTERVAL = 1000
 
 def create_notification_bar():
     # Create notification bar object
@@ -442,7 +442,7 @@ def create_notification_bar():
     # Notification icon (bell)
     notif_icon = lv.label(notification_bar)
     notif_icon.set_text(lv.SYMBOL.BELL)
-    notif_icon.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_SMALL, 0)
+    notif_icon.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_LARGE, 0)
     notif_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
     # WiFi icon
     wifi_icon = lv.label(notification_bar)
@@ -464,7 +464,8 @@ def create_notification_bar():
         ticks = time.ticks_ms()
         hours = (ticks // 3600000) % 24
         minutes = (ticks // 60000) % 60
-        time_label.set_text(f"{hours:02d}:{minutes:02d}")
+        seconds = (ticks // 1000) % 60
+        time_label.set_text(f"{hours:02d}:{minutes:02d}:{seconds:02d}")
     lv.timer_create(update_time, TIME_UPDATE_INTERVAL, None)
 
 
