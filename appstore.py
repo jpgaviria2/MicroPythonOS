@@ -12,14 +12,21 @@ import network
 import urequests
 
 # Pin configuration
+SPI_BUS = 2
+SPI_FREQ = 40000000
 LCD_SCLK = 39
 LCD_MOSI = 38
 LCD_MISO = 40
 LCD_DC = 42
 LCD_CS = 45
 LCD_BL = 1
+
+I2C_BUS = 0
+I2C_FREQ = 100000
 TP_SDA = 48
 TP_SCL = 47
+TP_ADDR = 0x15
+TP_REGBITS = 8
 
 TFT_HOR_RES=320
 TFT_VER_RES=240
@@ -55,22 +62,22 @@ drawer_open=False
 
 lv.init()
 spi_bus = machine.SPI.Bus(
-    host=2,
-    mosi=38,
-    miso=40,
-    sck=39
+    host=SPI_BUS,
+    mosi=LCD_MOSI,
+    miso=LCD_MISO,
+    sck=LCD_SCLK
 )
 display_bus = lcd_bus.SPIBus(
     spi_bus=spi_bus,
-    freq=40000000,
-    dc=42,
-    cs=45,
+    freq=SPI_FREQ,
+    dc=LCD_DC,
+    cs=LCD_CS,
 )
 display = st7789.ST7789(
     data_bus=display_bus,
-    display_width=240,
-    display_height=320,
-    backlight_pin=1,
+    display_width=TFT_VER_RES,
+    display_height=TFT_HOR_RES,
+    backlight_pin=LCD_BL,
     color_space=lv.COLOR_FORMAT.RGB565,
     color_byte_order=st7789.BYTE_ORDER_BGR,
     rgb565_byte_swap=True,
@@ -79,8 +86,8 @@ display.init()
 display.set_power(True)
 display.set_backlight(100)
 
-i2c_bus = i2c.I2C.Bus(host=0, scl=47, sda=48, freq=100000, use_locks=False)
-touch_dev = i2c.I2C.Device(bus=i2c_bus, dev_id=0x15, reg_bits=8)
+i2c_bus = i2c.I2C.Bus(host=I2C_BUS, scl=TP_SCL, sda=TP_SDA, freq=I2C_FREQ, use_locks=False)
+touch_dev = i2c.I2C.Device(bus=i2c_bus, dev_id=TP_ADDR, reg_bits=TP_REGBITS)
 indev=cst816s.CST816S(touch_dev,startup_rotation=lv.DISPLAY_ROTATION._180) # button in top left, good
 
 th = task_handler.TaskHandler()
