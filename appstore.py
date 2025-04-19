@@ -109,17 +109,6 @@ irq_pin.irq(trigger=machine.Pin.IRQ_FALLING,handler=handle_gesture)
 
 # GUI:
 
-
-
-
-
-
-
-
-
-
-
-
 # Below works at https://sim.lvgl.io/v9.0/micropython/ports/webassembly/index.html
 
 import time
@@ -420,57 +409,100 @@ create_drawer()
 
 
 
-# Fetch Bitcoin block height from mempool.space
-def get_block_height():
+
+# Subwindow doesn't work in web because of asyncio
+
+import uasyncio as asyncio
+import utime
+import gc
+
+
+
+screen = lv.screen_active()
+subwindow = lv.obj(screen)
+subwindow.set_size(TFT_HOR_RES, TFT_VER_RES - NOTIFICATION_BAR_HEIGHT)
+subwindow.set_pos(0, NOTIFICATION_BAR_HEIGHT)
+subwindow.set_style_border_width(0,0)
+subwindow.set_style_pad_all(0,0)
+
+
+# Function to execute the child script as a coroutine
+async def execute_script(script_source, lvgl_obj):
     try:
-        response = urequests.get("https://mempool.space/api/blocks/tip/height")
-        if response.status_code == 200:
-            height = response.text.strip()  # Returns plain text (e.g., "853123")
-            response.close()
-            return height
+        script_globals = {
+            'lv': lv,
+            'subwindow': lvgl_obj,
+            'asyncio': asyncio,
+            'utime': utime
+        }
+        print("Child script: Compiling")
+        code = compile(script_source, "<string>", "exec")
+        exec(code, script_globals)
+        update_child = script_globals.get('update_child')
+        if update_child:
+            print("Child script: Starting update_child")
+            await app_main()
         else:
-            response.close()
-            return "Error: HTTP " + str(response.status_code)
+            print("Child script error: No update_child function defined")
     except Exception as e:
-        return "Error: " + str(e)
+        print("Child script error:", e)
 
-def show_block_height():
-	# Create a label for block height
-	label = lv.label(scr)
-	label.set_text("Bitcoin Block Height: Fetching...")
-	label.set_style_text_color(lv.color_make(0, 255, 0), 0)  # Green text
-	label.set_style_text_font(lv.font_montserrat_16, 0)  # Larger font (if available)
-	label.align(lv.ALIGN.TOP_LEFT, 10, 200)
-	#label.center()
-	
-	# Style for label background
-	style = lv.style_t()
-	style.init()
-	style.set_bg_color(lv.palette_main(lv.PALETTE.DARK))  # Dark background
-	style.set_border_width(2)
-	style.set_border_color(lv.color_make(255, 255, 255))  # White border
-	style.set_pad_all(10)
-	style.set_radius(10)
-	label.add_style(style, 0)
-	
-	height = get_block_height()
-	label.set_text(f"Block Height: {height}")
-	
 
-# Connect to Wi-Fi
-def connect_wifi():
-    wlan = network.WLAN(network.STA_IF)
-    wlan.active(True)
-    wlan.connect("SSIDHERE", "PASSWORDHERE")
-    print("Connecting to Wi-Fi...", end="")
-    for _ in range(30):  # Wait up to 30 seconds
-        if wlan.isconnected():
-            print(" Connected!")
-            print("IP:", wlan.ifconfig()[0])
-            return True
-        time.sleep(1)
-        print(".", end="")
-    print(" Failed to connect!")
-    return False
+# Child script buffer: updates label, adds button and slider
+script_buffer = """
+import asyncio
+async def app_main():
+    print("Child coroutine: Creating UI")
+    # Label
+    label = lv.label(subwindow)
+    label.set_text("Child: 0")
+    label.set_style_text_font(lv.font_montserrat_12, 0)
+    label.align(lv.ALIGN.TOP_MID, 0, 10)
+    # Button
+    button = lv.button(subwindow)
+    button.set_size(80, 40)
+    button.align(lv.ALIGN.CENTER, 0, 0)
+    button_label = lv.label(button)
+    button_label.set_text("Child Btn")
+    button_label.set_style_text_font(lv.font_montserrat_12, 0)
+    # Slider
+    slider = lv.slider(subwindow)
+    #slider.set_size(100, 10)
+    slider.set_range(0, 100)
+    slider.align(lv.ALIGN.BOTTOM_MID, 0, -30)
+    # Button callback
+    def button_cb(e):
+        print("Child button clicked")
+    button.add_event_cb(button_cb, lv.EVENT.CLICKED, None)
+    # Slider callback
+    def slider_cb(e):
+        value = slider.get_value()
+        print("Child slider value:", value)
+    slider.add_event_cb(slider_cb, lv.EVENT.VALUE_CHANGED, None)
+    # Update loop
+    count = 0
+    while True:
+        count += 1
+        print("Child coroutine: Updating label to", count)
+        label.set_text(f"Child: {count}")
+        await asyncio.sleep_ms(1000)
+"""
 
+
+# Main async function to run all tasks
+async def main():
+    print("Main: Starting tasks")
+    #asyncio.create_task(update_parent())
+    asyncio.create_task(execute_script(script_buffer, subwindow))
+    while True:
+        await asyncio.sleep_ms(100)
+
+
+# Run the event loop
+gc.collect()
+print("Free memory before loop:", gc.mem_free())
+try:
+    asyncio.run(main())
+except Exception as e:
+    print("Main error:", e)
 
