@@ -412,19 +412,18 @@ create_drawer()
 
 # Subwindow doesn't work in web because of asyncio
 
+import lvgl as lv
 import uasyncio as asyncio
 import utime
 import gc
-
-
+import _thread
 
 screen = lv.screen_active()
 subwindow = lv.obj(screen)
 subwindow.set_size(TFT_HOR_RES, TFT_VER_RES - NOTIFICATION_BAR_HEIGHT)
 subwindow.set_pos(0, NOTIFICATION_BAR_HEIGHT)
-subwindow.set_style_border_width(0,0)
-subwindow.set_style_pad_all(0,0)
-
+subwindow.set_style_border_width(0, 0)
+subwindow.set_style_pad_all(0, 0)
 
 # Function to execute the child script as a coroutine
 async def execute_script(script_source, lvgl_obj):
@@ -445,8 +444,7 @@ async def execute_script(script_source, lvgl_obj):
         else:
             print("Child script error: No app_main function defined")
     except Exception as e:
-        print("Child script error:", e)
-
+        print(" detoxifyChild script error:", e)
 
 # Child script buffer: updates label, adds button and slider
 script_buffer = """
@@ -467,7 +465,6 @@ async def app_main():
     button_label.set_style_text_font(lv.font_montserrat_12, 0)
     # Slider
     slider = lv.slider(subwindow)
-    #slider.set_size(100, 10)
     slider.set_range(0, 100)
     slider.align(lv.ALIGN.BOTTOM_MID, 0, -30)
     # Button callback
@@ -488,5 +485,28 @@ async def app_main():
         await asyncio.sleep_ms(1000)
 """
 
+# Async main function to run the child script
+async def main():
+    print("Main: Starting child script")
+    asyncio.create_task(execute_script(script_buffer, subwindow))
+    while True:
+        await asyncio.sleep_ms(100)
 
-asyncio.run(execute_script(script_buffer, subwindow))
+# Function to run the event loop in a background thread
+def run_event_loop():
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        print("Event loop error:", e)
+
+# Start the event loop in a background thread
+gc.collect()
+print("Free memory before loop:", gc.mem_free())
+try:
+    _thread.stack_size(8192)
+    _thread.start_new_thread(run_event_loop, ())
+    print("Event loop started in background thread")
+except Exception as e:
+    print("Error starting event loop thread:", e)
+
+print("REPL is now available")
