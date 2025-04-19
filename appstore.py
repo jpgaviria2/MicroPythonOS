@@ -438,12 +438,12 @@ async def execute_script(script_source, lvgl_obj):
         print("Child script: Compiling")
         code = compile(script_source, "<string>", "exec")
         exec(code, script_globals)
-        update_child = script_globals.get('update_child')
-        if update_child:
-            print("Child script: Starting update_child")
+        app_main = script_globals.get('app_main')
+        if app_main:
+            print("Child script: Starting app_main")
             await app_main()
         else:
-            print("Child script error: No update_child function defined")
+            print("Child script error: No app_main function defined")
     except Exception as e:
         print("Child script error:", e)
 
@@ -489,20 +489,4 @@ async def app_main():
 """
 
 
-# Main async function to run all tasks
-async def main():
-    print("Main: Starting tasks")
-    #asyncio.create_task(update_parent())
-    asyncio.create_task(execute_script(script_buffer, subwindow))
-    while True:
-        await asyncio.sleep_ms(100)
-
-
-# Run the event loop
-gc.collect()
-print("Free memory before loop:", gc.mem_free())
-try:
-    asyncio.run(main())
-except Exception as e:
-    print("Main error:", e)
-
+asyncio.run(execute_script(script_buffer, subwindow))
