@@ -113,14 +113,9 @@ irq_pin.irq(trigger=machine.Pin.IRQ_FALLING,handler=handle_gesture)
 
 import time
 
-
-# Redefined from above
-
+# Constants
 TFT_HOR_RES=320
 TFT_VER_RES=240
-
-
-# Constants
 NOTIFICATION_BAR_HEIGHT=24
 BUTTON_WIDTH=100
 BUTTON_HEIGHT=40
@@ -136,7 +131,6 @@ SLIDER_DEFAULT_VALUE=80
 OFFSET_WIFI_ICON = -60
 OFFSET_BATTERY_ICON = -40
 TIME_UPDATE_INTERVAL = 1000
-
 
 # Color palette
 DARKPINK = lv.color_hex(0xEC048C)
