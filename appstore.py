@@ -415,6 +415,7 @@ import _thread
 
 # Function to execute the child script as a coroutine
 def execute_script(script_source, lvgl_obj):
+    print(f"Thread identifier: {_thread.get_ident()}")
     try:
         script_globals = {
             'lv': lv,
@@ -483,7 +484,7 @@ def app_main():
 gc.collect()
 print("Free memory before loop:", gc.mem_free())
 try:
-    _thread.stack_size(8192)
+    _thread.stack_size(131072) # 168KB maximum at startup but 136KB after loading display, drivers, LVGL gui etc so let's go for 128KB for now, still a lot...
     _thread.start_new_thread(execute_script, (script_buffer, subwindow))
     print("Event loop started in background thread")
 except Exception as e:
