@@ -56,6 +56,7 @@ display.init()
 display.set_power(True)
 display.set_backlight(100)
 
+# Touch handling:
 i2c_bus = i2c.I2C.Bus(host=I2C_BUS, scl=TP_SCL, sda=TP_SDA, freq=I2C_FREQ, use_locks=False)
 touch_dev = i2c.I2C.Device(bus=i2c_bus, dev_id=TP_ADDR, reg_bits=TP_REGBITS)
 indev=cst816s.CST816S(touch_dev,startup_rotation=lv.DISPLAY_ROTATION._180) # button in top left, good
@@ -63,6 +64,42 @@ indev=cst816s.CST816S(touch_dev,startup_rotation=lv.DISPLAY_ROTATION._180) # but
 th = task_handler.TaskHandler()
 display.set_rotation(lv.DISPLAY_ROTATION._90)
 
+# Custom touch interrupt handler:
+indev._write_reg(0xEC,0x06)
+indev._write_reg(0xFA,0x50)
+irq_pin=machine.Pin(46,machine.Pin.IN,machine.Pin.PULL_UP)
+# gesture ids:
+# 0: press
+# 1: swipe from left to USB port
+# 2: swipe from USB port to left
+# 3: top to bottom
+# 4: bottom to top
+# 5: release
+# 12: long press
+def handle_gesture(pin):
+    indev._read_reg(0x01)
+    gesture_id=indev._rx_buf[0]
+    indev._read_reg(0x02)
+    finger_num=indev._rx_buf[0]
+    indev._read_reg(0x03)
+    x_h=indev._rx_buf[0]
+    indev._read_reg(0x04)
+    x_l=indev._rx_buf[0]
+    x=((x_h&0x0F)<<8)|x_l
+    indev._read_reg(0x05)
+    y_h=indev._rx_buf[0]
+    indev._read_reg(0x06)
+    y_l=indev._rx_buf[0]
+    y=((y_h&0x0F)<<8)|y_l
+    print(f"GestureID={gesture_id},FingerNum={finger_num},X={x},Y={y}")
+    if gesture_id==0x04:
+        print("Swipe Up Detected")
+        close_drawer()
+    elif gesture_id==0x03:
+        print("Swipe Down Detected")
+        open_drawer()
+
+irq_pin.irq(trigger=machine.Pin.IRQ_FALLING,handler=handle_gesture)
 
 
 
@@ -70,139 +107,7 @@ display.set_rotation(lv.DISPLAY_ROTATION._90)
 
 
 
-
-import lvgl as lv
-import uasyncio as asyncio
-import utime
-import gc
-
-# Create a subwindow for the child script (half the 320x240 display)
-screen = lv.screen_active()
-subwindow = lv.obj(screen)
-subwindow.set_size(160, 240)  # Half width, full height
-subwindow.align(lv.ALIGN.LEFT_MID, 0, 0)  # Left side
-subwindow.set_style_bg_color(lv.color_hex(0xDDDDDD), lv.PART.MAIN)
-
-# Create a label for parent updates
-parent_label = lv.label(screen)
-parent_label.set_text("Parent: 0")
-parent_label.set_style_text_font(lv.font_montserrat_12, 0)
-parent_label.align(lv.ALIGN.TOP_RIGHT, -10, 10)
-
-# Create a parent button
-parent_button = lv.button(screen)
-parent_button.set_size(80, 40)
-parent_button.align(lv.ALIGN.BOTTOM_RIGHT, -10, -50)
-parent_button_label = lv.label(parent_button)
-parent_button_label.set_text("Parent Btn")
-parent_button_label.set_style_text_font(lv.font_montserrat_12, 0)
-
-# Create a parent slider
-parent_slider = lv.slider(screen)
-parent_slider.set_size(100, 10)
-parent_slider.set_range(0, 100)
-parent_slider.align(lv.ALIGN.BOTTOM_RIGHT, -10, -10)
-
-# Parent button callback
-def parent_button_cb(e):
-    print("Parent button clicked")
-
-parent_button.add_event_cb(parent_button_cb, lv.EVENT.CLICKED, None)
-
-# Parent slider callback
-def parent_slider_cb(e):
-    value = parent_slider.get_value()
-    print("Parent slider value:", value)
-
-parent_slider.add_event_cb(parent_slider_cb, lv.EVENT.VALUE_CHANGED, None)
-
-# Function to execute the child script as a coroutine
-async def execute_script(script_source, lvgl_obj):
-    try:
-        script_globals = {
-            'lv': lv,
-            'subwindow': lvgl_obj,
-            'asyncio': asyncio,
-            'utime': utime
-        }
-        print("Child script: Compiling")
-        code = compile(script_source, "<string>", "exec")
-        exec(code, script_globals)
-        update_child = script_globals.get('update_child')
-        if update_child:
-            print("Child script: Starting update_child")
-            await update_child()
-        else:
-            print("Child script error: No update_child function defined")
-    except Exception as e:
-        print("Child script error:", e)
-
-# Child script buffer: updates label, adds button and slider
-script_buffer = """
-import asyncio
-async def update_child():
-    print("Child coroutine: Creating UI")
-    # Label
-    label = lv.label(subwindow)
-    label.set_text("Child: 0")
-    label.set_style_text_font(lv.font_montserrat_12, 0)
-    label.align(lv.ALIGN.TOP_MID, 0, 10)
-    # Button
-    button = lv.button(subwindow)
-    button.set_size(80, 40)
-    button.align(lv.ALIGN.BOTTOM_MID, 0, -50)
-    button_label = lv.label(button)
-    button_label.set_text("Child Btn")
-    button_label.set_style_text_font(lv.font_montserrat_12, 0)
-    # Slider
-    slider = lv.slider(subwindow)
-    slider.set_size(100, 10)
-    slider.set_range(0, 100)
-    slider.align(lv.ALIGN.BOTTOM_MID, 0, -10)
-    # Button callback
-    def button_cb(e):
-        print("Child button clicked")
-    button.add_event_cb(button_cb, lv.EVENT.CLICKED, None)
-    # Slider callback
-    def slider_cb(e):
-        value = slider.get_value()
-        print("Child slider value:", value)
-    slider.add_event_cb(slider_cb, lv.EVENT.VALUE_CHANGED, None)
-    # Update loop
-    count = 0
-    while True:
-        count += 1
-        print("Child coroutine: Updating label to", count)
-        label.set_text(f"Child: {count}")
-        await asyncio.sleep_ms(2000)  # Update every 2s
-"""
-
-# Parent coroutine: updates parent label every 1 second
-async def update_parent():
-    count = 0
-    while True:
-        count += 1
-        print("Parent coroutine: Updating label to", count)
-        parent_label.set_text(f"Parent: {count}")
-        gc.collect()
-        print("Parent coroutine: Free memory:", gc.mem_free())
-        await asyncio.sleep_ms(1000)  # Update every 1s
-
-# Main async function to run all tasks
-async def main():
-    print("Main: Starting tasks")
-    asyncio.create_task(update_parent())
-    asyncio.create_task(execute_script(script_buffer, subwindow))
-    while True:
-        await asyncio.sleep_ms(100)
-
-# Run the event loop
-gc.collect()
-print("Free memory before loop:", gc.mem_free())
-try:
-    asyncio.run(main())
-except Exception as e:
-    print("Main error:", e)
+# GUI:
 
 
 
@@ -509,47 +414,6 @@ def close_drawer():
 
 
 create_drawer()
-
-
-
-
-indev._write_reg(0xEC,0x06)
-indev._write_reg(0xFA,0x50)
-irq_pin=machine.Pin(46,machine.Pin.IN,machine.Pin.PULL_UP)
-
-# gesture id:
-# 0: press
-# 1: swipe from left to USB port
-# 2: swipe from USB port to left
-# 3: top to bottom
-# 4: bottom to top
-# 5: release
-# 12: long press
-def handle_gesture(pin):
-    indev._read_reg(0x01)
-    gesture_id=indev._rx_buf[0]
-    indev._read_reg(0x02)
-    finger_num=indev._rx_buf[0]
-    indev._read_reg(0x03)
-    x_h=indev._rx_buf[0]
-    indev._read_reg(0x04)
-    x_l=indev._rx_buf[0]
-    x=((x_h&0x0F)<<8)|x_l
-    indev._read_reg(0x05)
-    y_h=indev._rx_buf[0]
-    indev._read_reg(0x06)
-    y_l=indev._rx_buf[0]
-    y=((y_h&0x0F)<<8)|y_l
-    print(f"GestureID={gesture_id},FingerNum={finger_num},X={x},Y={y}")
-    if gesture_id==0x04:
-        print("Swipe Up Detected")
-        close_drawer()
-    elif gesture_id==0x03:
-        print("Swipe Down Detected")
-        open_drawer()
-
-
-irq_pin.irq(trigger=machine.Pin.IRQ_FALLING,handler=handle_gesture)
 
 
 
