@@ -90,12 +90,12 @@ def handle_gesture(pin):
     indev._read_reg(0x06)
     y_l=indev._rx_buf[0]
     y=((y_h&0x0F)<<8)|y_l
-    print(f"GestureID={gesture_id},FingerNum={finger_num},X={x},Y={y}")
+    #print(f"GestureID={gesture_id},FingerNum={finger_num},X={x},Y={y}")
     if gesture_id==0x04:
-        print("Swipe Up Detected")
+        #print("Swipe Up Detected")
         close_drawer()
     elif gesture_id==0x03:
-        print("Swipe Down Detected")
+        #print("Swipe Down Detected")
         open_drawer()
 
 irq_pin.irq(trigger=machine.Pin.IRQ_FALLING,handler=handle_gesture)
@@ -365,6 +365,7 @@ def create_drawer():
         close_drawer()
         drawer_open=False
     wifi_btn.add_event_cb(wifi_event,lv.EVENT.CLICKED,None)
+    #
     settings_btn=lv.button(drawer)
     settings_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
     settings_btn.align(lv.ALIGN.TOP_RIGHT,-PADDING_SMALL,DRAWER_BUTTON_Y_OFFSET)
@@ -378,6 +379,22 @@ def create_drawer():
         close_drawer()
         drawer_open=False
     settings_btn.add_event_cb(settings_event,lv.EVENT.CLICKED,None)
+    #
+    launcher_btn=lv.button(drawer)
+    launcher_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
+    launcher_btn.align(lv.ALIGN.BOTTOM_LEFT,PADDING_SMALL,0)
+    launcher_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
+    launcher_label=lv.label(launcher_btn)
+    launcher_label.set_text(lv.SYMBOL.HOME+" Launcher")
+    launcher_label.center()
+    launcher_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
+    def launcher_event(e):
+    	print("Launcher button pressed!")
+        global drawer_open
+        close_drawer()
+        drawer_open=False
+        run_app(launcher_script,False)
+    launcher_btn.add_event_cb(launcher_event,lv.EVENT.CLICKED,None)
 
 def open_drawer():
     global drawer_open
@@ -480,7 +497,7 @@ while should_continue:
     count += 1
     print("Child coroutine: Updating label to", count)
     label.set_text(f"Child: {count}")
-    time.sleep_ms(1000)
+    time.sleep_ms(5000)
 print("Child coroutine: Exiting")
 """
 
