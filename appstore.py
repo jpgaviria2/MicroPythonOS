@@ -106,7 +106,6 @@ irq_pin.irq(trigger=machine.Pin.IRQ_FALLING,handler=handle_gesture)
 
 
 # GUI:
-
 # Below works at https://sim.lvgl.io/v9.0/micropython/ports/webassembly/index.html
 
 import time
@@ -155,160 +154,75 @@ drawer_open=False
 scr = lv.screen_active()
 scr.set_style_bg_color(lv.color_hex(0x000000), 0)
 
-# Create a button (using lv.obj as a base)
-btn = lv.button(scr)
-btn.set_size(100, 50)
-#btn.align(lv.ALIGN.LEFT_MID, 60, 60) doesnt work in web version?
-
-# Add button style
-style = lv.style_t()
-style.init()
-style.set_bg_color(lv.palette_main(lv.PALETTE.BLUE))
-style.set_border_width(2)
-style.set_border_color(lv.palette_darken(lv.PALETTE.BLUE, 3))
-btn.add_style(style, 0)
-
-# Add a label to the button
-label = lv.label(btn)
-label.set_text("Click Me")
-label.center()
-
-# Button event callback
-def btn_event_cb(evt):
-    if evt.get_code() == lv.EVENT.CLICKED:
-        print("Button clicked!")
-
-# Register the event callback
-btn.add_event_cb(btn_event_cb, lv.EVENT.CLICKED, None)
 
 
+def open_drawer():
+    global drawer_open
+    if not drawer_open:
+        drawer.set_y(NOTIFICATION_BAR_HEIGHT)
+        drawer_open=True
 
 
-# Create a slider
-slider = lv.slider(scr)
-slider.set_size(200, 20)
-slider.set_range(0, 100)
-slider.set_value(50, lv.ANIM.OFF)
-slider.align(lv.ALIGN.BOTTOM_MID, 0, -40)
-
-slider_label=lv.label(scr)
-slider_label.set_text("80%")
-slider_label.set_style_text_color(COLOR_TEXT_WHITE,0)
-slider_label.align_to(slider,lv.ALIGN.OUT_TOP_MID,0,-5)
-
-def slider_event(e):
-    value=slider.get_value()
-    print("slider value:")
-    print(value)
-    slider_label.set_text(f"{value}%")
-    #display.set_backlight(value) doesnt do anything and doesnt work in web version
-
-slider.add_event_cb(slider_event,lv.EVENT.VALUE_CHANGED,None)
+def close_drawer():
+    global drawer_open
+    if drawer_open:
+        drawer.set_y(-TFT_VER_RES+NOTIFICATION_BAR_HEIGHT)
+        drawer_open=False
 
 
-# Style for the slider background
-bg_style = lv.style_t()
-bg_style.init()
-bg_style.set_bg_color(lv.palette_main(lv.PALETTE.GREY))
-bg_style.set_border_width(1)
-bg_style.set_border_color(lv.color_make(50, 50, 50))
-bg_style.set_radius(10)
-slider.add_style(bg_style, lv.PART.MAIN)
+def toggle_drawer(event):
+	global drawer_open
+	if drawer_open:
+		close_drawer()
+	else:
+		open_drawer()
 
-# Style for the slider indicator (track)
-indic_style = lv.style_t()
-indic_style.init()
-indic_style.set_bg_color(lv.palette_main(lv.PALETTE.BLUE))
-indic_style.set_radius(10)
-slider.add_style(indic_style, lv.PART.INDICATOR)
-
-# Style for the slider knob
-knob_style = lv.style_t()
-knob_style.init()
-knob_style.set_bg_color(lv.palette_main(lv.PALETTE.RED))
-knob_style.set_border_width(2)
-knob_style.set_border_color(lv.color_make(50, 50, 50))
-knob_style.set_radius(100)  # Circular knob
-knob_style.set_pad_all(5)
-slider.add_style(knob_style, lv.PART.KNOB)
-
-
-#show_block_height()
-
-# Connect to Wi-Fi and fetch block height
-#if connect_wifi():
-#else:
-#    label.set_text("Block Height: Wi-Fi Error")
+# Create notification bar object
+notification_bar = lv.obj(lv.screen_active())
+notification_bar.set_style_bg_color(COLOR_NOTIF_BAR_BG, 0)
+notification_bar.set_size(320, NOTIFICATION_BAR_HEIGHT)
+notification_bar.set_pos(0, 0)
+notification_bar.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
+notification_bar.set_scroll_dir(lv.DIR.VER)
+notification_bar.set_style_border_width(0, 0)
+notification_bar.set_style_radius(0, 0)
+# Time label
+time_label = lv.label(notification_bar)
+time_label.set_text("12:00")
+time_label.align(lv.ALIGN.LEFT_MID, PADDING_TINY, 0)
+time_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
+# Notification icon (bell)
+notif_icon = lv.label(notification_bar)
+notif_icon.set_text(lv.SYMBOL.BELL)
+notif_icon.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_LARGE, 0)
+notif_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
+# WiFi icon
+wifi_icon = lv.label(notification_bar)
+wifi_icon.set_text(lv.SYMBOL.WIFI)
+wifi_icon.align(lv.ALIGN.RIGHT_MID, OFFSET_WIFI_ICON, 0)
+wifi_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
+# Battery icon
+battery_icon = lv.label(notification_bar)
+battery_icon.set_text(lv.SYMBOL.BATTERY_FULL)
+battery_icon.align(lv.ALIGN.RIGHT_MID, OFFSET_BATTERY_ICON, 0)
+battery_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
+# Battery percentage
+battery_label = lv.label(notification_bar)
+battery_label.set_text("100%")
+battery_label.align(lv.ALIGN.RIGHT_MID, 0, 0)
+battery_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
+# Timer to update time every second
+def update_time(timer):
+    ticks = time.ticks_ms()
+    hours = (ticks // 3600000) % 24
+    minutes = (ticks // 60000) % 60
+    seconds = (ticks // 1000) % 60
+    time_label.set_text(f"{hours:02d}:{minutes:02d}:{seconds:02d}")
+lv.timer_create(update_time, TIME_UPDATE_INTERVAL, None)
+notification_bar.add_event_cb(toggle_drawer, lv.EVENT.CLICKED, None)
 
 
 
-#print(os.listdir('/')) 
-#try:
-#    with open('/boot.py', 'r') as file:
-#        print("Contents of /boot.py:")
-#        print("-" * 20)
-#        for line in file:
-#            print(line.rstrip())  # Remove trailing newlines for clean output
-#except OSError as e:
-#    print("Error reading /boot.py:", e)
-#with open('/block_height.txt', 'w') as f:
-#    f.write('853123')
-
-
-def create_notification_bar():
-    # Create notification bar object
-    notification_bar = lv.obj(lv.screen_active())
-    notification_bar.set_style_bg_color(COLOR_NOTIF_BAR_BG, 0)
-    notification_bar.set_size(320, NOTIFICATION_BAR_HEIGHT)
-    notification_bar.set_pos(0, 0)
-    notification_bar.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
-    notification_bar.set_scroll_dir(lv.DIR.VER)
-    notification_bar.set_style_border_width(0, 0)
-    notification_bar.set_style_radius(0, 0)
-    # Time label
-    time_label = lv.label(notification_bar)
-    time_label.set_text("12:00")
-    time_label.align(lv.ALIGN.LEFT_MID, PADDING_TINY, 0)
-    time_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
-    # Notification icon (bell)
-    notif_icon = lv.label(notification_bar)
-    notif_icon.set_text(lv.SYMBOL.BELL)
-    notif_icon.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_LARGE, 0)
-    notif_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
-    # WiFi icon
-    wifi_icon = lv.label(notification_bar)
-    wifi_icon.set_text(lv.SYMBOL.WIFI)
-    wifi_icon.align(lv.ALIGN.RIGHT_MID, OFFSET_WIFI_ICON, 0)
-    wifi_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
-    # Battery icon
-    battery_icon = lv.label(notification_bar)
-    battery_icon.set_text(lv.SYMBOL.BATTERY_FULL)
-    battery_icon.align(lv.ALIGN.RIGHT_MID, OFFSET_BATTERY_ICON, 0)
-    battery_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
-    # Battery percentage
-    battery_label = lv.label(notification_bar)
-    battery_label.set_text("100%")
-    battery_label.align(lv.ALIGN.RIGHT_MID, 0, 0)
-    battery_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
-    openbutton = lv.button(notification_bar)
-    openbutton.align(lv.ALIGN.TOP_MID, -20, -8)
-    openbutton.add_event_cb(lambda event: open_drawer(), lv.EVENT.CLICKED, None)
-    closebutton = lv.button(notification_bar)
-    closebutton.align(lv.ALIGN.TOP_MID, 20, -8)
-    closebutton.add_event_cb(lambda event: close_drawer(), lv.EVENT.CLICKED, None)
-    # Timer to update time every second
-    def update_time(timer):
-        ticks = time.ticks_ms()
-        hours = (ticks // 3600000) % 24
-        minutes = (ticks // 60000) % 60
-        seconds = (ticks // 1000) % 60
-        time_label.set_text(f"{hours:02d}:{minutes:02d}:{seconds:02d}")
-    lv.timer_create(update_time, TIME_UPDATE_INTERVAL, None)
-
-
-
-# Create the notification bar
-create_notification_bar()
 
 
 # Subwindow is created before drawer so that drawer is on top
@@ -410,48 +324,10 @@ def create_drawer():
         run_app(launcher_script,False)
     restart_btn.add_event_cb(lambda event: machine.reset(),lv.EVENT.CLICKED,None)
 
-def open_drawer():
-    global drawer_open
-    if not drawer_open:
-        drawer.set_y(NOTIFICATION_BAR_HEIGHT)
-        drawer_open=True
-
-
-def close_drawer():
-    global drawer_open
-    if drawer_open:
-        drawer.set_y(-TFT_VER_RES+NOTIFICATION_BAR_HEIGHT)
-        drawer_open=False
-
-
 
 create_drawer()
 
 
-
-# Create file explorer widget
-file_explorer = lv.file_explorer(subwindow)
-file_explorer.set_root_path("/")
-file_explorer.explorer_open_dir('/')
-file_explorer.set_size(210, 210)
-file_explorer.set_mode(lv.FILE_EXPLORER.MODE.DEFAULT)  # Default browsing mode
-file_explorer.set_sort(lv.FILE_EXPLORER.SORT.NAME_ASC)  # Sort by name, ascending
-file_explorer.align(lv.ALIGN.CENTER, 0, 0)
-def file_explorer_event_cb(e):
-    code = e.get_code()
-    obj = e.get_target_obj()
-    if code == lv.EVENT.VALUE_CHANGED:
-        #selected_path = obj.get_selected_file_name()
-        selected_path = file_explorer.explorer_get_selected_file_name
-        print("Selected:", selected_path)
-        if obj.is_selected_dir():
-            print("This is a directory")
-        else:
-            print("This is a file")
-
-
-# Attach event callback
-file_explorer.add_event_cb(file_explorer_event_cb, lv.EVENT.VALUE_CHANGED, None)
 
 
 
@@ -491,10 +367,11 @@ def run_app(scriptname,is_file,return_to_launcher=True):
 	gc.collect()
 	print("Free memory before starting new script thread:", gc.mem_free())
 	try:
+    	subwindow.clean()
     	# 168KB maximum at startup but 136KB after loading display, drivers, LVGL gui etc so let's go for 128KB for now, still a lot...
     	# But then no additional threads can be created. So 32KB seems like a good balance, allowing for 4 threads in apps...
-    	subwindow.clean()
-    	_thread.stack_size(32768)
+    	#_thread.stack_size(32768)
+    	_thread.stack_size(16384)
     	_thread.start_new_thread(execute_script, (scriptname, False, subwindow, return_to_launcher))
     	print("Event loop started in background thread")
 	except Exception as e:
@@ -628,11 +505,6 @@ run_app(launcher_script,False,False)
 
 
 
-
-
-
-
-
 import network
 import time
 
@@ -653,118 +525,6 @@ def connect_wifi():
     return False
 
 
-connect_wifi()
+#connect_wifi()
 
-
-
-
-
-#import mip
-#mip.install('github:miguelgrinberg/microdot/src/microdot/microdot.py')
-# http://192.168.1.122/upload
-# http://192.168.1.122/files//
-from microdot import Microdot, Response
-import os
-
-
-# HTML template for the upload form
-UPLOAD_FORM = '''
-<!DOCTYPE html>
-<html>
-<head><title>File Manager</title></head>
-<body>
-    <h1>File Manager</h1>
-    <p><a href="/files">View Files</a></p>
-    <h2>Upload File</h2>
-    <form method="POST" action="/upload" enctype="multipart/form-data">
-        <input type="file" name="file">
-        <input type="submit" value="Upload">
-    </form>
-</body>
-</html>
-'''
-
-app = Microdot()
-
-@app.route('/')
-async def index(request):
-    return '<a href="/files//">Files</a>'
-
-
-@app.route('/files/<path:path>')
-async def list_files(req, path=''):
-    try:
-        # Sanitize path to prevent directory traversal
-        path = path.strip('/')
-        if '..' in path:
-            return Response('Invalid path', status_code=400)
-        # Get directory contents
-        full_path = '/' + path
-        files = os.listdir(full_path) if path else os.listdir('/')
-        html = '<h1>File Manager</h1><ul>'
-        for f in files:
-            link_path = f'{path}/{f}' if path else f
-            html += f'<li><a href="/files/{link_path}">{f}</a> | <a href="/download/{link_path}">Download</a></li>'
-        html += '</ul>'
-        return Response(html, headers={'Content-Type': 'text/html'})
-    except OSError as e:
-        return Response(f'Error: {e}', status_code=500)
-
-
-@app.route('/download/<path:path>')
-async def download_file(req, path):
-    try:
-        full_path = '/' + path.strip('/')
-        with open(full_path, 'rb') as f:
-            content = f.read()  # Read in chunks for large files
-        return Response(content, headers={
-            'Content-Type': 'application/octet-stream',
-            'Content-Disposition': f'attachment; filename="{path.split("/")[-1]}"'
-        })
-    except OSError as e:
-        return Response(f'Error: {e}', status_code=404)
-
-
-
-@app.route('/upload', methods=['GET'])
-async def upload_form(req):
-    return Response(UPLOAD_FORM, headers={'Content-Type': 'text/html'})
-
-
-
-@app.route('/upload', methods=['POST'])
-async def upload_file(req):
-    try:
-        # Check if form data contains a file
-        if 'file' not in req.form or not req.files['file']['filename']:
-            return Response('No file selected', status_code=400)
-        # Get file details
-        filename = req.files['file']['filename']
-        file_content = req.files['file']['body']
-        # Sanitize filename to prevent path traversal
-        filename = filename.split('/')[-1].split('\\')[-1]
-        if not filename:
-            return Response('Invalid filename', status_code=400)
-        # Save file to filesystem
-        file_path = f'/{filename}'
-        with open(file_path, 'wb') as f:
-            f.write(file_content)  # Write in one go for small files
-        # Free memory
-        gc.collect()
-        # Redirect to file listing
-        return Response(status_code=302, headers={'Location': '/files'})
-    except OSError as e:
-        return Response(f'Error saving file: {e}', status_code=500)
-    except MemoryError:
-        return Response('File too large for available memory', status_code=507)
-
-
-
-def startit():
-	app.run(port=80)
-	# http://192.168.1.115:5000
-
-
-import _thread
-_thread.start_new_thread(startit, ())
 
