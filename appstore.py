@@ -530,9 +530,11 @@ print("App2 running")
 # Quit flag
 should_continue = True
 
+canary = lv.label(subwindow)
+
 def app2_thread():
 	count=0
-	while should_continue:
+	while should_continue and canary.get_text():
 		print(f"app2_thread: thread_id {_thread.get_ident()} - {count}")
 		count+=1
 		time.sleep(4)
@@ -567,16 +569,13 @@ def slider_cb(e):
     value = slider.get_value()
     #print("Child slider value:", value)
 slider.add_event_cb(slider_cb, lv.EVENT.VALUE_CHANGED, None)
-
-
-
 # Update loop
 count = 0
 while should_continue:
     count += 1
     #print("Child coroutine: Updating label to", count)
     label.set_text(f"App2: {count}")
-    time.sleep_ms(100) # shorter makes it more responive to the quit button
+    time.sleep_ms(4000) # shorter makes it more responive to the quit button
 print("Child coroutine: Exiting")
 """
 
