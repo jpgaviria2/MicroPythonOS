@@ -395,6 +395,22 @@ def create_drawer():
         drawer_open=False
         run_app(launcher_script,False)
     launcher_btn.add_event_cb(launcher_event,lv.EVENT.CLICKED,None)
+    #
+    restart_btn=lv.button(drawer)
+    restart_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
+    restart_btn.align(lv.ALIGN.BOTTOM_RIGHT,PADDING_SMALL,0)
+    restart_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
+    restart_label=lv.label(restart_btn)
+    restart_label.set_text(lv.SYMBOL.POWER+" Reset")
+    restart_label.center()
+    restart_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
+    def launcher_event(e):
+    	print("Reset button pressed!")
+        global drawer_open
+        close_drawer()
+        drawer_open=False
+        run_app(launcher_script,False)
+    restart_btn.add_event_cb(lambda event: machine.reset(),lv.EVENT.CLICKED,None)
 
 def open_drawer():
     global drawer_open
