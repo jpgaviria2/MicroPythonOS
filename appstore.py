@@ -447,7 +447,8 @@ def execute_script(script_source, is_file, lvgl_obj, return_to_launcher):
             'lv': lv,
             'subwindow': lvgl_obj,
             'run_app': run_app,
-            'app1_script': app1_script
+            'app1_script': app1_script,
+            'app2_script': app2_script
         }
         if is_file:
             print(f"Thread {thread_id}: reading script from file: {script_source}")
@@ -478,13 +479,13 @@ def run_app(scriptname,is_file,return_to_launcher=True):
     	print("Error starting event loop thread:", e)
 
 
-# Child script buffer: updates label, adds button and slider
+# app1: updates label, adds button and slider
 app1_script = """
 import time
 print("Child coroutine: Creating UI")
 # Label
 label = lv.label(subwindow)
-label.set_text("Child: 0")
+label.set_text("App1: 0")
 label.align(lv.ALIGN.TOP_MID, 0, 10)
 # Button
 button = lv.button(subwindow)
@@ -492,6 +493,7 @@ button.set_size(100, 60)
 button.align(lv.ALIGN.CENTER, 0, 0)
 button_label = lv.label(button)
 button_label.set_text("Quit")
+button_label.center()
 # Slider
 slider = lv.slider(subwindow)
 slider.set_range(0, 100)
@@ -508,14 +510,56 @@ button.add_event_cb(button_cb, lv.EVENT.CLICKED, None)
 # Slider callback
 def slider_cb(e):
     value = slider.get_value()
-    print("Child slider value:", value)
+    #print("Child slider value:", value)
 slider.add_event_cb(slider_cb, lv.EVENT.VALUE_CHANGED, None)
 # Update loop
 count = 0
 while should_continue:
     count += 1
     #print("Child coroutine: Updating label to", count)
-    label.set_text(f"Child: {count}")
+    label.set_text(f"App1: {count}")
+    time.sleep_ms(100) # shorter makes it more responive to the quit button
+print("Child coroutine: Exiting")
+"""
+
+app2_script = """
+import time
+print("Child coroutine: Creating UI")
+# Label
+label = lv.label(subwindow)
+label.set_text("App2: 0")
+label.align(lv.ALIGN.TOP_MID, 0, 10)
+# Button
+button = lv.button(subwindow)
+button.set_size(100, 60)
+button.align(lv.ALIGN.CENTER, 0, 0)
+button_label = lv.label(button)
+button_label.set_text("Quit")
+button_label.center()
+# Slider
+slider = lv.slider(subwindow)
+slider.set_range(0, 100)
+slider.set_value(50, lv.ANIM.OFF)
+slider.align(lv.ALIGN.BOTTOM_MID, 0, -30)
+# Quit flag
+should_continue = True
+# Button callback
+def button_cb(e):
+    global should_continue
+    print("Quit button clicked, exiting child")
+    should_continue = False
+button.add_event_cb(button_cb, lv.EVENT.CLICKED, None)
+# Slider callback
+def slider_cb(e):
+    value = slider.get_value()
+    #print("Child slider value:", value)
+slider.add_event_cb(slider_cb, lv.EVENT.VALUE_CHANGED, None)
+# Update loop
+count = 0
+while should_continue:
+    count += 1
+    #print("Child coroutine: Updating label to", count)
+    label.set_text(f"App2: {count}")
     time.sleep_ms(100) # shorter makes it more responive to the quit button
 print("Child coroutine: Exiting")
 """
@@ -523,17 +567,20 @@ print("Child coroutine: Exiting")
 
 launcher_script = """
 print("Launcher script running")
-# Button
-button = lv.button(subwindow)
-button.set_size(100, 80)
-button.align(lv.ALIGN.LEFT_MID, 0, 0)
-button_label = lv.label(button)
-button_label.set_text("App1")
-# Button callback
-def button_cb(e):
-    print("App1 button clicked")
-    run_app(app1_script,False)
-button.add_event_cb(button_cb, lv.EVENT.CLICKED, None)
+app1_button = lv.button(subwindow)
+app1_button.set_size(120, 40)
+app1_button.align(lv.ALIGN.LEFT_MID, 20, 0)
+app1_button_label = lv.label(app1_button)
+app1_button_label.set_text("Start App 1")
+app1_button_label.center()
+app1_button.add_event_cb(lambda event: run_app(app1_script,False), lv.EVENT.CLICKED, None)
+app2_button = lv.button(subwindow)
+app2_button.set_size(120, 40)
+app2_button.align(lv.ALIGN.RIGHT_MID, -20, 0)
+app2_button_label = lv.label(app2_button)
+app2_button_label.set_text("Start App 2")
+app2_button_label.center()
+app2_button.add_event_cb(lambda event: run_app(app2_script,False), lv.EVENT.CLICKED, None)
 print("Launcher script exiting")
 """
 
