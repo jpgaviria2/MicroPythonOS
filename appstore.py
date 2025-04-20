@@ -2,7 +2,6 @@ import lvgl as lv
 from machine import Pin, SPI
 import st7789 
 import lcd_bus
-#from micropython import const
 import machine
 import task_handler
 import cst816s
@@ -415,6 +414,8 @@ def execute_script(script_source, is_file, lvgl_obj):
         script_globals = {
             'lv': lv,
             'subwindow': lvgl_obj,
+            'run_app': run_app,
+            'app1_script': app1_script
         }
         if is_file:
             print(f"Thread {thread_id}: reading script from file: {script_source}")
@@ -427,14 +428,28 @@ def execute_script(script_source, is_file, lvgl_obj):
         print(f"Thread {thread_id}: error ", e)
 
 
+def run_app(scriptname,is_file):
+	# Start the event loop in a background thread
+	gc.collect()
+	print("Free memory before loop:", gc.mem_free())
+	try:
+    	# 168KB maximum at startup but 136KB after loading display, drivers, LVGL gui etc so let's go for 128KB for now, still a lot...
+    	# But then no additional threads can be created. So 32KB seems like a good balance, allowing for 4 threads in apps...
+    	subwindow.clean()
+    	_thread.stack_size(32768)
+    	_thread.start_new_thread(execute_script, (scriptname, False, subwindow))
+    	print("Event loop started in background thread")
+	except Exception as e:
+    	print("Error starting event loop thread:", e)
+
+
 # Child script buffer: updates label, adds button and slider
-script_buffer = """
+app1_script = """
 import time
 print("Child coroutine: Creating UI")
 # Label
 label = lv.label(subwindow)
 label.set_text("Child: 0")
-label.set_style_text_font(lv.font_montserrat_12, 0)
 label.align(lv.ALIGN.TOP_MID, 0, 10)
 # Button
 button = lv.button(subwindow)
@@ -442,7 +457,6 @@ button.set_size(80, 40)
 button.align(lv.ALIGN.CENTER, 0, 0)
 button_label = lv.label(button)
 button_label.set_text("Quit")
-button_label.set_style_text_font(lv.font_montserrat_12, 0)
 # Slider
 slider = lv.slider(subwindow)
 slider.set_range(0, 100)
@@ -471,15 +485,24 @@ print("Child coroutine: Exiting")
 """
 
 
-# Start the event loop in a background thread
-gc.collect()
-print("Free memory before loop:", gc.mem_free())
-try:
-    # 168KB maximum at startup but 136KB after loading display, drivers, LVGL gui etc so let's go for 128KB for now, still a lot...
-    # But then no additional threads can be created. So 32KB seems like a good balance, allowing for 4 threads in apps...
-    _thread.stack_size(32768) 
-    _thread.start_new_thread(execute_script, (script_buffer, False, subwindow))
-    print("Event loop started in background thread")
-except Exception as e:
-    print("Error starting event loop thread:", e)
+launcher_script = """
+print("Launcher script running")
+# Button
+button = lv.button(subwindow)
+button.set_size(80, 40)
+button.align(lv.ALIGN.LEFT_MID, 0, 0)
+button_label = lv.label(button)
+button_label.set_text("App1")
+# Button callback
+def button_cb(e):
+    print("App1 button clicked")
+    run_app(app1_script,False)
+button.add_event_cb(button_cb, lv.EVENT.CLICKED, None)
+print("Launcher script exiting")
+"""
 
+
+
+
+#run_app(app1_script,False)
+run_app(launcher_script,False)
