@@ -122,7 +122,6 @@ PADDING_TINY=5
 PADDING_SMALL=10
 PADDING_MEDIUM=20
 PADDING_LARGE=30
-DRAWER_BUTTON_Y_OFFSET=60
 DRAWER_ANIM_DURATION=300
 SLIDER_MIN_VALUE=1
 SLIDER_MAX_VALUE=100
@@ -293,10 +292,10 @@ def create_notification_bar():
     battery_label.align(lv.ALIGN.RIGHT_MID, 0, 0)
     battery_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
     openbutton = lv.button(notification_bar)
-    openbutton.align(lv.ALIGN.TOP_MID, -20, -14)
+    openbutton.align(lv.ALIGN.TOP_MID, -20, -8)
     openbutton.add_event_cb(lambda event: open_drawer(), lv.EVENT.CLICKED, None)
     closebutton = lv.button(notification_bar)
-    closebutton.align(lv.ALIGN.TOP_MID, 20, -14)
+    closebutton.align(lv.ALIGN.TOP_MID, 20, -8)
     closebutton.add_event_cb(lambda event: close_drawer(), lv.EVENT.CLICKED, None)
     # Timer to update time every second
     def update_time(timer):
@@ -353,7 +352,7 @@ def create_drawer():
     # this crashes it: slider.add_event_cb(slider_event,lv.EVENT.VALUE_CHANGED,slider_label)
     wifi_btn=lv.button(drawer)
     wifi_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
-    wifi_btn.align(lv.ALIGN.TOP_LEFT,PADDING_SMALL,DRAWER_BUTTON_Y_OFFSET)
+    wifi_btn.align(lv.ALIGN.LEFT_MID,PADDING_SMALL,0)
     wifi_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
     wifi_label=lv.label(wifi_btn)
     wifi_label.set_text(lv.SYMBOL.WIFI+" WiFi")
@@ -368,7 +367,7 @@ def create_drawer():
     #
     settings_btn=lv.button(drawer)
     settings_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
-    settings_btn.align(lv.ALIGN.TOP_RIGHT,-PADDING_SMALL,DRAWER_BUTTON_Y_OFFSET)
+    settings_btn.align(lv.ALIGN.RIGHT_MID,-PADDING_SMALL,0)
     settings_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
     settings_label=lv.label(settings_btn)
     settings_label.set_text(lv.SYMBOL.SETTINGS+" Settings")
@@ -398,7 +397,7 @@ def create_drawer():
     #
     restart_btn=lv.button(drawer)
     restart_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
-    restart_btn.align(lv.ALIGN.BOTTOM_RIGHT,PADDING_SMALL,0)
+    restart_btn.align(lv.ALIGN.BOTTOM_RIGHT,-PADDING_SMALL,0)
     restart_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
     restart_label=lv.label(restart_btn)
     restart_label.set_text(lv.SYMBOL.POWER+" Reset")
@@ -486,7 +485,7 @@ label.set_text("Child: 0")
 label.align(lv.ALIGN.TOP_MID, 0, 10)
 # Button
 button = lv.button(subwindow)
-button.set_size(80, 40)
+button.set_size(100, 60)
 button.align(lv.ALIGN.CENTER, 0, 0)
 button_label = lv.label(button)
 button_label.set_text("Quit")
@@ -522,7 +521,7 @@ launcher_script = """
 print("Launcher script running")
 # Button
 button = lv.button(subwindow)
-button.set_size(80, 40)
+button.set_size(100, 80)
 button.align(lv.ALIGN.LEFT_MID, 0, 0)
 button_label = lv.label(button)
 button_label.set_text("App1")
