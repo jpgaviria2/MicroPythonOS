@@ -628,7 +628,9 @@ connect_wifi()
 
 #import mip
 #mip.install('github:miguelgrinberg/microdot/src/microdot/microdot.py')
-from microdot_asyncio import Microdot, Response
+from microdot import Microdot, Response
+import os
+
 
 app = Microdot()
 
@@ -636,12 +638,39 @@ app = Microdot()
 async def index(request):
     return 'Hello, world!'
 
-import os
-@app.route('/files')
-async def list_files(req):
-    files = os.listdir('/')
-    html = '<h1>Files</h1><ul>' + ''.join(f'<li>{f}</li>' for f in files) + '</ul>'
-    return Response(html, headers={'Content-Type': 'text/html'})
+
+@app.route('/files/<path:path>')
+async def list_files(req, path=''):
+    try:
+        # Sanitize path to prevent directory traversal
+        path = path.strip('/')
+        if '..' in path:
+            return Response('Invalid path', status_code=400)
+        # Get directory contents
+        full_path = '/' + path
+        files = os.listdir(full_path) if path else os.listdir('/')
+        html = '<h1>File Manager</h1><ul>'
+        for f in files:
+            link_path = f'{path}/{f}' if path else f
+            html += f'<li><a href="/files/{link_path}">{f}</a> | <a href="/download/{link_path}">Download</a></li>'
+        html += '</ul>'
+        return Response(html, headers={'Content-Type': 'text/html'})
+    except OSError as e:
+        return Response(f'Error: {e}', status_code=500)
+
+
+@app.route('/download/<path:path>')
+async def download_file(req, path):
+    try:
+        full_path = '/' + path.strip('/')
+        with open(full_path, 'rb') as f:
+            content = f.read()  # Read in chunks for large files
+        return Response(content, headers={
+            'Content-Type': 'application/octet-stream',
+            'Content-Disposition': f'attachment; filename="{path.split("/")[-1]}"'
+        })
+    except OSError as e:
+        return Response(f'Error: {e}', status_code=404)
 
 
 def startit():
