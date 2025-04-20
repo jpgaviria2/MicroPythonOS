@@ -439,7 +439,7 @@ create_drawer()
 import _thread
 
 # Function to execute the child script as a coroutine
-def execute_script(script_source, is_file, lvgl_obj):
+def execute_script(script_source, is_file, lvgl_obj, return_to_launcher):
     thread_id = _thread.get_ident();
     print(f"Thread {thread_id}: executing script")
     try:
@@ -456,20 +456,23 @@ def execute_script(script_source, is_file, lvgl_obj):
         print(f"Thread {thread_id}: starting script")
         exec(script_source, script_globals)
         print(f"Thread {thread_id}: script finished")
+        if return_to_launcher:
+        	print(f"Thread {thread_id}: running launcher_script")
+        	run_app(launcher_script,False,False)
     except Exception as e:
         print(f"Thread {thread_id}: error ", e)
 
 
-def run_app(scriptname,is_file):
+def run_app(scriptname,is_file,return_to_launcher=True):
 	# Start the event loop in a background thread
 	gc.collect()
-	print("Free memory before loop:", gc.mem_free())
+	print("Free memory before starting new script thread:", gc.mem_free())
 	try:
     	# 168KB maximum at startup but 136KB after loading display, drivers, LVGL gui etc so let's go for 128KB for now, still a lot...
     	# But then no additional threads can be created. So 32KB seems like a good balance, allowing for 4 threads in apps...
     	subwindow.clean()
     	_thread.stack_size(32768)
-    	_thread.start_new_thread(execute_script, (scriptname, False, subwindow))
+    	_thread.start_new_thread(execute_script, (scriptname, False, subwindow, return_to_launcher))
     	print("Event loop started in background thread")
 	except Exception as e:
     	print("Error starting event loop thread:", e)
@@ -492,6 +495,7 @@ button_label.set_text("Quit")
 # Slider
 slider = lv.slider(subwindow)
 slider.set_range(0, 100)
+slider.set_value(50, lv.ANIM.OFF)
 slider.align(lv.ALIGN.BOTTOM_MID, 0, -30)
 # Quit flag
 should_continue = True
@@ -510,9 +514,9 @@ slider.add_event_cb(slider_cb, lv.EVENT.VALUE_CHANGED, None)
 count = 0
 while should_continue:
     count += 1
-    print("Child coroutine: Updating label to", count)
+    #print("Child coroutine: Updating label to", count)
     label.set_text(f"Child: {count}")
-    time.sleep_ms(5000)
+    time.sleep_ms(100) # shorter makes it more responive to the quit button
 print("Child coroutine: Exiting")
 """
 
@@ -534,7 +538,4 @@ print("Launcher script exiting")
 """
 
 
-
-
-#run_app(app1_script,False)
-run_app(launcher_script,False)
+run_app(launcher_script,False,False)
