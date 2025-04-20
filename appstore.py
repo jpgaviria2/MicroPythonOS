@@ -429,6 +429,29 @@ create_drawer()
 
 
 
+# Create file explorer widget
+file_explorer = lv.file_explorer(subwindow)
+file_explorer.set_root_path("/")
+file_explorer.explorer_open_dir('/')
+file_explorer.set_size(210, 210)
+file_explorer.set_mode(lv.FILE_EXPLORER.MODE.DEFAULT)  # Default browsing mode
+file_explorer.set_sort(lv.FILE_EXPLORER.SORT.NAME_ASC)  # Sort by name, ascending
+file_explorer.align(lv.ALIGN.CENTER, 0, 0)
+def file_explorer_event_cb(e):
+    code = e.get_code()
+    obj = e.get_target_obj()
+    if code == lv.EVENT.VALUE_CHANGED:
+        #selected_path = obj.get_selected_file_name()
+        selected_path = file_explorer.explorer_get_selected_file_name
+        print("Selected:", selected_path)
+        if obj.is_selected_dir():
+            print("This is a directory")
+        else:
+            print("This is a file")
+
+
+# Attach event callback
+file_explorer.add_event_cb(file_explorer_event_cb, lv.EVENT.VALUE_CHANGED, None)
 
 
 
@@ -603,6 +626,13 @@ print("Launcher script exiting")
 run_app(launcher_script,False,False)
 
 
+
+
+
+
+
+
+
 import network
 import time
 
@@ -626,17 +656,39 @@ def connect_wifi():
 connect_wifi()
 
 
+
+
+
 #import mip
 #mip.install('github:miguelgrinberg/microdot/src/microdot/microdot.py')
+# http://192.168.1.122/upload
+# http://192.168.1.122/files//
 from microdot import Microdot, Response
 import os
 
+
+# HTML template for the upload form
+UPLOAD_FORM = '''
+<!DOCTYPE html>
+<html>
+<head><title>File Manager</title></head>
+<body>
+    <h1>File Manager</h1>
+    <p><a href="/files">View Files</a></p>
+    <h2>Upload File</h2>
+    <form method="POST" action="/upload" enctype="multipart/form-data">
+        <input type="file" name="file">
+        <input type="submit" value="Upload">
+    </form>
+</body>
+</html>
+'''
 
 app = Microdot()
 
 @app.route('/')
 async def index(request):
-    return 'Hello, world!'
+    return '<a href="/files//">Files</a>'
 
 
 @app.route('/files/<path:path>')
@@ -673,6 +725,41 @@ async def download_file(req, path):
         return Response(f'Error: {e}', status_code=404)
 
 
+
+@app.route('/upload', methods=['GET'])
+async def upload_form(req):
+    return Response(UPLOAD_FORM, headers={'Content-Type': 'text/html'})
+
+
+
+@app.route('/upload', methods=['POST'])
+async def upload_file(req):
+    try:
+        # Check if form data contains a file
+        if 'file' not in req.form or not req.files['file']['filename']:
+            return Response('No file selected', status_code=400)
+        # Get file details
+        filename = req.files['file']['filename']
+        file_content = req.files['file']['body']
+        # Sanitize filename to prevent path traversal
+        filename = filename.split('/')[-1].split('\\')[-1]
+        if not filename:
+            return Response('Invalid filename', status_code=400)
+        # Save file to filesystem
+        file_path = f'/{filename}'
+        with open(file_path, 'wb') as f:
+            f.write(file_content)  # Write in one go for small files
+        # Free memory
+        gc.collect()
+        # Redirect to file listing
+        return Response(status_code=302, headers={'Location': '/files'})
+    except OSError as e:
+        return Response(f'Error saving file: {e}', status_code=500)
+    except MemoryError:
+        return Response('File too large for available memory', status_code=507)
+
+
+
 def startit():
 	app.run(port=80)
 	# http://192.168.1.115:5000
@@ -680,3 +767,4 @@ def startit():
 
 import _thread
 _thread.start_new_thread(startit, ())
+
