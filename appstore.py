@@ -530,14 +530,15 @@ print("App2 running")
 # Quit flag
 should_continue = True
 
-canary = lv.label(subwindow)
+canary = lv.obj(subwindow)
+canary.add_flag(0x0001) # LV_OBJ_FLAG_HIDDEN is 0x0001 (don't know why I can't find it!)
 
 def app2_thread():
 	count=0
-	while should_continue and canary.get_text():
+	while should_continue and canary.get_class():
 		print(f"app2_thread: thread_id {_thread.get_ident()} - {count}")
 		count+=1
-		time.sleep(4)
+		time.sleep(1)
 
 _thread.start_new_thread(app2_thread, ())
 
@@ -575,7 +576,7 @@ while should_continue:
     count += 1
     #print("Child coroutine: Updating label to", count)
     label.set_text(f"App2: {count}")
-    time.sleep_ms(4000) # shorter makes it more responive to the quit button
+    time.sleep_ms(1000) # shorter makes it more responive to the quit button
 print("Child coroutine: Exiting")
 """
 
