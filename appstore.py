@@ -6,7 +6,6 @@ import machine
 import task_handler
 import cst816s
 import i2c
-import network
 import urequests
 
 # Pin configuration
@@ -602,3 +601,53 @@ print("Launcher script exiting")
 
 
 run_app(launcher_script,False,False)
+
+
+import network
+import time
+
+# Connect to Wi-Fi
+def connect_wifi():
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    wlan.connect("SSIDHERE", "PASSWORDHERE")
+    print("Connecting to Wi-Fi...", end="")
+    for _ in range(30):  # Wait up to 30 seconds
+        if wlan.isconnected():
+            print(" Connected!")
+            print("IP:", wlan.ifconfig()[0])
+            return True
+        time.sleep(1)
+        print(".", end="")
+    print(" Failed to connect!")
+    return False
+
+
+connect_wifi()
+
+
+#import mip
+#mip.install('github:miguelgrinberg/microdot/src/microdot/microdot.py')
+from microdot_asyncio import Microdot, Response
+
+app = Microdot()
+
+@app.route('/')
+async def index(request):
+    return 'Hello, world!'
+
+import os
+@app.route('/files')
+async def list_files(req):
+    files = os.listdir('/')
+    html = '<h1>Files</h1><ul>' + ''.join(f'<li>{f}</li>' for f in files) + '</ul>'
+    return Response(html, headers={'Content-Type': 'text/html'})
+
+
+def startit():
+	app.run(port=80)
+	# http://192.168.1.115:5000
+
+
+import _thread
+_thread.start_new_thread(startit, ())
