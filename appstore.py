@@ -1,12 +1,13 @@
-import lvgl as lv
 from machine import Pin, SPI
 import st7789 
 import lcd_bus
 import machine
-import task_handler
 import cst816s
 import i2c
 import urequests
+
+import lvgl as lv
+import task_handler
 
 # Pin configuration
 SPI_BUS = 2
@@ -28,7 +29,7 @@ TP_REGBITS = 8
 TFT_HOR_RES=320
 TFT_VER_RES=240
 
-lv.init()
+#lv.init() not needed
 spi_bus = machine.SPI.Bus(
     host=SPI_BUS,
     mosi=LCD_MOSI,
@@ -46,6 +47,7 @@ display = st7789.ST7789(
     display_width=TFT_VER_RES,
     display_height=TFT_HOR_RES,
     backlight_pin=LCD_BL,
+    backlight_on_state=STATE_PWM,
     color_space=lv.COLOR_FORMAT.RGB565,
     color_byte_order=st7789.BYTE_ORDER_BGR,
     rgb565_byte_swap=True,
@@ -59,7 +61,13 @@ i2c_bus = i2c.I2C.Bus(host=I2C_BUS, scl=TP_SCL, sda=TP_SDA, freq=I2C_FREQ, use_l
 touch_dev = i2c.I2C.Device(bus=i2c_bus, dev_id=TP_ADDR, reg_bits=TP_REGBITS)
 indev=cst816s.CST816S(touch_dev,startup_rotation=lv.DISPLAY_ROTATION._180) # button in top left, good
 
-th = task_handler.TaskHandler()
+task_handler.TaskHandler()
+
+#def task_thread():
+#	task_handler.TaskHandler()
+#import _thread
+#_thread.start_new_thread(task_thread, ())
+
 display.set_rotation(lv.DISPLAY_ROTATION._90)
 
 # Custom touch interrupt handler:
