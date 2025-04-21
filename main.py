@@ -12,11 +12,11 @@ BUTTON_HEIGHT=40
 PADDING_TINY=5
 PADDING_SMALL=10
 PADDING_MEDIUM=20
-PADDING_LARGE=30
+PADDING_LARGE=40
 DRAWER_ANIM_DURATION=300
 SLIDER_MIN_VALUE=1
 SLIDER_MAX_VALUE=100
-SLIDER_DEFAULT_VALUE=80
+SLIDER_DEFAULT_VALUE=100
 OFFSET_WIFI_ICON = -60
 OFFSET_BATTERY_ICON = -40
 TIME_UPDATE_INTERVAL = 1000
@@ -138,24 +138,20 @@ def create_drawer():
     slider=lv.slider(drawer)
     slider.set_range(SLIDER_MIN_VALUE,SLIDER_MAX_VALUE)
     slider.set_value(SLIDER_DEFAULT_VALUE,False)
-    slider.set_width(TFT_HOR_RES-PADDING_MEDIUM)
+    slider.set_width(TFT_HOR_RES-PADDING_LARGE)
     slider.align(lv.ALIGN.TOP_MID,0,PADDING_SMALL)
     slider.set_style_bg_color(COLOR_SLIDER_BG,lv.PART.MAIN)
     slider.set_style_bg_color(COLOR_SLIDER_INDICATOR,lv.PART.INDICATOR)
     slider.set_style_bg_color(COLOR_SLIDER_KNOB,lv.PART.KNOB)
     slider_label=lv.label(drawer)
-    slider_label.set_text("80%")
+    slider_label.set_text(f"{SLIDER_DEFAULT_VALUE}%")
     slider_label.set_style_text_color(COLOR_TEXT_WHITE,0)
     slider_label.align_to(slider,lv.ALIGN.OUT_TOP_MID,0,-5)
-    # works here
     def slider_event(e):
-        slider=e.get_target()
-        label=e.get_user_data()
         value=slider.get_value()
-        label.set_text(f"{value}%")
+        slider_label.set_text(f"{value}%")
         display.set_backlight(value)
-    # this crashes it: slider.add_event_cb(slider_event,lv.EVENT.VALUE_CHANGED,slider_label)
-    # this crashes it: slider.add_event_cb(slider_event,lv.EVENT.VALUE_CHANGED,slider_label)
+    slider.add_event_cb(slider_event,lv.EVENT.VALUE_CHANGED,None)
     wifi_btn=lv.button(drawer)
     wifi_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
     wifi_btn.align(lv.ALIGN.LEFT_MID,PADDING_SMALL,0)
