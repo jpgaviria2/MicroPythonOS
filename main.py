@@ -238,16 +238,19 @@ def execute_script(script_source, is_file, lvgl_obj, return_to_launcher):
             with open(script_source, 'r') as f:
                 script_source = f.read()
         print(f"Thread {thread_id}: starting script")
-        exec(script_source, script_globals)
+        try:
+            exec(script_source, script_globals)
+        except Exception as e:
+            print(f"Thread {thread_id}: exception during execution: ", e)
         print(f"Thread {thread_id}: script finished")
         if return_to_launcher:
-            print(f"Thread {thread_id}: running launcher_script")
+            print(f"Thread {thread_id}: finished, return_to_launcher=True so running launcher_script...")
             run_launcher()
     except Exception as e:
         print(f"Thread {thread_id}: error '{e}'")
 
 
-def run_app(scriptname,is_file,return_to_launcher=True):
+def run_app(scriptname, is_file, return_to_launcher=True):
     gc.collect()
     print("/main.py: free memory before starting thread:", gc.mem_free())
     try:
