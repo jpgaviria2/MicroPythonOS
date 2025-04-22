@@ -1,3 +1,9 @@
+# Example results for ESP32-S3 with 8MB SPIRAM:
+# Test Summary:
+# Busy loop: 153018.20 iterations/second
+# Busy loop with yield: 40303.37 iterations/second
+# SHA-256 (1KB): 7357.60 iterations/second
+
 import time
 import hashlib
 import os
