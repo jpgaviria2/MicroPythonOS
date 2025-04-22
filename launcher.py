@@ -85,10 +85,7 @@ def create_app_launcher():
         label.set_width(icon_size)
         label.align(lv.ALIGN.BOTTOM_MID, 0, 0)
         label.set_style_text_align(lv.TEXT_ALIGN.CENTER, 0)
-        # Add click event to both icon and label
-        #image.add_event_cb(lambda e: on_app_click(e, app_name, app_dir), lv.EVENT.CLICKED, None)
-        #label.add_event_cb(lambda e: on_app_click(e, app_name, app_dir), lv.EVENT.CLICKED, None)
-        #app_cont.add_event_cb(lambda e: print("nice"), lv.EVENT.CLICKED, None)
+        printf(f"adding callback {app_name}")
         app_cont.add_event_cb(lambda e: on_app_click(e, app_name, app_dir), lv.EVENT.CLICKED, None)
 
 
