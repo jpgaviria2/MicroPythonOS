@@ -230,8 +230,8 @@ def execute_script(script_source, is_file, lvgl_obj, return_to_launcher):
         script_globals = {
             'lv': lv,
             'subwindow': lvgl_obj,
-            'run_app': run_app
-            #'run_launcher' : run_launcher
+            'run_app': run_app,
+            '__name__': "__main__"
         }
         if is_file:
             print(f"Thread {thread_id}: reading script from file: {script_source}")

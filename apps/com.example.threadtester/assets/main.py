@@ -1,3 +1,11 @@
+# Maximum threads with stack size 1024: 48
+# Maximum threads with stack size 2048: 48
+# Maximum threads with stack size 4096: 48
+# Maximum threads with stack size 8192: 22
+# Maximum threads with stack size 16386: 10
+# Maximum threads with stack size 32768: 3
+# Maximum threads with stack size 65536: 1
+
 import _thread
 import time
 
@@ -65,7 +73,7 @@ def main():
     wifi_icon = lv.label(lv.screen_active())
     wifi_icon.set_text("Test label")
     wifi_icon.align(lv.ALIGN.CENTER, 0, 0)
-    wifi_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
+    wifi_icon.set_style_text_color(lv.color_hex(0x0000FF), 0)
     
     print("done!")
 
@@ -76,4 +84,3 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Error in main: {e}")
 
-main()
