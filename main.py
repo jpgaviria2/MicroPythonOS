@@ -262,7 +262,7 @@ def run_app(scriptname,is_file,return_to_launcher=True):
         # But then no additional threads can be created. So 32KB seems like a good balance, allowing for 4 threads in apps...
         #_thread.stack_size(32768)
         _thread.stack_size(16384)
-        _thread.start_new_thread(execute_script, (scriptname, False, subwindow, return_to_launcher))
+        _thread.start_new_thread(execute_script, (scriptname, is_file, subwindow, return_to_launcher))
         print("Event loop started in background thread")
     except Exception as e:
         print("Error starting event loop thread:", e)
