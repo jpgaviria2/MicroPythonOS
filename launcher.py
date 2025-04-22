@@ -35,7 +35,6 @@ def load_icon(icon_path):
 
 # Function to handle icon/label click
 def on_app_click(event, app_name, app_dir):
-    print("it clicked")    
     if event.get_code() == lv.EVENT.CLICKED:
         print(f"Launching app: {app_name} ({app_dir})")
 
@@ -85,8 +84,8 @@ def create_app_launcher():
         label.set_width(icon_size)
         label.align(lv.ALIGN.BOTTOM_MID, 0, 0)
         label.set_style_text_align(lv.TEXT_ALIGN.CENTER, 0)
-        printf(f"adding callback {app_name}")
-        app_cont.add_event_cb(lambda e: on_app_click(e, app_name, app_dir), lv.EVENT.CLICKED, None)
+        app_cont.add_event_cb(lambda e, name=app_name, dir=app_dir: on_app_click(e, name, dir), lv.EVENT.CLICKED, None)
+
 
 
 # Run the app launcher
