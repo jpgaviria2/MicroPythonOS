@@ -390,6 +390,7 @@ print("Launcher script exiting")
 """
 
 
-run_app(launcher_script,False,False)
+#run_app(launcher_script,False,False)
+run_app("/launcher.py",True,False)
 
 

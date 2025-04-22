@@ -22,19 +22,20 @@ def parse_manifest(manifest_path):
 # Function to load PNG icon
 def load_icon(icon_path):
     try:
-        image = lv.image(lv.screen_active())
+        image = lv.image(subwindow)
         image.set_src(icon_path)
         return image
     except Exception as e:
         print(f"Error loading icon {icon_path}: {e}")
         # Fallback: create a placeholder image
-        image = lv.image(lv.screen_active())
+        image = lv.image(subwindow)
         image.set_src(lv.SYMBOL.DUMMY)  # Or use a default image
         return image
 
 
 # Function to handle icon/label click
 def on_app_click(event, app_name, app_dir):
+    print("it clicked")    
     if event.get_code() == lv.EVENT.CLICKED:
         print(f"Launching app: {app_name} ({app_dir})")
 
@@ -50,7 +51,7 @@ def create_app_launcher():
         print("Error accessing /apps directory")
         return
     # Create a container for the grid
-    cont = lv.obj(lv.screen_active())
+    cont = lv.obj(subwindow)
     cont.set_size(lv.pct(100), lv.pct(100))
     cont.set_style_pad_all(10, 0)
     cont.set_style_border_width(0, 0)
@@ -85,8 +86,10 @@ def create_app_launcher():
         label.align(lv.ALIGN.BOTTOM_MID, 0, 0)
         label.set_style_text_align(lv.TEXT_ALIGN.CENTER, 0)
         # Add click event to both icon and label
-        image.add_event_cb(lambda e: on_app_click(e, app_name, app_dir), lv.EVENT.CLICKED, None)
-        label.add_event_cb(lambda e: on_app_click(e, app_name, app_dir), lv.EVENT.CLICKED, None)
+        #image.add_event_cb(lambda e: on_app_click(e, app_name, app_dir), lv.EVENT.CLICKED, None)
+        #label.add_event_cb(lambda e: on_app_click(e, app_name, app_dir), lv.EVENT.CLICKED, None)
+        #app_cont.add_event_cb(lambda e: print("nice"), lv.EVENT.CLICKED, None)
+        app_cont.add_event_cb(lambda e: on_app_click(e, app_name, app_dir), lv.EVENT.CLICKED, None)
 
 
 # Run the app launcher
