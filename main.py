@@ -262,6 +262,6 @@ def run_app(scriptname,is_file,return_to_launcher=True):
 
 
 def run_launcher():
-    run_app("/apps/com.example.launcher/assets/main.py",True,False)
+    run_app("/apps/com.example.launcher/assets/main.py", True, False)
 
 run_launcher()
