@@ -14,7 +14,7 @@ SLIDER_MAX_VALUE=100
 SLIDER_DEFAULT_VALUE=100
 OFFSET_WIFI_ICON = -60
 OFFSET_BATTERY_ICON = -40
-TIME_UPDATE_INTERVAL = 1000
+CLOCK_UPDATE_INTERVAL = 100 # 10 or even 1 ms doesn't seem to change the framerate but 100ms is enough
 
 # Color palette
 DARKPINK = lv.color_hex(0xEC048C)
@@ -74,14 +74,14 @@ notification_bar.set_style_radius(0, 0)
 
 # Time label
 time_label = lv.label(notification_bar)
-time_label.set_text("00:00")
-time_label.align(lv.ALIGN.LEFT_MID, PADDING_TINY, 0)
+time_label.set_text("00:00:00.000")
+time_label.align(lv.ALIGN.LEFT_MID, 0, 0)
 time_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
 
 # Notification icon (bell)
 notif_icon = lv.label(notification_bar)
 notif_icon.set_text(lv.SYMBOL.BELL)
-notif_icon.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_LARGE, 0)
+notif_icon.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
 notif_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
 
 # WiFi icon
@@ -112,7 +112,7 @@ def update_time(timer):
     seconds = (ticks // 1000) % 60
     milliseconds = ticks % 1000
     time_label.set_text(f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}")
-lv.timer_create(update_time, TIME_UPDATE_INTERVAL, None)
+lv.timer_create(update_time, CLOCK_UPDATE_INTERVAL, None)
 notification_bar.add_event_cb(toggle_drawer, lv.EVENT.CLICKED, None)
 
 
