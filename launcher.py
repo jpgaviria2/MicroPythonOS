@@ -65,6 +65,7 @@ def create_app_launcher():
         base_path = f"{apps_dir}/{app_dir}"
         icon_path = f"{base_path}/res/mipmap-mdpi/launcher_icon.png"
         manifest_path = f"{base_path}/META-INF/MANIFEST.MF"
+        main_script = f"{base_path}/assets/main.py"
         # Get app name from MANIFEST.MF
         app_name = parse_manifest(manifest_path)
         # Create a container for each app (icon + label)
