@@ -1,9 +1,6 @@
 # GUI:
 # Below works at https://sim.lvgl.io/v9.0/micropython/ports/webassembly/index.html
 
-import time
-
-
 # Constants
 TFT_HOR_RES=320
 TFT_VER_RES=240
@@ -111,9 +108,9 @@ battery_label.set_text("100%")
 battery_label.align(lv.ALIGN.RIGHT_MID, 0, 0)
 battery_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
 
-#import time
 
 # Timer to update time every second
+import time
 def update_time(timer):
     ticks = time.ticks_ms()
     hours = (ticks // 3600000) % 24
@@ -254,8 +251,7 @@ def execute_script(script_source, is_file, lvgl_obj, return_to_launcher):
         print(f"Thread {thread_id}: script finished")
         if return_to_launcher:
             print(f"Thread {thread_id}: running launcher_script")
-            run_app("/apps/com.example.launcher/assets/main.py",True,False)
-            #run_launcher()
+            run_launcher()
     except Exception as e:
         print(f"Thread {thread_id}: error ", e)
 
