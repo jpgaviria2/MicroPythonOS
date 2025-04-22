@@ -17,26 +17,6 @@ def parse_manifest(manifest_path):
         print(f"Error reading {manifest_path}")
     return name
 
-
-# Function to load PNG icon
-def load_icon(icon_path):
-    # Fallback: create a placeholder image
-    image = lv.image(subwindow)
-    image.set_src(lv.SYMBOL.DUMMY)  # Or use a default image
-    try:
-        with open(icon_path, 'rb') as f:
-            png_data = f.read()
-            png_image_dsc = lv.image_dsc_t({
-                'data_size': len(png_data),
-                'data': png_data
-            })
-            image.set_src(png_image_dsc)
-        return image
-    except Exception as e:
-        print(f"Error loading icon {icon_path}: {e}")
-        return image
-
-
 # Function to handle icon/label click
 def on_app_click(event, app_name, main_script, app_dir):
     if event.get_code() == lv.EVENT.CLICKED:
@@ -78,7 +58,19 @@ def create_app_launcher():
         app_cont.set_style_pad_all(0, 0)
         app_cont.set_style_bg_color(lv.color_hex(0x00FF00), 0)
         # Load and display icon
-        image = load_icon(icon_path)
+        image = lv.image(app_cont)
+        try:
+            with open(icon_path, 'rb') as f:
+                png_data = f.read()
+                png_image_dsc = lv.image_dsc_t({
+                    'data_size': len(png_data),
+                    'data': png_data
+                })
+                image.set_src(png_image_dsc)
+        except Exception as e:
+            print(f"Error loading icon {icon_path}: {e}")
+            # Fallback: create a placeholder image
+            image.set_src(lv.SYMBOL.DUMMY)  # Or use a default image
         image.align(lv.ALIGN.TOP_MID, 0, 0)
         image.set_size(icon_size, icon_size)
         # Create label
