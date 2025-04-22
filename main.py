@@ -3,6 +3,7 @@
 
 import time
 
+
 # Constants
 TFT_HOR_RES=320
 TFT_VER_RES=240
@@ -79,31 +80,39 @@ notification_bar.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
 notification_bar.set_scroll_dir(lv.DIR.VER)
 notification_bar.set_style_border_width(0, 0)
 notification_bar.set_style_radius(0, 0)
+
 # Time label
 time_label = lv.label(notification_bar)
 time_label.set_text("12:00")
 time_label.align(lv.ALIGN.LEFT_MID, PADDING_TINY, 0)
 time_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
+
 # Notification icon (bell)
 notif_icon = lv.label(notification_bar)
 notif_icon.set_text(lv.SYMBOL.BELL)
 notif_icon.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_LARGE, 0)
 notif_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
+
 # WiFi icon
 wifi_icon = lv.label(notification_bar)
 wifi_icon.set_text(lv.SYMBOL.WIFI)
 wifi_icon.align(lv.ALIGN.RIGHT_MID, OFFSET_WIFI_ICON, 0)
 wifi_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
+
 # Battery icon
 battery_icon = lv.label(notification_bar)
 battery_icon.set_text(lv.SYMBOL.BATTERY_FULL)
 battery_icon.align(lv.ALIGN.RIGHT_MID, OFFSET_BATTERY_ICON, 0)
 battery_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
+
 # Battery percentage
 battery_label = lv.label(notification_bar)
 battery_label.set_text("100%")
 battery_label.align(lv.ALIGN.RIGHT_MID, 0, 0)
 battery_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
+
+#import time
+
 # Timer to update time every second
 def update_time(timer):
     ticks = time.ticks_ms()
@@ -223,11 +232,9 @@ create_drawer()
 
 
 
-# uasyncio and _thread aren't available on web
-
 import _thread
 
-# Function to execute the child script as a coroutine
+
 def execute_script(script_source, is_file, lvgl_obj, return_to_launcher):
     thread_id = _thread.get_ident();
     print(f"Thread {thread_id}: executing script")
@@ -236,6 +243,7 @@ def execute_script(script_source, is_file, lvgl_obj, return_to_launcher):
             'lv': lv,
             'subwindow': lvgl_obj,
             'run_app': run_app
+            #'run_launcher' : run_launcher
         }
         if is_file:
             print(f"Thread {thread_id}: reading script from file: {script_source}")
@@ -246,7 +254,8 @@ def execute_script(script_source, is_file, lvgl_obj, return_to_launcher):
         print(f"Thread {thread_id}: script finished")
         if return_to_launcher:
             print(f"Thread {thread_id}: running launcher_script")
-            run_app("/launcher.py",True,False)
+            run_app("/apps/com.example.launcher/assets/main.py",True,False)
+            #run_launcher()
     except Exception as e:
         print(f"Thread {thread_id}: error ", e)
 
@@ -258,7 +267,6 @@ def run_app(scriptname,is_file,return_to_launcher=True):
         subwindow.clean()
         # 168KB maximum at startup but 136KB after loading display, drivers, LVGL gui etc so let's go for 128KB for now, still a lot...
         # But then no additional threads can be created. So 32KB seems like a good balance, allowing for 4 threads in apps...
-        #_thread.stack_size(32768)
         _thread.stack_size(16384)
         _thread.start_new_thread(execute_script, (scriptname, is_file, subwindow, return_to_launcher))
         print("Event loop started in background thread")
@@ -266,6 +274,7 @@ def run_app(scriptname,is_file,return_to_launcher=True):
         print("Error starting event loop thread:", e)
 
 
-run_app("/launcher.py",True,False)
+def run_launcher():
+    run_app("/apps/com.example.launcher/assets/main.py",True,False)
 
-
+run_launcher()

@@ -1,5 +1,4 @@
 import uos
-#import ufs
 import uio
 import machine
 
@@ -39,8 +38,6 @@ def on_app_click(event, app_name, main_script, app_dir):
         print(f"Launching app: {app_name} by starting {main_script} in {app_dir})")
         run_app(main_script, True)
 
-
-# Create the app launcher
 def create_app_launcher():
     # Get list of app directories
     apps_dir = "/apps"
@@ -89,15 +86,4 @@ def create_app_launcher():
         app_cont.add_event_cb(lambda e, name=app_name, main_script=main_script, dir=app_dir: on_app_click(e, name, main_script, dir), lv.EVENT.CLICKED, None)
 
 
-
-# Run the app launcher
 create_app_launcher()
-
-#import time
-#while True:
-#    lv.task_handler()
-#    machine.idle()  # Allow other tasks to run
-#    time.sleep_ms(100)
-
-
-
