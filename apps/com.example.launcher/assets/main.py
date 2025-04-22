@@ -8,7 +8,7 @@ def parse_manifest(manifest_path):
     try:
         with uio.open(manifest_path, 'r') as f:
             for line in f:
-                print(f"Parsing line: {line}")
+                #print(f"Parsing line: {line}")
                 line = line.strip()
                 if line.startswith("Name:"):
                     name = line.split(":", 1)[1].strip()

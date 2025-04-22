@@ -234,7 +234,7 @@ def execute_script(script_source, is_file, lvgl_obj, return_to_launcher):
             '__name__': "__main__"
         }
         if is_file:
-            print(f"Thread {thread_id}: reading script from file: {script_source}")
+            print(f"Thread {thread_id}: reading script from file {script_source}")
             with open(script_source, 'r') as f:
                 script_source = f.read()
         print(f"Thread {thread_id}: starting script")
@@ -244,21 +244,21 @@ def execute_script(script_source, is_file, lvgl_obj, return_to_launcher):
             print(f"Thread {thread_id}: running launcher_script")
             run_launcher()
     except Exception as e:
-        print(f"Thread {thread_id}: error ", e)
+        print(f"Thread {thread_id}: error '{e}'")
 
 
 def run_app(scriptname,is_file,return_to_launcher=True):
     gc.collect()
-    print("Free memory before starting new script thread:", gc.mem_free())
+    print("/main.py: free memory before starting thread:", gc.mem_free())
     try:
+        print("/main.py: cleaning subwindow...")
         subwindow.clean()
         # 168KB maximum at startup but 136KB after loading display, drivers, LVGL gui etc so let's go for 128KB for now, still a lot...
-        # But then no additional threads can be created. So 32KB seems like a good balance, allowing for 4 threads in apps...
-        _thread.stack_size(16384)
+        # But then no additional threads can be created. A stacksize of 32KB allows for 4 threads, so 3 in the app itself, which might be tight.
+        _thread.stack_size(16384) # A stack size of 16KB allows for around 10 threads in the app, which should be plenty.
         _thread.start_new_thread(execute_script, (scriptname, is_file, subwindow, return_to_launcher))
-        print("Event loop started in background thread")
     except Exception as e:
-        print("Error starting event loop thread:", e)
+        print("/main.py: error starting new thread thread: ", e)
 
 
 def run_launcher():
