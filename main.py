@@ -1,6 +1,3 @@
-# GUI:
-# Below works at https://sim.lvgl.io/v9.0/micropython/ports/webassembly/index.html
-
 # Constants
 TFT_HOR_RES=320
 TFT_VER_RES=240
@@ -42,10 +39,7 @@ drawer=None
 wifi_screen=None
 drawer_open=False
 
-scr = lv.screen_active()
-scr.set_style_bg_color(lv.color_hex(0x000000), 0)
-
-
+lv.screen_active().set_style_bg_color(lv.color_hex(0x000000), 0)
 
 def open_drawer():
     global drawer_open
@@ -80,7 +74,7 @@ notification_bar.set_style_radius(0, 0)
 
 # Time label
 time_label = lv.label(notification_bar)
-time_label.set_text("12:00")
+time_label.set_text("00:00")
 time_label.align(lv.ALIGN.LEFT_MID, PADDING_TINY, 0)
 time_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
 
@@ -116,7 +110,8 @@ def update_time(timer):
     hours = (ticks // 3600000) % 24
     minutes = (ticks // 60000) % 60
     seconds = (ticks // 1000) % 60
-    time_label.set_text(f"{hours:02d}:{minutes:02d}:{seconds:02d}")
+    milliseconds = ticks % 1000
+    time_label.set_text(f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}")
 lv.timer_create(update_time, TIME_UPDATE_INTERVAL, None)
 notification_bar.add_event_cb(toggle_drawer, lv.EVENT.CLICKED, None)
 
@@ -134,93 +129,92 @@ subwindow.set_style_pad_all(0, 0)
 
 
 
-def create_drawer():
-    global drawer,wifi_screen
-    drawer=lv.obj(lv.screen_active())
-    drawer.set_size(TFT_HOR_RES,TFT_VER_RES-NOTIFICATION_BAR_HEIGHT)
-    drawer.set_pos(0,-TFT_VER_RES+NOTIFICATION_BAR_HEIGHT)
-    drawer.set_style_bg_color(COLOR_DRAWER_BG,0)
-    drawer.set_scroll_dir(lv.DIR.NONE)
-    slider=lv.slider(drawer)
-    slider.set_range(SLIDER_MIN_VALUE,SLIDER_MAX_VALUE)
-    slider.set_value(SLIDER_DEFAULT_VALUE,False)
-    slider.set_width(TFT_HOR_RES-PADDING_LARGE)
-    slider.align(lv.ALIGN.TOP_MID,0,PADDING_SMALL)
-    slider.set_style_bg_color(COLOR_SLIDER_BG,lv.PART.MAIN)
-    slider.set_style_bg_color(COLOR_SLIDER_INDICATOR,lv.PART.INDICATOR)
-    slider.set_style_bg_color(COLOR_SLIDER_KNOB,lv.PART.KNOB)
-    slider_label=lv.label(drawer)
-    slider_label.set_text(f"{SLIDER_DEFAULT_VALUE}%")
-    slider_label.set_style_text_color(COLOR_TEXT_WHITE,0)
-    slider_label.align_to(slider,lv.ALIGN.OUT_TOP_MID,0,-5)
-    def slider_event(e):
-        value=slider.get_value()
-        slider_label.set_text(f"{value}%")
-        display.set_backlight(value)
-    slider.add_event_cb(slider_event,lv.EVENT.VALUE_CHANGED,None)
-    wifi_btn=lv.button(drawer)
-    wifi_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
-    wifi_btn.align(lv.ALIGN.LEFT_MID,PADDING_SMALL,0)
-    wifi_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
-    wifi_label=lv.label(wifi_btn)
-    wifi_label.set_text(lv.SYMBOL.WIFI+" WiFi")
-    wifi_label.center()
-    wifi_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
-    def wifi_event(e):
-        global drawer_open
-        #wifi_screen.set_y(0) # TODO: make this
-        close_drawer()
-        drawer_open=False
-    wifi_btn.add_event_cb(wifi_event,lv.EVENT.CLICKED,None)
-    #
-    settings_btn=lv.button(drawer)
-    settings_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
-    settings_btn.align(lv.ALIGN.RIGHT_MID,-PADDING_SMALL,0)
-    settings_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
-    settings_label=lv.label(settings_btn)
-    settings_label.set_text(lv.SYMBOL.SETTINGS+" Settings")
-    settings_label.center()
-    settings_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
-    def settings_event(e):
-        global drawer_open
-        close_drawer()
-        drawer_open=False
-    settings_btn.add_event_cb(settings_event,lv.EVENT.CLICKED,None)
-    #
-    launcher_btn=lv.button(drawer)
-    launcher_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
-    launcher_btn.align(lv.ALIGN.BOTTOM_LEFT,PADDING_SMALL,0)
-    launcher_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
-    launcher_label=lv.label(launcher_btn)
-    launcher_label.set_text(lv.SYMBOL.HOME+" Launcher")
-    launcher_label.center()
-    launcher_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
-    def launcher_event(e):
-        print("Launcher button pressed!")
-        global drawer_open
-        close_drawer()
-        drawer_open=False
-        run_app(launcher_script,False)
-    launcher_btn.add_event_cb(launcher_event,lv.EVENT.CLICKED,None)
-    #
-    restart_btn=lv.button(drawer)
-    restart_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
-    restart_btn.align(lv.ALIGN.BOTTOM_RIGHT,-PADDING_SMALL,0)
-    restart_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
-    restart_label=lv.label(restart_btn)
-    restart_label.set_text(lv.SYMBOL.POWER+" Reset")
-    restart_label.center()
-    restart_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
-    def launcher_event(e):
-    	print("Reset button pressed!")
-        global drawer_open
-        close_drawer()
-        drawer_open=False
-        run_app(launcher_script,False)
-    restart_btn.add_event_cb(lambda event: machine.reset(),lv.EVENT.CLICKED,None)
+global drawer,wifi_screen
+
+drawer=lv.obj(lv.screen_active())
+drawer.set_size(TFT_HOR_RES,TFT_VER_RES-NOTIFICATION_BAR_HEIGHT)
+drawer.set_pos(0,-TFT_VER_RES+NOTIFICATION_BAR_HEIGHT)
+drawer.set_style_bg_color(COLOR_DRAWER_BG,0)
+drawer.set_scroll_dir(lv.DIR.NONE)
+slider=lv.slider(drawer)
+slider.set_range(SLIDER_MIN_VALUE,SLIDER_MAX_VALUE)
+slider.set_value(SLIDER_DEFAULT_VALUE,False)
+slider.set_width(TFT_HOR_RES-PADDING_LARGE)
+slider.align(lv.ALIGN.TOP_MID,0,PADDING_SMALL)
+slider.set_style_bg_color(COLOR_SLIDER_BG,lv.PART.MAIN)
+slider.set_style_bg_color(COLOR_SLIDER_INDICATOR,lv.PART.INDICATOR)
+slider.set_style_bg_color(COLOR_SLIDER_KNOB,lv.PART.KNOB)
+slider_label=lv.label(drawer)
+slider_label.set_text(f"{SLIDER_DEFAULT_VALUE}%")
+slider_label.set_style_text_color(COLOR_TEXT_WHITE,0)
+slider_label.align_to(slider,lv.ALIGN.OUT_TOP_MID,0,-5)
+def slider_event(e):
+    value=slider.get_value()
+    slider_label.set_text(f"{value}%")
+    display.set_backlight(value)
+slider.add_event_cb(slider_event,lv.EVENT.VALUE_CHANGED,None)
+wifi_btn=lv.button(drawer)
+wifi_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
+wifi_btn.align(lv.ALIGN.LEFT_MID,PADDING_SMALL,0)
+wifi_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
+wifi_label=lv.label(wifi_btn)
+wifi_label.set_text(lv.SYMBOL.WIFI+" WiFi")
+wifi_label.center()
+wifi_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
+def wifi_event(e):
+    global drawer_open
+    #wifi_screen.set_y(0) # TODO: make this
+    close_drawer()
+    drawer_open=False
+wifi_btn.add_event_cb(wifi_event,lv.EVENT.CLICKED,None)
+#
+settings_btn=lv.button(drawer)
+settings_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
+settings_btn.align(lv.ALIGN.RIGHT_MID,-PADDING_SMALL,0)
+settings_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
+settings_label=lv.label(settings_btn)
+settings_label.set_text(lv.SYMBOL.SETTINGS+" Settings")
+settings_label.center()
+settings_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
+def settings_event(e):
+    global drawer_open
+    close_drawer()
+    drawer_open=False
+settings_btn.add_event_cb(settings_event,lv.EVENT.CLICKED,None)
+#
+launcher_btn=lv.button(drawer)
+launcher_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
+launcher_btn.align(lv.ALIGN.BOTTOM_LEFT,PADDING_SMALL,0)
+launcher_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
+launcher_label=lv.label(launcher_btn)
+launcher_label.set_text(lv.SYMBOL.HOME+" Launcher")
+launcher_label.center()
+launcher_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
+def launcher_event(e):
+    print("Launcher button pressed!")
+    global drawer_open
+    close_drawer()
+    drawer_open=False
+    run_launcher()
+launcher_btn.add_event_cb(launcher_event,lv.EVENT.CLICKED,None)
+#
+restart_btn=lv.button(drawer)
+restart_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
+restart_btn.align(lv.ALIGN.BOTTOM_RIGHT,-PADDING_SMALL,0)
+restart_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
+restart_label=lv.label(restart_btn)
+restart_label.set_text(lv.SYMBOL.POWER+" Reset")
+restart_label.center()
+restart_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
+def launcher_event(e):
+    print("Reset button pressed!")
+    global drawer_open
+    close_drawer()
+    drawer_open=False
+    run_app(launcher_script,False)
+restart_btn.add_event_cb(lambda event: machine.reset(),lv.EVENT.CLICKED,None)
 
 
-create_drawer()
 
 
 
