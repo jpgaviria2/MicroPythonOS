@@ -4,68 +4,38 @@ import random
 import display_driver  # Replace with your display driver (e.g., ILI9341, ST7796)
 
 # Configuration
-SPRITE_SIZE = 20   # Size of each sprite (rectangle) in pixels
-UPDATE_INTERVAL_MS = 100  # Update metrics display and add sprite every 100ms
+SPINNER_SIZE = 20   # Size of each spinner in pixels
+UPDATE_INTERVAL_MS = 1000  # Add spinner and update metrics every 100ms
 
 # Global variables
-sprite_count = 0
+spinner_count = 0
 metrics_label = None
 
-def update_metrics(timer):
-    """Update on-screen metrics (sprite count)."""
-    global sprite_count, metrics_label
-    if metrics_label:
-        metrics_label.set_text(f"Sprites: {sprite_count}")
-
-def create_sprite(parent, index):
-    """Create a single animated sprite (rectangle)."""
-    sprite = lv.obj(parent)
-    sprite.set_size(SPRITE_SIZE, SPRITE_SIZE)
-    sprite.set_style_bg_color(lv.color_hex(random.randint(0, 0xFFFFFF)), 0)
-    sprite.set_pos(random.randint(0, lv.screen_active().get_width() - SPRITE_SIZE),
-                   random.randint(0, lv.screen_active().get_height() - SPRITE_SIZE))
-    
+def add_spinner_and_update(timer):
+    """Add a new spinner and update on-screen metrics."""
+    global spinner_count, metrics_label
     try:
-        # Create animation for random movement in X
-        anim = lv.anim_t()
-        anim.init()
-        anim.set_var(sprite)
-        anim.set_time(1000)  # Animation duration (ms)
-        anim.set_repeat_count(lv.ANIM_REPEAT_INFINITE)
-        x_start = sprite.get_x()
-        x_end = random.randint(0, lv.screen_active().get_width() - SPRITE_SIZE)
-        anim.set_values(x_start, x_end)
-        anim.set_path_cb(lv.anim_t.path_ease_in_out)
-        # Use direct method call to avoid callback issues
-        def x_cb(anim, val):
-            anim.get_var().set_x(val)
-        anim.set_exec_cb(x_cb)
-        lv.anim_t.start(anim)
-        
-        # Create animation for random movement in Y
-        anim_y = lv.anim_t()
-        anim_y.init()
-        anim_y.set_var(sprite)
-        anim_y.set_time(1000)
-        anim_y.set_repeat_count(lv.ANIM_REPEAT_INFINITE)
-        y_start = sprite.get_y()
-        y_end = random.randint(0, lv.screen_active().get_height() - SPRITE_SIZE)
-        anim_y.set_values(y_start, y_end)
-        anim_y.set_path_cb(lv.anim_t.path_ease_in_out)
-        def y_cb(anim, val):
-            anim.get_var().set_y(val)
-        anim_y.set_exec_cb(y_cb)
-        lv.anim_t.start(anim_y)
+        # Create spinner with only parent argument
+        spinner = lv.spinner(lv.screen_active())
+        spinner.set_size(SPINNER_SIZE, SPINNER_SIZE)
+        spinner.set_pos(
+            random.randint(0, lv.screen_active().get_width() - SPINNER_SIZE),
+            random.randint(0, lv.screen_active().get_height() - SPINNER_SIZE)
+        )
+        spinner_count += 1
     except Exception as e:
-        print(f"Failed to create animation for sprite {index}: {e}")
-        sprite.delete()
-        return None
+        print(f"Failed to create spinner {spinner_count + 1}: {e}")
+        return
     
-    return sprite
+    # Update metrics
+    if metrics_label:
+        metrics_label.set_text(f"Spinners: {spinner_count}")
+    
+    print(f"Added spinner {spinner_count}")
 
 def run_benchmark():
-    global sprite_count, metrics_label
-    print("Starting LVGL animation benchmark...")
+    global spinner_count, metrics_label
+    print("Starting LVGL spinner benchmark...")
     
     # Initialize LVGL and screen
     try:
@@ -78,24 +48,20 @@ def run_benchmark():
     scr.set_style_bg_color(lv.color_black(), 0)
     
     # Create metrics label
-    metrics_label = lv.label(scr)
-    metrics_label.set_style_text_color(lv.color_white(), 0)
-    metrics_label.set_style_bg_color(lv.color_black(), 0)
-    metrics_label.set_style_bg_opa(lv.OPA.COVER, 0)
-    metrics_label.set_pos(10, 10)
-    metrics_label.set_text("Sprites: 0")
-    
-    # Create timer for updating metrics and adding sprites
-    def add_sprite_and_update(timer):
-        global sprite_count
-        sprite = create_sprite(scr, sprite_count)
-        if sprite:
-            sprite_count += 1
-            print(f"Added sprite {sprite_count}")
-        update_metrics(timer)
-    
     try:
-        lv.timer_create(add_sprite_and_update, UPDATE_INTERVAL_MS, None)
+        metrics_label = lv.label(scr)
+        metrics_label.set_style_text_color(lv.color_white(), 0)
+        metrics_label.set_style_bg_color(lv.color_black(), 0)
+        metrics_label.set_style_bg_opa(lv.OPA.COVER, 0)
+        metrics_label.set_pos(10, 10)
+        metrics_label.set_text("Spinners: 0")
+    except Exception as e:
+        print(f"Failed to create metrics label: {e}")
+        return
+    
+    # Create timer for adding spinners and updating metrics
+    try:
+        lv.timer_create(add_spinner_and_update, UPDATE_INTERVAL_MS, None)
     except Exception as e:
         print(f"Failed to create timer: {e}")
         return
@@ -113,5 +79,3 @@ if __name__ == "__main__":
         run_benchmark()
     except Exception as e:
         print(f"Error in benchmark: {e}")
-
-
