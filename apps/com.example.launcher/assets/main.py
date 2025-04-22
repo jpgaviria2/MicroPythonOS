@@ -58,7 +58,7 @@ def create_app_launcher():
     label_height = 20
     col_gap = 20
     row_gap = 20
-    for app_dir in app_dirs:
+    for app_dir in app_dirs: # TODO: skip 'Launcher' apps from the list here
         # Paths
         base_path = f"{apps_dir}/{app_dir}"
         icon_path = f"{base_path}/res/mipmap-mdpi/launcher_icon.png"
