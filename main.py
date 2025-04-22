@@ -128,9 +128,6 @@ subwindow.set_style_border_width(0, 0)
 subwindow.set_style_pad_all(0, 0)
 
 
-
-global drawer,wifi_screen
-
 drawer=lv.obj(lv.screen_active())
 drawer.set_size(TFT_HOR_RES,TFT_VER_RES-NOTIFICATION_BAR_HEIGHT)
 drawer.set_pos(0,-TFT_VER_RES+NOTIFICATION_BAR_HEIGHT)
