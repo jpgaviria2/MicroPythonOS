@@ -20,15 +20,20 @@ def parse_manifest(manifest_path):
 
 # Function to load PNG icon
 def load_icon(icon_path):
+    # Fallback: create a placeholder image
+    image = lv.image(subwindow)
+    image.set_src(lv.SYMBOL.DUMMY)  # Or use a default image
     try:
-        image = lv.image(subwindow)
-        image.set_src(icon_path)
+        with open(icon_path, 'rb') as f:
+            png_data = f.read()
+            png_image_dsc = lv.image_dsc_t({
+                'data_size': len(png_data),
+                'data': png_data
+            })
+            image.set_src(png_image_dsc)
         return image
     except Exception as e:
         print(f"Error loading icon {icon_path}: {e}")
-        # Fallback: create a placeholder image
-        image = lv.image(subwindow)
-        image.set_src(lv.SYMBOL.DUMMY)  # Or use a default image
         return image
 
 
