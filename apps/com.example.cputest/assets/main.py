@@ -59,11 +59,12 @@ def stress_test_sha256():
 
 
 subwindow.clean()
+
 status = lv.label(subwindow)
-status.align(lv.ALIGN.LEFT_MID, 5, 0)
+status.align(lv.ALIGN.TOP_LEFT, 5, 10)
 status.set_style_text_color(lv.color_hex(0xFFFFFF), 0)
 
-summary = "Running CPU tests..."
+summary = "Running CPU tests...\n\n"
 status.set_text(summary)
 
 # Run busy loop test
