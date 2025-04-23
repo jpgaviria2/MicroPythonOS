@@ -29,7 +29,6 @@ TP_REGBITS = 8
 TFT_HOR_RES=320
 TFT_VER_RES=240
 
-#lv.init() # not needed
 spi_bus = machine.SPI.Bus(
     host=SPI_BUS,
     mosi=LCD_MOSI,
@@ -64,11 +63,7 @@ indev=cst816s.CST816S(touch_dev,startup_rotation=lv.DISPLAY_ROTATION._180) # but
 th = task_handler.TaskHandler()
 display.set_rotation(lv.DISPLAY_ROTATION._90)
 
-# Custom touch interrupt handler:
-indev._write_reg(0xEC,0x06)
-indev._write_reg(0xFA,0x50)
-irq_pin=machine.Pin(46,machine.Pin.IN,machine.Pin.PULL_UP)
-# gesture ids:
+# Gesture IDs:
 # 0: press
 # 1: swipe from left to USB port
 # 2: swipe from USB port to left
@@ -76,29 +71,49 @@ irq_pin=machine.Pin(46,machine.Pin.IN,machine.Pin.PULL_UP)
 # 4: bottom to top
 # 5: release
 # 12: long press
-def handle_gesture(pin):
-    indev._read_reg(0x01)
-    gesture_id=indev._rx_buf[0]
-    indev._read_reg(0x02)
-    finger_num=indev._rx_buf[0]
-    indev._read_reg(0x03)
-    x_h=indev._rx_buf[0]
-    indev._read_reg(0x04)
-    x_l=indev._rx_buf[0]
-    x=((x_h&0x0F)<<8)|x_l
-    indev._read_reg(0x05)
-    y_h=indev._rx_buf[0]
-    indev._read_reg(0x06)
-    y_l=indev._rx_buf[0]
-    y=((y_h&0x0F)<<8)|y_l
-    #print(f"GestureID={gesture_id},FingerNum={finger_num},X={x},Y={y}")
-    if gesture_id==0x04:
-        #print("Swipe Up Detected")
-        close_drawer()
-    elif gesture_id==0x03:
-        #print("Swipe Down Detected")
-        open_drawer()
 
-irq_pin.irq(trigger=machine.Pin.IRQ_FALLING,handler=handle_gesture)
+start_y = None # Variable to store the starting Y-coordinate of a touch
+def handle_gesture(pin):
+    global start_y  # Access the global start_y variable
+    indev._read_reg(0x01)
+    gesture_id = indev._rx_buf[0]
+    indev._read_reg(0x02)
+    finger_num = indev._rx_buf[0]
+    indev._read_reg(0x03)
+    x_h = indev._rx_buf[0]
+    indev._read_reg(0x04)
+    x_l = indev._rx_buf[0]
+    x = ((x_h & 0x0F) << 8) | x_l
+    indev._read_reg(0x05)
+    y_h = indev._rx_buf[0]
+    indev._read_reg(0x06)
+    y_l = indev._rx_buf[0]
+    y = ((y_h & 0x0F) << 8) | y_l
+    #print(f"GestureID={gesture_id},FingerNum={finger_num},X={x},Y={y}")
+    temp = y
+    y = TFT_VER_RES - x
+    #x = TFT_HOR_RES - temp
+    x = temp
+    print(f"Corrected GestureID={gesture_id},FingerNum={finger_num},X={x},Y={y}")
+    if gesture_id == 0x00 and start_y is None:  # Press (touch start)
+        # Store the starting Y-coordinate
+        start_y = y
+        print(f"Touch started at Y={start_y}")
+    elif gesture_id == 0x04:  # Swipe up
+        # print("Swipe Up Detected")
+        close_drawer()
+        start_y = None  # Clear start_y after gesture
+    elif gesture_id == 0x03:  # Swipe down
+        if start_y is not None and start_y < NOTIFICATION_BAR_HEIGHT:
+            # print("Swipe Down Detected from Notification Bar")
+            open_drawer()
+        start_y = None  # Clear start_y after gesture
+    elif gesture_id == 0x05:  # Release
+        start_y = None  # Clear start_y on release
+
+indev._write_reg(0xEC,0x06)
+indev._write_reg(0xFA,0x50)
+irq_pin=machine.Pin(46,machine.Pin.IN,machine.Pin.PULL_UP)
+irq_pin.irq(trigger=machine.Pin.IRQ_FALLING, handler=handle_gesture)
 
 print("boot.py finished")

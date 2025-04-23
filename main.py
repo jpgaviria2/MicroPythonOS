@@ -223,7 +223,6 @@ restart_btn.add_event_cb(lambda event: machine.reset(),lv.EVENT.CLICKED,None)
 
 import _thread
 
-
 def execute_script(script_source, is_file, lvgl_obj, return_to_launcher):
     thread_id = _thread.get_ident();
     print(f"Thread {thread_id}: executing script")
