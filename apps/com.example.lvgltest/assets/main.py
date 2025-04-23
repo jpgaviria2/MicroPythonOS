@@ -2,13 +2,14 @@ import time
 import random
 
 # Configuration
-SPINNER_SIZE = 20   # Size of each spinner in pixels
+SPINNER_SIZE = 40   # Size of each spinner in pixels
 UPDATE_INTERVAL_MS = 3000  # Add spinner and update metrics every 100ms
 
 # Global variables
 spinner_count = 0
 metrics_label = None
 
+subwindow.clean()
 canary = lv.obj(subwindow)
 canary.add_flag(lv.obj.FLAG.HIDDEN)
 
