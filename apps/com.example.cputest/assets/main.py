@@ -57,33 +57,34 @@ def stress_test_sha256():
     print(f"SHA-256 test completed: {iterations_per_second:.2f} iterations/second")
     return iterations_per_second
 
-def main():
-    print("Starting CPU stress tests...")
-    
-    # Run busy loop test
-    busy_loop_ips = stress_test_busy_loop()
-    
-    # Small delay to stabilize system
-    time.sleep_ms(500)
-    
-    # Run busy loop with yield test
-    yield_loop_ips = stress_test_busy_loop_with_yield()
-    
-    # Small delay to stabilize system
-    time.sleep_ms(500)
-    
-    # Run SHA-256 test
-    sha256_ips = stress_test_sha256()
-    
-    # Summary
-    print("\nTest Summary:")
-    print(f"Busy loop: {busy_loop_ips:.2f} iterations/second")
-    print(f"Busy loop with yield: {yield_loop_ips:.2f} iterations/second")
-    print(f"SHA-256 (1KB): {sha256_ips:.2f} iterations/second")
-    print("All tests completed.")
 
-try:
-    main()
-except Exception as e:
-    print(f"Error during tests: {e}")
+subwindow.clean()
+status = lv.label(lv.screen_active())
+status.set_text("Running CPU tests...")
+status.align(lv.ALIGN.LEFT_MID, 5, 0)
+status.set_style_text_color(lv.color_hex(0xFFFFFF), 0)
+
+# Run busy loop test
+busy_loop_ips = stress_test_busy_loop()
+
+# Small delay to stabilize system
+time.sleep_ms(500)
+
+# Run busy loop with yield test
+yield_loop_ips = stress_test_busy_loop_with_yield()
+
+# Small delay to stabilize system
+time.sleep_ms(500)
+
+# Run SHA-256 test
+sha256_ips = stress_test_sha256()
+
+summary = (
+f"\nTest Summary:\n"
+f"Busy loop: {busy_loop_ips:.2f} iterations/second\n"
+f"Busy loop with yield: {yield_loop_ips:.2f} iterations/second\n"
+f"SHA-256 (1KB): {sha256_ips:.2f} iterations/second\n"
+f"All tests completed."
+)
+status.set_text(summary)    
 
