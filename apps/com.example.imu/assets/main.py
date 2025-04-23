@@ -38,7 +38,7 @@ canary = lv.obj(subwindow)
 canary.add_flag(0x0001) # LV_OBJ_FLAG_HIDDEN is 0x0001
 
 while canary.get_class():
-    print(f"""{sensor.temperature=}	{sensor.acceleration=} {sensor.gyro=}""")
+    #print(f"""{sensor.temperature=} {sensor.acceleration=} {sensor.gyro=}""")
     temp = int(sensor.temperature * 100)
     templabel.set_text(f"Temperature: {temp}")
     ax = sensor.acceleration[0]
@@ -64,5 +64,4 @@ while canary.get_class():
     slidergy.set_value(gyp, lv.ANIM.OFF)
     slidergz.set_value(gzp, lv.ANIM.OFF)
     time.sleep_ms(100)
-
 
