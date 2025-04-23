@@ -40,8 +40,9 @@ cont.set_style_border_width(0, 0)
 cont.set_flex_flow(lv.FLEX_FLOW.ROW_WRAP)
 # Grid parameters
 icon_size = 64  # Adjust based on your display
-iconcont_size = icon_size + 
-label_height = 20
+label_height = 24
+iconcont_width = icon_size + 24
+iconcont_height = icon_size + label_height
 col_gap = 20
 row_gap = 20
 for app_dir in app_dirs: # TODO: skip 'Launcher' apps from the list here
@@ -54,9 +55,9 @@ for app_dir in app_dirs: # TODO: skip 'Launcher' apps from the list here
     app_name = parse_manifest(manifest_path)
     # Create a container for each app (icon + label)
     app_cont = lv.obj(cont)
-    app_cont.set_size(icon_size, icon_size + label_height)
+    app_cont.set_size(iconcont_width, iconcont_height)
     app_cont.set_style_border_width(0, 0)
-    app_cont.set_style_pad_all(0, 0)
+    app_cont.set_style_pad_all(col_gap, row_gap)
     #app_cont.set_style_bg_color(lv.color_hex(0x00FF00), 0)
     # Load and display icon
     image = lv.image(app_cont)
