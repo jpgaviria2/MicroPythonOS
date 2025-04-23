@@ -12,6 +12,10 @@ print(f"""{sensor.temperature=}
 templabel = lv.label(subwindow)
 templabel.align(lv.ALIGN.TOP_MID, 0, 10)
 
+#scale = lv.scale(subwindow)
+#scale.set_size(lv.pct(80), 50)
+#scale.align(lv.ALIGN.TOP_MID, 0, 40)
+
 #acclabelx = lv.label(subwindow)
 #acclabelx.align(lv.ALIGN.CENTER, -100, 0)
 #acclabely = lv.label(subwindow)
@@ -20,11 +24,11 @@ templabel.align(lv.ALIGN.TOP_MID, 0, 10)
 #acclabelz.align(lv.ALIGN.CENTER, 100, 0)
 
 sliderx = lv.slider(subwindow)
-sliderx.align(lv.ALIGN.CENTER, 0, -30)
+sliderx.align(lv.ALIGN.CENTER, 0, -60)
 slidery = lv.slider(subwindow)
-slidery.align(lv.ALIGN.CENTER, 0, 0)
+slidery.align(lv.ALIGN.CENTER, 0, -30)
 sliderz = lv.slider(subwindow)
-sliderz.align(lv.ALIGN.CENTER, 0, 30)
+sliderz.align(lv.ALIGN.CENTER, 0, 0)
 
 canary = lv.obj(subwindow)
 canary.add_flag(0x0001) # LV_OBJ_FLAG_HIDDEN is 0x0001
@@ -36,7 +40,8 @@ while canary.get_class():
     ayp = int((ay * 100 + 100)/2)
     az = sensor.acceleration[2]
     azp = int((az * 100 + 100)/2)
-    templabel.set_text(f"Temperature: {sensor.temperature}")
+    temp = int(sensor.temperature * 100)
+    templabel.set_text(f"Temperature: {temp}")
     #acclabelx.set_text(f"AXP: { axp}")
     #acclabely.set_text(f"AY: {sensor.acceleration[1]}")
     #acclabelz.set_text(f"AZ: {sensor.acceleration[2]}")
