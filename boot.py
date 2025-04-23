@@ -94,11 +94,11 @@ def handle_gesture(pin):
     y = TFT_VER_RES - x
     #x = TFT_HOR_RES - temp
     x = temp
-    print(f"Corrected GestureID={gesture_id},FingerNum={finger_num},X={x},Y={y}")
+    #print(f"Corrected GestureID={gesture_id},FingerNum={finger_num},X={x},Y={y}")
     if gesture_id == 0x00 and start_y is None:  # Press (touch start)
         # Store the starting Y-coordinate
         start_y = y
-        print(f"Touch started at Y={start_y}")
+        #print(f"Touch started at Y={start_y}")
     elif gesture_id == 0x04:  # Swipe up
         # print("Swipe Up Detected")
         close_drawer()
