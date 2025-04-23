@@ -104,7 +104,7 @@ def handle_gesture(pin):
         close_drawer()
         start_y = None  # Clear start_y after gesture
     elif gesture_id == 0x03:  # Swipe down
-        if start_y is not None and start_y < NOTIFICATION_BAR_HEIGHT:
+        if start_y is not None and start_y <= NOTIFICATION_BAR_HEIGHT:
             # print("Swipe Down Detected from Notification Bar")
             open_drawer()
         start_y = None  # Clear start_y after gesture
