@@ -103,5 +103,5 @@ print("-" * 40)
 for buffer_size, max_buffers in results:
 	print(f"{buffer_size:>18} | {max_buffers:>20}")
 	print("=====================================")
-	print("Test completed.")
+print("Test completed.")
 
