@@ -81,9 +81,8 @@ status.set_style_text_color(lv.color_hex(0xFFFFFF), 0)
 status.set_style_text_font(lv.font_unscii_8, 0)
 
 summary = "Running RAM memory tests...\n\n"
-summary += "=== Memory Allocation Test Summary ===\n"
 summary += "Buffer Size (bytes) | Max Allocated\n"
-summary += "-" * 30 + "\n"
+summary += "-----------------------------------\n"
 status.set_text(summary)
 
 while canary.is_valid():
@@ -107,6 +106,11 @@ while canary.is_valid():
    status.set_text(summary)
 
 # Print summary report
-summary += "\n" + "=" * 30 + "\n\n"
+summary += "\n"
+summary += "===================================\n"
 summary += "Test completed.\n"
 status.set_text(summary)
+
+# Wait until the user stops the app
+while canary.is_valid():
+    time.sleep_ms(100)
