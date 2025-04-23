@@ -48,7 +48,8 @@ iconcont_height = icon_size + label_height
 for app_dir in app_dirs: # TODO: skip 'Launcher' apps from the list here
     # Paths
     base_path = f"{apps_dir}/{app_dir}"
-    icon_path = f"{base_path}/res/mipmap-mdpi/launcher_icon.png"
+    #icon_path = f"{base_path}/res/mipmap-mdpi/launcher_icon.png"
+    icon_path = "/icon_64x64.bin"
     manifest_path = f"{base_path}/META-INF/MANIFEST.MF"
     main_script = f"{base_path}/assets/main.py"
     # Get app name from MANIFEST.MF
@@ -63,12 +64,20 @@ for app_dir in app_dirs: # TODO: skip 'Launcher' apps from the list here
     image = lv.image(app_cont)
     try:
         with open(icon_path, 'rb') as f:
-            png_data = f.read()
-            png_image_dsc = lv.image_dsc_t({
-                'data_size': len(png_data),
-                'data': png_data
+            f.seek(12) # first 12 bytes are headers
+            image_data = f.read()
+            image_dsc = lv.image_dsc_t({
+                "header": {
+                    "magic": lv.IMAGE_HEADER_MAGIC,
+                    "w": 64,
+                    "h": 64,
+                    "stride": 64 * 2,
+                    "cf": lv.COLOR_FORMAT.RGB565
+                 },
+                'data_size': len(image_data),
+                'data': image_data
             })
-            image.set_src(png_image_dsc)
+            image.set_src(image_dsc)
     except Exception as e:
         print(f"Error loading icon {icon_path}: {e}")
         # Fallback: create a placeholder image
