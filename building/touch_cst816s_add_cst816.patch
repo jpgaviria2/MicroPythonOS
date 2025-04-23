@@ -1,0 +1,23 @@
+diff --git a/api_drivers/common_api_drivers/indev/cst816s.py b/api_drivers/common_api_drivers/indev/cst816s.py
+index 146bdae..46f3451 100644
+--- a/api_drivers/common_api_drivers/indev/cst816s.py
++++ b/api_drivers/common_api_drivers/indev/cst816s.py
+@@ -40,7 +40,8 @@ _BPC1H = const(0xB2)
+ _BPC1L = const(0xB3)
+ 
+ _ChipID = const(0xA7)
+-_ChipIDValue = const(0xB5)
++_ChipIDValueS = const(0xB5) # cst816s
++_ChipIDValue = const(0xB6)  # cst816
+ 
+ _ProjID = const(0xA8)
+ _FwVersion = const(0xA9)
+@@ -205,7 +206,7 @@ class CST816S(pointer_framework.PointerDriver):
+         self._read_reg(_FwVersion)
+         print('FW Version:', hex(self._rx_buf[0]))
+ 
+-        if chip_id != _ChipIDValue:
++        if chip_id != _ChipIDValue and chip_id != ChipIDValueS:
+             raise RuntimeError(f'Incorrect chip id ({hex(_ChipIDValue)})')
+ 
+         self._write_reg(_IrqCtl, _EnTouch | _EnChange)

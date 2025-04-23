@@ -1,0 +1,14 @@
+diff --git a/tools/mpremote/mpremote/main.py b/tools/mpremote/mpremote/main.py
+index e6e3970..5501fa4 100644
+--- a/tools/mpremote/mpremote/main.py
++++ b/tools/mpremote/mpremote/main.py
+@@ -477,7 +477,8 @@ class State:
+         self.ensure_connected()
+         soft_reset = self._auto_soft_reset if soft_reset is None else soft_reset
+         if soft_reset or not self.transport.in_raw_repl:
+-            self.transport.enter_raw_repl(soft_reset=soft_reset)
++            #self.transport.enter_raw_repl(soft_reset=soft_reset)
++            self.transport.enter_raw_repl(soft_reset=False)
+             self._auto_soft_reset = False
+ 
+     def ensure_friendly_repl(self):
