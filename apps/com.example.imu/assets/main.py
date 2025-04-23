@@ -34,9 +34,21 @@ slidergy.align(lv.ALIGN.CENTER, 0, 60)
 slidergz = lv.slider(subwindow)
 slidergz.align(lv.ALIGN.CENTER, 0, 90)
 
+def map_nonlinear(value: float) -> int:
+    """Convert a value from [-200, 200] to [0, 100] with non-linear stretching around 0."""
+    # Step 1: Normalize input from [-200, 200] to [-1, 1]
+    normalized = value / 200.0
+    # Step 2: Apply non-linear transformation (preserve sign)
+    sign = 1 if normalized >= 0 else -1
+    abs_normalized = abs(normalized)
+    # Use square root (or another power < 1) to stretch small values
+    non_linear = sign * (abs_normalized ** 0.5)
+    # Step 3: Scale and shift to [0, 100]
+    # Map [-1, 1] to [0, 100] (i.e., -1 -> 0, 0 -> 50, 1 -> 100)
+    return int((non_linear + 1) * 50.0)
+
 canary = lv.obj(subwindow)
 canary.add_flag(0x0001) # LV_OBJ_FLAG_HIDDEN is 0x0001
-
 while canary.get_class():
     #print(f"""{sensor.temperature=} {sensor.acceleration=} {sensor.gyro=}""")
     templabel.set_text(f"Temperature: {sensor.temperature:.2f}")
@@ -50,17 +62,8 @@ while canary.get_class():
     slidery.set_value(ayp, lv.ANIM.OFF)
     sliderz.set_value(azp, lv.ANIM.OFF)
     # values between -200 and 200 => /4 becomes -50 and 50 => +50 becomes 0 and 100
-    gx = sensor.gyro[0]
-    gxp = int(gx / 4 + 50)
-    gy = sensor.gyro[1]
-    gyp = int(gy / 4 + 50)
-    gz = sensor.gyro[2]
-    gzp = int(gz / 4 + 50)
-    #acclabelx.set_text(f"AXP: { axp}")
-    #acclabely.set_text(f"AY: {sensor.acceleration[1]}")
-    #acclabelz.set_text(f"AZ: {sensor.acceleration[2]}")
-    slidergx.set_value(gxp, lv.ANIM.OFF)
-    slidergy.set_value(gyp, lv.ANIM.OFF)
-    slidergz.set_value(gzp, lv.ANIM.OFF)
+    slidergx.set_value(map_nonlinear(sensor.gyro[0]), lv.ANIM.OFF)
+    slidergy.set_value(map_nonlinear(sensor.gyro[1]), lv.ANIM.OFF)
+    slidergz.set_value(map_nonlinear(sensor.gyro[2]), lv.ANIM.OFF)
     time.sleep_ms(100)
 
