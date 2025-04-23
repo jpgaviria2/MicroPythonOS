@@ -39,7 +39,7 @@ drawer=None
 wifi_screen=None
 drawer_open=False
 
-lv.screen_active().set_style_bg_color(lv.color_hex(0x000000), 0)
+lv.screen_active().set_style_bg_color(lv.color_hex(0x444444), 0)
 
 def open_drawer():
     global drawer_open
@@ -112,6 +112,7 @@ def update_time(timer):
     seconds = (ticks // 1000) % 60
     milliseconds = ticks % 1000
     time_label.set_text(f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}")
+
 lv.timer_create(update_time, CLOCK_UPDATE_INTERVAL, None)
 notification_bar.add_event_cb(toggle_drawer, lv.EVENT.CLICKED, None)
 

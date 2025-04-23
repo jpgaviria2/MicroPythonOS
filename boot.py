@@ -61,7 +61,7 @@ i2c_bus = i2c.I2C.Bus(host=I2C_BUS, scl=TP_SCL, sda=TP_SDA, freq=I2C_FREQ, use_l
 touch_dev = i2c.I2C.Device(bus=i2c_bus, dev_id=TP_ADDR, reg_bits=TP_REGBITS)
 indev=cst816s.CST816S(touch_dev,startup_rotation=lv.DISPLAY_ROTATION._180) # button in top left, good
 
-task_handler.TaskHandler()
+th = task_handler.TaskHandler()
 display.set_rotation(lv.DISPLAY_ROTATION._90)
 
 # Custom touch interrupt handler:
