@@ -59,32 +59,32 @@ def stress_test_sha256():
 
 
 subwindow.clean()
-status = lv.label(lv.screen_active())
-status.set_text("Running CPU tests...")
+status = lv.label(subwindow)
 status.align(lv.ALIGN.LEFT_MID, 5, 0)
 status.set_style_text_color(lv.color_hex(0xFFFFFF), 0)
 
+summary = "Running CPU tests..."
+status.set_text(summary)
+
 # Run busy loop test
 busy_loop_ips = stress_test_busy_loop()
+summary += f"Busy loop: {busy_loop_ips:.2f}/second\n"
+status.set_text(summary)
 
 # Small delay to stabilize system
 time.sleep_ms(500)
 
 # Run busy loop with yield test
 yield_loop_ips = stress_test_busy_loop_with_yield()
+summary += f"Busy loop with yield: {yield_loop_ips:.2f}/second\n"
+status.set_text(summary)
 
 # Small delay to stabilize system
 time.sleep_ms(500)
 
 # Run SHA-256 test
 sha256_ips = stress_test_sha256()
-
-summary = (
-f"\nTest Summary:\n"
-f"Busy loop: {busy_loop_ips:.2f} iterations/second\n"
-f"Busy loop with yield: {yield_loop_ips:.2f} iterations/second\n"
-f"SHA-256 (1KB): {sha256_ips:.2f} iterations/second\n"
-f"All tests completed."
-)
+summary += f"SHA-256 (1KB): {sha256_ips:.2f}/second\n"
+summary += "\nAll tests completed."
 status.set_text(summary)    
 
