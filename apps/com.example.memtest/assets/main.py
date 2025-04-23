@@ -107,6 +107,6 @@ while canary.is_valid():
    status.set_text(summary)
 
 # Print summary report
-summary += "\n=====================================\n\n"
+summary += "\n" + "=" * 30 + "\n\n"
 summary += "Test completed.\n"
 status.set_text(summary)
