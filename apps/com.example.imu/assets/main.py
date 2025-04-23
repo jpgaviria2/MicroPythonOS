@@ -39,8 +39,7 @@ canary.add_flag(0x0001) # LV_OBJ_FLAG_HIDDEN is 0x0001
 
 while canary.get_class():
     #print(f"""{sensor.temperature=} {sensor.acceleration=} {sensor.gyro=}""")
-    temp = int(sensor.temperature * 100)
-    templabel.set_text(f"Temperature: {temp}")
+    templabel.set_text(f"Temperature: {sensor.temperature:.2f}")
     ax = sensor.acceleration[0]
     axp = int((ax * 100 + 100)/2)
     ay = sensor.acceleration[1]
