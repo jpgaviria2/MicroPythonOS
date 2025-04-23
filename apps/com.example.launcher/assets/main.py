@@ -42,7 +42,7 @@ for app_dir in [d for d in uos.listdir(apps_dir) if uos.stat(f"{apps_dir}/{d}")[
     # Paths
     base_path = f"{apps_dir}/{app_dir}"
     #icon_path = f"{base_path}/res/mipmap-mdpi/launcher_icon.png"
-    icon_path = "/icon_64x64.bin"
+    icon_path = "/resources/icon_64x64.bin"
     manifest_path = f"{base_path}/META-INF/MANIFEST.MF"
     main_script = f"{base_path}/assets/main.py"
     # Get app name from MANIFEST.MF
