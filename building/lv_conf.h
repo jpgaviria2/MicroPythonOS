@@ -26,7 +26,7 @@
     #define MICROPY_CACHE_SIZE  200 * 1024 // 24 images of 64x64 pixels (8KB)
 #endif
 #ifndef MICROPY_COLOR_DEPTH
-    #define MICROPY_COLOR_DEPTH  32 // TODO: try 16 for performance
+    #define MICROPY_COLOR_DEPTH  16
 #endif
 #ifndef MICROPY_FLOAT
     #define MICROPY_FLOAT  0
