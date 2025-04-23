@@ -1,8 +1,14 @@
 # Example results for ESP32-S3 with 8MB SPIRAM:
+#
 # Test Summary:
 # Busy loop: 153018.20 iterations/second
 # Busy loop with yield: 40303.37 iterations/second
 # SHA-256 (1KB): 7357.60 iterations/second
+#
+# Adding the canary.is_valid() test reduces the results to:
+# Busy loop: 22289 iterations/second
+# Busy loop with yield: 15923 iterations/second
+# SHA-256 (1KB): 5269 iterations/second
 
 import time
 import hashlib
@@ -13,52 +19,50 @@ TEST_DURATION = 5  # Duration of each test in seconds
 DATA_SIZE = 1024   # 1KB of data for SHA-256 test
 DATA = os.urandom(DATA_SIZE)  # Generate 1KB of random data for SHA-256
 
+subwindow.clean()
+canary = lv.obj(subwindow)
+canary.add_flag(lv.obj.FLAG.HIDDEN)
+
 def stress_test_busy_loop():
     print("\nStarting busy loop stress test...")
     iterations = 0
     start_time = time.ticks_ms()
     end_time = start_time + (TEST_DURATION * 1000)
-    
-    while time.ticks_ms() < end_time:
+    while time.ticks_ms() < end_time and canary.is_valid():
         iterations += 1
-    
     duration_ms = time.ticks_diff(time.ticks_ms(), start_time)
     iterations_per_second = (iterations / duration_ms) * 1000
     print(f"Busy loop test completed: {iterations_per_second:.2f} iterations/second")
     return iterations_per_second
+
 
 def stress_test_busy_loop_with_yield():
     print("\nStarting busy loop with yield (sleep_ms(0)) stress test...")
     iterations = 0
     start_time = time.ticks_ms()
     end_time = start_time + (TEST_DURATION * 1000)
-    
-    while time.ticks_ms() < end_time:
+    while time.ticks_ms() < end_time and canary.is_valid():
         iterations += 1
         time.sleep_ms(0)  # Yield to other tasks
-    
     duration_ms = time.ticks_diff(time.ticks_ms(), start_time)
     iterations_per_second = (iterations / duration_ms) * 1000
     print(f"Busy loop with yield test completed: {iterations_per_second:.2f} iterations/second")
     return iterations_per_second
+
 
 def stress_test_sha256():
     print("\nStarting SHA-256 stress test (1KB data)...")
     iterations = 0
     start_time = time.ticks_ms()
     end_time = start_time + (TEST_DURATION * 1000)
-    
-    while time.ticks_ms() < end_time:
+    while time.ticks_ms() < end_time and canary.is_valid():
         hashlib.sha256(DATA).digest()  # Compute SHA-256 on 1KB data
         iterations += 1
-    
     duration_ms = time.ticks_diff(time.ticks_ms(), start_time)
     iterations_per_second = (iterations / duration_ms) * 1000
     print(f"SHA-256 test completed: {iterations_per_second:.2f} iterations/second")
     return iterations_per_second
 
-
-subwindow.clean()
 
 status = lv.label(subwindow)
 status.align(lv.ALIGN.TOP_LEFT, 5, 10)
@@ -89,3 +93,6 @@ summary += f"SHA-256 (1KB): {sha256_ips:.2f}/second\n"
 summary += "\nAll tests completed."
 status.set_text(summary)    
 
+# Wait until the user stops the app
+while canary.is_valid():
+    time.sleep_ms(100)
