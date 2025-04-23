@@ -78,11 +78,12 @@ canary.add_flag(lv.obj.FLAG.HIDDEN)
 status = lv.label(subwindow)
 status.align(lv.ALIGN.TOP_LEFT, 5, 10)
 status.set_style_text_color(lv.color_hex(0xFFFFFF), 0)
+status.set_style_text_font(lv.font_unscii_8, 0)
 
 summary = "Running RAM memory tests...\n\n"
 summary += "=== Memory Allocation Test Summary ===\n"
-summary += "Buffer Size (bytes) | Max Buffers Allocated\n"
-summary += "-" * 40 + "\n"
+summary += "Buffer Size (bytes) | Max Allocated\n"
+summary += "-" * 30 + "\n"
 status.set_text(summary)
 
 while canary.is_valid():
@@ -95,17 +96,17 @@ while canary.is_valid():
    # Check if we allocated 0 buffers (indicates we can't allocate this size)
    if max_buffers == 0:
        print(f"Cannot allocate buffers of size {buffer_size} bytes. Stopping test.")
+       summary += f"{max_buffers:>14}\n"
+       status.set_text(summary)
        break
    # Clean up memory before next test
    gc.collect()
    time.sleep_ms(100)  # Brief delay to stabilize system
    n += 1
-   summary += f"{buffer_size:>12} | "
-   status.set_text(summary)
    summary += f"{max_buffers:>14}\n"
    status.set_text(summary)
 
 # Print summary report
-summary += "=====================================\n\n"
+summary += "\n=====================================\n\n"
 summary += "Test completed.\n"
 status.set_text(summary)
