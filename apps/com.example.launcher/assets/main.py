@@ -1,6 +1,7 @@
 import uos
 import uio
 import machine
+import sys
 
 # Function to parse MANIFEST.MF
 def parse_manifest(manifest_path):
@@ -31,7 +32,8 @@ try:
     app_dirs = [d for d in uos.listdir(apps_dir) if uos.stat(f"{apps_dir}/{d}")[0] & 0x4000]  # Directories only
 except OSError:
     print("Error accessing /apps directory")
-    return
+    sys.exit()
+
 # Create a container for the grid
 cont = lv.obj(subwindow)
 cont.set_size(lv.pct(100), lv.pct(100))
@@ -43,8 +45,6 @@ icon_size = 64  # Adjust based on your display
 label_height = 24
 iconcont_width = icon_size + 24
 iconcont_height = icon_size + label_height
-col_gap = 20
-row_gap = 20
 for app_dir in app_dirs: # TODO: skip 'Launcher' apps from the list here
     # Paths
     base_path = f"{apps_dir}/{app_dir}"
@@ -57,7 +57,7 @@ for app_dir in app_dirs: # TODO: skip 'Launcher' apps from the list here
     app_cont = lv.obj(cont)
     app_cont.set_size(iconcont_width, iconcont_height)
     app_cont.set_style_border_width(0, 0)
-    app_cont.set_style_pad_all(col_gap, row_gap)
+    app_cont.set_style_pad_all(0, 0)
     #app_cont.set_style_bg_color(lv.color_hex(0x00FF00), 0)
     # Load and display icon
     image = lv.image(app_cont)
@@ -79,7 +79,7 @@ for app_dir in app_dirs: # TODO: skip 'Launcher' apps from the list here
     label = lv.label(app_cont)
     label.set_text(app_name)
     label.set_long_mode(lv.label.LONG.WRAP)
-    label.set_width(icon_size)
+    label.set_width(iconcont_width)
     label.align(lv.ALIGN.BOTTOM_MID, 0, 0)
     label.set_style_text_align(lv.TEXT_ALIGN.CENTER, 0)
     app_cont.add_event_cb(lambda e, name=app_name, main_script=main_script, dir=app_dir: on_app_click(e, name, main_script, dir), lv.EVENT.CLICKED, None)
