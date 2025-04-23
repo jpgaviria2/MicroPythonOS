@@ -10,7 +10,7 @@ spinner_count = 0
 metrics_label = None
 
 canary = lv.obj(subwindow)
-canary.add_flag(0x0001) # LV_OBJ_FLAG_HIDDEN is 0x0001
+canary.add_flag(lv.obj.FLAG.HIDDEN)
 
 def add_spinner_and_update():
     global spinner_count, metrics_label

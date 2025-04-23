@@ -8,7 +8,7 @@ print("App2 running")
 should_continue = True
 
 canary = lv.obj(subwindow)
-canary.add_flag(0x0001) # LV_OBJ_FLAG_HIDDEN is 0x0001 (don't know why I can't find it!)
+canary.add_flag(lv.obj.FLAG.HIDDEN)
 
 def app2_thread():
 	count=0

@@ -78,7 +78,7 @@ results = []
 n = 1
 
 canary = lv.obj(subwindow)
-canary.add_flag(0x0001) # LV_OBJ_FLAG_HIDDEN is 0x0001
+canary.add_flag(lv.obj.FLAG.HIDDEN)
 
 while canary.get_class():
    buffer_size = 2 ** n
