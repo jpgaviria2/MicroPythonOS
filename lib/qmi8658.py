@@ -45,6 +45,7 @@ _REG_CTRL6 = const(0x07)  # Attitude Engine ODR and Motion on Demand
 _REG_CTRL7 = const(0x08)  # Enable Sensors and Configure Data Reads
 
 _REG_TEMP = const(0x33)  # Temperature sensor.
+_REG_TEMP_H = const(0x34)  # Temperature sensor QMI8658_TEMP_H
 
 _REG_AX_L = const(0x35)  # Read accelerometer
 _REG_AX_H = const(0x36)
@@ -151,9 +152,12 @@ class QMI8658:
 
     @property
     def temperature(self) -> float:
-        """Get the device temperature."""
-        temp_raw = self._read_u8(_REG_TEMP)
-        return temp_raw / 256
+        temp_raw_l = self._read_u8(_REG_TEMP)    # Low byte (unsigned)
+        temp_raw_h = self._read_u8(_REG_TEMP_H)  # High byte (unsigned)
+        temp_raw = (temp_raw_h << 8) | temp_raw_l
+        if temp_raw & 0x8000:  # If MSB is 1, it's negative
+            temp_raw = temp_raw - 0x10000  # Subtract 2^16 to get negative value    	
+        return temp_raw / 256.0
 
     @property
     def acceleration(self) -> tuple[float, float, float]:
