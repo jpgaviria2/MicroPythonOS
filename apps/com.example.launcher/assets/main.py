@@ -1,9 +1,7 @@
 import uos
 import uio
 import machine
-import sys
 
-# Function to parse MANIFEST.MF
 def parse_manifest(manifest_path):
     name = "Unknown"
     try:
@@ -18,21 +16,12 @@ def parse_manifest(manifest_path):
         print(f"Error reading {manifest_path}")
     return name
 
-# Function to handle icon/label click
+
 def on_app_click(event, app_name, main_script, app_dir):
     if event.get_code() == lv.EVENT.CLICKED:
         print(f"Launching app: {app_name} by starting {main_script} in {app_dir})")
         run_app(main_script, True)
 
-
-# Get list of app directories
-apps_dir = "/apps"
-app_dirs = []
-try:
-    app_dirs = [d for d in uos.listdir(apps_dir) if uos.stat(f"{apps_dir}/{d}")[0] & 0x4000]  # Directories only
-except OSError:
-    print("Error accessing /apps directory")
-    sys.exit()
 
 # Create a container for the grid
 cont = lv.obj(subwindow)
@@ -40,12 +29,16 @@ cont.set_size(lv.pct(100), lv.pct(100))
 cont.set_style_pad_all(10, 0)
 cont.set_style_border_width(0, 0)
 cont.set_flex_flow(lv.FLEX_FLOW.ROW_WRAP)
+
 # Grid parameters
 icon_size = 64  # Adjust based on your display
 label_height = 24
 iconcont_width = icon_size + 24
 iconcont_height = icon_size + label_height
-for app_dir in app_dirs: # TODO: skip 'Launcher' apps from the list here
+
+# Get list of app directories
+apps_dir = "/apps"
+for app_dir in [d for d in uos.listdir(apps_dir) if uos.stat(f"{apps_dir}/{d}")[0] & 0x4000]: # TODO: skip 'Launcher' apps from the list here
     # Paths
     base_path = f"{apps_dir}/{app_dir}"
     #icon_path = f"{base_path}/res/mipmap-mdpi/launcher_icon.png"
@@ -92,6 +85,5 @@ for app_dir in app_dirs: # TODO: skip 'Launcher' apps from the list here
     label.align(lv.ALIGN.BOTTOM_MID, 0, 0)
     label.set_style_text_align(lv.TEXT_ALIGN.CENTER, 0)
     app_cont.add_event_cb(lambda e, name=app_name, main_script=main_script, dir=app_dir: on_app_click(e, name, main_script, dir), lv.EVENT.CLICKED, None)
-
 
 
