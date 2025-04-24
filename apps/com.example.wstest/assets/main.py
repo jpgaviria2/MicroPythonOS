@@ -1,11 +1,10 @@
-# Bug: when a giant response comes in, it cuts off after 5470 bytes and then the rest is read as a new (garbled) response.
-
 import usocket
 import ssl
 import ubinascii
 import ujson
 import urandom
 import uhashlib
+import time
 
 subwindow.clean()
 canary = lv.obj(subwindow)
@@ -168,53 +167,50 @@ status.set_style_text_color(lv.color_hex(0xFFFFFF), 0)
 summary = "Websocket sends:\n\n"
 status.set_text(summary)
 
-def test_websocket():
-    global summary, status
-    port = 443
-    #host = "echo.websocket.org"
-    #path = "/"
-    host = "ws.blockchain.info"
-    path = "/inv"
+port = 443
+#host = "echo.websocket.org"
+#path = "/"
+host = "ws.blockchain.info"
+path = "/inv"
 
+try:
+    sock = ws_handshake(host, port, path)
+
+    print("Reading a bit...") # echo.websocket.org sends a reply
+    for _ in range(3):
+        time.sleep(1)
+        data = ws_read_frame(sock)
+        if data:
+            print(f"Response: {data}")
+            break
+
+    print("Sending JSON ping...")
+    ws_send_text(sock, ujson.dumps({"op": "ping"}))
+    for _ in range(10):
+        time.sleep(2)
+        data = ws_read_frame(sock)
+        if data:
+            print(f"Response: {data}")
+            summary += f"{data}\n"
+            status.set_text(summary)
+            break
+
+    print("Subscribing unconfirmed transactions...")
+    ws_send_text(sock, ujson.dumps({"op": "unconfirmed_sub"}))
+    while canary.is_valid():
+        time.sleep(1)            
+        data = ws_read_frame(sock) # Bug: when a giant response comes in, it cuts off after 5470 bytes and then the rest is read as a new (garbled) response
+        if data:
+            print(f"Response: {data}")
+            summary += f"{data}\n"
+            status.set_text(summary)
+
+    sock.close()
+except Exception as e:
+    print(f"Error: {str(e)}")
     try:
-        sock = ws_handshake(host, port, path)
-
-        print("Reading a bit...") # echo.websocket.org sends a reply
-        for _ in range(3):
-            time.sleep(1)
-            data = ws_read_frame(sock)
-            if data:
-                print(f"Response: {data}")
-                break
-
-        print("Sending JSON ping...")
-        ws_send_text(sock, ujson.dumps({"op": "ping"}))
-        for _ in range(10):
-            time.sleep(2)
-            data = ws_read_frame(sock)
-            if data:
-                print(f"Response: {data}")
-                summary += f"{data}\n"
-                status.set_text(summary)
-                break
-
-        print("Subscribing unconfirmed transactions...")
-        ws_send_text(sock, ujson.dumps({"op": "unconfirmed_sub"}))
-        while canary.is_valid():
-            time.sleep(1)
-            data = ws_read_frame(sock)
-            if data:
-                print(f"Response: {data}")
-                summary += f"{data}\n"
-                status.set_text(summary)
-
         sock.close()
-    except Exception as e:
-        print(f"Error: {str(e)}")
-        try:
-            sock.close()
-        except:
-            pass
+    except:
+        pass
 
 
-test_websocket()
