@@ -44,7 +44,7 @@ def run_benchmark():
     metrics_label.set_pos(10, 10)
     metrics_label.set_text("Spinners: 0")
     
-    while canary.get_class():
+    while canary.is_active():
         add_spinner_and_update()
         time.sleep_ms(UPDATE_INTERVAL_MS)
 
