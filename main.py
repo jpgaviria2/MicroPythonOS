@@ -222,9 +222,10 @@ restart_btn.add_event_cb(lambda event: machine.reset(),lv.EVENT.CLICKED,None)
 
 
 import _thread
+import traceback
 
 def execute_script(script_source, is_file, lvgl_obj, return_to_launcher):
-    thread_id = _thread.get_ident();
+    thread_id = _thread.get_ident()
     print(f"Thread {thread_id}: executing script")
     try:
         script_globals = {
@@ -239,16 +240,21 @@ def execute_script(script_source, is_file, lvgl_obj, return_to_launcher):
                 script_source = f.read()
         print(f"Thread {thread_id}: starting script")
         try:
-            exec(script_source, script_globals)
+            # Compile the script to catch syntax errors with better context
+            compiled_script = compile(script_source, '<script>' if not is_file else script_source, 'exec')
+            exec(compiled_script, script_globals)
         except Exception as e:
-            print(f"Thread {thread_id}: exception during execution: ", e)
+            print(f"Thread {thread_id}: exception during execution:")
+            # Print the full stack trace using the caught exception
+            traceback.print_exception(e)
         print(f"Thread {thread_id}: script finished")
         if return_to_launcher:
             print(f"Thread {thread_id}: finished, return_to_launcher=True so running launcher_script...")
             run_launcher()
     except Exception as e:
-        print(f"Thread {thread_id}: error '{e}'")
-
+        print(f"Thread {thread_id}: error:")
+        # Print the full stack trace for outer errors
+        traceback.print_exception(e)
 
 def run_app(scriptname, is_file, return_to_launcher=True):
     gc.collect()
