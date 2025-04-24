@@ -89,6 +89,7 @@ wifi_icon = lv.label(notification_bar)
 wifi_icon.set_text(lv.SYMBOL.WIFI)
 wifi_icon.align(lv.ALIGN.RIGHT_MID, OFFSET_WIFI_ICON, 0)
 wifi_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
+wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
 
 # Battery icon
 battery_icon = lv.label(notification_bar)
@@ -103,7 +104,7 @@ battery_label.align(lv.ALIGN.RIGHT_MID, 0, 0)
 battery_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
 
 
-# Timer to update time every second
+# Update time
 import time
 def update_time(timer):
     ticks = time.ticks_ms()
@@ -112,6 +113,14 @@ def update_time(timer):
     seconds = (ticks // 1000) % 60
     milliseconds = ticks % 1000
     time_label.set_text(f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}")
+
+import wlan
+def update_wifi_icon(timer):
+    if network.WLAN(network.STA_IF).isconnected():
+        global wifi_icon
+        wifi_icon.remove_flag(lv.obj.FLAG.HIDDEN)
+    else:
+        wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
 
 lv.timer_create(update_time, CLOCK_UPDATE_INTERVAL, None)
 notification_bar.add_event_cb(toggle_drawer, lv.EVENT.CLICKED, None)
@@ -275,4 +284,8 @@ def run_app(scriptname, is_file, return_to_launcher=True):
 def run_launcher():
     run_app("/apps/com.example.launcher/assets/main.py", True, False)
 
-run_launcher()
+#run_app("/autostart.py", True, subwindow, False)
+
+execute_script("/autostart.py", True, subwindow, False)
+
+run_launcher() # not needed because autostart.py will return_to_launcher
