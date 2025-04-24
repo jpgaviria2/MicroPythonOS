@@ -240,21 +240,23 @@ def execute_script(script_source, is_file, lvgl_obj, return_to_launcher):
                 script_source = f.read()
         print(f"Thread {thread_id}: starting script")
         try:
-            # Compile the script to catch syntax errors with better context
-            compiled_script = compile(script_source, '<script>' if not is_file else script_source, 'exec')
+            # Use a short filename for compile() to avoid 'name too long' error
+            compile_name = 'script' if not is_file else 'main.py'  # Shortened name
+            compiled_script = compile(script_source, compile_name, 'exec')
             exec(compiled_script, script_globals)
         except Exception as e:
             print(f"Thread {thread_id}: exception during execution:")
-            # Print the full stack trace using the caught exception
-            traceback.print_exception(e)
+            # Print stack trace with exception type, value, and traceback
+            tb = getattr(e, '__traceback__', None)
+            traceback.print_exception(type(e), e, tb)
         print(f"Thread {thread_id}: script finished")
         if return_to_launcher:
             print(f"Thread {thread_id}: finished, return_to_launcher=True so running launcher_script...")
             run_launcher()
     except Exception as e:
         print(f"Thread {thread_id}: error:")
-        # Print the full stack trace for outer errors
-        traceback.print_exception(e)
+        tb = getattr(e, '__traceback__', None)
+        traceback.print_exception(type(e), e, tb)
 
 def run_app(scriptname, is_file, return_to_launcher=True):
     gc.collect()
