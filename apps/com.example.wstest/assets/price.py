@@ -158,13 +158,32 @@ def ws_read_frame(sock):
         print(f"Unknown opcode: {opcode}")
         return None
 
-
+def get_price(json_str):
+    try:
+        # Parse the JSON string into a Python dictionary
+        data = ujson.loads(json_str)
+        # Check if 'price' exists in the dictionary
+        if "price" in data:
+            price = data["price"]
+            return price  # Return the price as a string
+            # If you need it as a float, use: return float(price)
+        else:
+            print("Error: 'price' field not found in JSON")
+            return None
+    except ValueError:
+        # Handle invalid JSON
+        print("Error: Invalid JSON string")
+        return None
+    except Exception as e:
+        # Handle any other unexpected errors
+        print(f"Error: An unexpected error occurred - {str(e)}")
+        return None
 
 status = lv.label(subwindow)
 status.align(lv.ALIGN.TOP_LEFT, 5, 10)
 status.set_style_text_color(lv.color_hex(0xFFFFFF), 0)
 
-summary = "Websocket sends:\n\n"
+summary = "Bitcoin USD price\nfrom Coinbase's Websocket API:\n\n"
 status.set_text(summary)
 
 port = 443
@@ -173,7 +192,6 @@ path = "/"
 
 try:
     sock = ws_handshake(host, port, path)
-
     print("Reading a bit...") # echo.websocket.org sends a reply
     for _ in range(3):
         time.sleep(1)
@@ -181,18 +199,18 @@ try:
         if data:
             print(f"Response: {data}")
             break
-
     print("Subscribing to price updates...")
     ws_send_text(sock, ujson.dumps({"type": "subscribe","product_ids": ["BTC-USD"],"channels": ["ticker_batch"]}))
-    #ws_send_text(sock, '{"type": "subscribe","product_ids": ["BTC-USD","channels": ["ticker_batch"]}')
     while canary.is_valid():
         time.sleep(1)            
         data = ws_read_frame(sock)
         if data:
             print(f"Response: {data}")
-            summary += f"{data}\n"
-            status.set_text(summary)
-
+            price = get_price(data)
+            if price:
+                print(f"Price: {price}")
+                summary += f"{price}\n"
+                status.set_text(summary)
     sock.close()
 except Exception as e:
     print(f"Error: {str(e)}")
