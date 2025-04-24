@@ -4,17 +4,18 @@ import machine
 
 def parse_manifest(manifest_path):
     name = "Unknown"
+    main_script = None  # Default to None if Main-Script is not found
     try:
         with uio.open(manifest_path, 'r') as f:
             for line in f:
-                #print(f"Parsing line: {line}")
                 line = line.strip()
                 if line.startswith("Name:"):
                     name = line.split(":", 1)[1].strip()
-                    break
+                elif line.startswith("Main-Script:"):
+                    main_script = line.split(":", 1)[1].strip()
     except OSError:
         print(f"Error reading {manifest_path}")
-    return name
+    return name, main_script
 
 
 def on_app_click(event, app_name, main_script, app_dir):
@@ -44,9 +45,12 @@ for app_dir in [d for d in uos.listdir(apps_dir) if uos.stat(f"{apps_dir}/{d}")[
     #icon_path = f"{base_path}/res/mipmap-mdpi/launcher_icon.png"
     icon_path = "/resources/icon_64x64.bin"
     manifest_path = f"{base_path}/META-INF/MANIFEST.MF"
-    main_script = f"{base_path}/assets/main.py"
     # Get app name from MANIFEST.MF
-    app_name = parse_manifest(manifest_path)
+    app_name, main_script = parse_manifest(manifest_path)
+    if main_script:
+        main_script = f"{base_path}/{main_script}"
+    else:
+        main_script = f"{base_path}/assets/main.py" # default
     # Create a container for each app (icon + label)
     app_cont = lv.obj(cont)
     app_cont.set_size(iconcont_width, iconcont_height)

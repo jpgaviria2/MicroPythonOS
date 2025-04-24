@@ -236,6 +236,18 @@ restart_btn.add_event_cb(lambda event: machine.reset(),lv.EVENT.CLICKED,None)
 import _thread
 import traceback
 
+def get_filename(path):
+    try:
+        if not path or not isinstance(path, str):
+            return None
+        # Extract filename using rsplit and take the last part
+        filename = path.rsplit('/', 1)[-1]
+        # Limit to the first 7 characters
+        return filename[:7]
+    except Exception as e:
+        print(f"Error extracting filename: {str(e)}")
+        return None
+
 def execute_script(script_source, is_file, lvgl_obj, return_to_launcher):
     thread_id = _thread.get_ident()
     print(f"Thread {thread_id}: executing script")
@@ -252,8 +264,7 @@ def execute_script(script_source, is_file, lvgl_obj, return_to_launcher):
                 script_source = f.read()
         print(f"Thread {thread_id}: starting script")
         try:
-            # Use a short filename for compile() to avoid 'name too long' error
-            compile_name = 'script' if not is_file else 'main.py'  # Shortened name
+            compile_name = 'script' if not is_file else get_filename(script_source) # Only filename, to avoid 'name too long' error
             compiled_script = compile(script_source, compile_name, 'exec')
             exec(compiled_script, script_globals)
         except Exception as e:
