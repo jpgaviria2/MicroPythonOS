@@ -14,7 +14,9 @@ SLIDER_MAX_VALUE=100
 SLIDER_DEFAULT_VALUE=100
 OFFSET_WIFI_ICON = -60
 OFFSET_BATTERY_ICON = -40
+
 CLOCK_UPDATE_INTERVAL = 100 # 10 or even 1 ms doesn't seem to change the framerate but 100ms is enough
+WIFI_ICON_UPDATE_INTERVAL = 1500
 
 # Color palette
 DARKPINK = lv.color_hex(0xEC048C)
@@ -114,7 +116,7 @@ def update_time(timer):
     milliseconds = ticks % 1000
     time_label.set_text(f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}")
 
-import wlan
+import network
 def update_wifi_icon(timer):
     if network.WLAN(network.STA_IF).isconnected():
         global wifi_icon
@@ -123,6 +125,7 @@ def update_wifi_icon(timer):
         wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
 
 lv.timer_create(update_time, CLOCK_UPDATE_INTERVAL, None)
+lv.timer_create(update_wifi_icon, WIFI_ICON_UPDATE_INTERVAL, None)
 notification_bar.add_event_cb(toggle_drawer, lv.EVENT.CLICKED, None)
 
 
