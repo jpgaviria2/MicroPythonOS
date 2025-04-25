@@ -31,10 +31,10 @@ for app_dir in [d for d in uos.listdir(apps_dir) if uos.stat(f"{apps_dir}/{d}")[
     image = lv.image(app_cont)
     try:
         with open(icon_path, 'rb') as f:
-            png_data = f.read()
+            image_data = f.read()
             image_dsc = lv.image_dsc_t({
-                'data_size': len(png_data),
-                'data': png_data
+                'data_size': len(image_data),
+                'data': image_data
             })
             image.set_src(image_dsc)
     except Exception as e:
