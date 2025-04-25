@@ -16,7 +16,7 @@ SLIDER_DEFAULT_VALUE=100
 CLOCK_UPDATE_INTERVAL = 100 # 10 or even 1 ms doesn't seem to change the framerate but 100ms is enough
 WIFI_ICON_UPDATE_INTERVAL = 1500
 TEMPERATURE_UPDATE_INTERVAL = 2000
-MEMFREE_UPDATE_INTERVAL = 1000
+MEMFREE_UPDATE_INTERVAL = 5000 # not too frequent because there's a forced gc.collect() to give it a reliable value
 
 # Color palette
 DARKPINK = lv.color_hex(0xEC048C)
@@ -144,6 +144,7 @@ def update_temperature(timer):
 
 import gc
 def update_memfree(timer):
+    gc.collect()
     memfree_label.set_text(f"{gc.mem_free()}")
 
 lv.timer_create(update_time, CLOCK_UPDATE_INTERVAL, None)
