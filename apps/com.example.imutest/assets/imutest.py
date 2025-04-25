@@ -39,7 +39,7 @@ def map_nonlinear(value: float) -> int:
 
 canary = lv.obj(subwindow)
 canary.add_flag(lv.obj.FLAG.HIDDEN)
-while canary.get_class():
+while canary.is_valid():
     #print(f"""{sensor.temperature=} {sensor.acceleration=} {sensor.gyro=}""")
     templabel.set_text(f"Temperature: {sensor.temperature:.2f}")
     ax = sensor.acceleration[0]
