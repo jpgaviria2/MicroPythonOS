@@ -25,28 +25,21 @@ for app_dir in [d for d in uos.listdir(apps_dir) if uos.stat(f"{apps_dir}/{d}")[
     app_cont.set_style_border_width(0, 0)
     app_cont.set_style_pad_all(0, 0)
     # Load and display icon
-    #icon_path = f"{base_path}/res/mipmap-mdpi/launcher_icon.png"
+    #icon_path = f"{app_dir_fullpath}/res/mipmap-mdpi/launcher_icon.png"
     icon_path = "/resources/icon_64x64.bin"
+    #icon_path = "/resources/icon_64x64.png"
     image = lv.image(app_cont)
     try:
         with open(icon_path, 'rb') as f:
-            f.seek(12) # first 12 bytes are headers
-            image_data = f.read()
+            png_data = f.read()
             image_dsc = lv.image_dsc_t({
-                "header": {
-                    "magic": lv.IMAGE_HEADER_MAGIC,
-                    "w": 64,
-                    "h": 64,
-                    "stride": 64 * 2,
-                    "cf": lv.COLOR_FORMAT.RGB565
-                 },
-                'data_size': len(image_data),
-                'data': image_data
+                'data_size': len(png_data),
+                'data': png_data
             })
             image.set_src(image_dsc)
     except Exception as e:
         print(f"Error loading icon {icon_path}: {e}")
-        image.set_src(lv.SYMBOL.DUMMY)  # Or use a default image
+        image.set_src(lv.SYMBOL.STOP)  # square block
     image.align(lv.ALIGN.TOP_MID, 0, 0)
     image.set_size(icon_size, icon_size)
     # Create label
