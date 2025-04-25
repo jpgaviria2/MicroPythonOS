@@ -133,6 +133,9 @@ notification_bar.add_event_cb(toggle_drawer, lv.EVENT.CLICKED, None)
 
 
 # Subwindow is created before drawer so that drawer is on top
+# Instead of giving the apps access to the subwindow, potentially corrupting it,
+# it might be better to give a subcontainer in the subwindow.
+# But if that's a performance impact, then properly restoring the subwindow along with subwindow.clean() is also an option.
 screen = lv.screen_active()
 subwindow = lv.obj(screen)
 subwindow.set_size(TFT_HOR_RES, TFT_VER_RES - NOTIFICATION_BAR_HEIGHT)
