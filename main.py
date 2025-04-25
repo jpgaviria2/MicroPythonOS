@@ -235,8 +235,24 @@ restart_btn.add_event_cb(lambda event: machine.reset(),lv.EVENT.CLICKED,None)
 
 import _thread
 import traceback
+import uio
 
-def get_filename(path):
+def parse_manifest(manifest_path):
+    name = "Unknown"
+    main_script = "assets/main.py"
+    try:
+        with uio.open(manifest_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("Name:"):
+                    name = line.split(":", 1)[1].strip()
+                elif line.startswith("Main-Script:"):
+                    main_script = line.split(":", 1)[1].strip()
+    except OSError:
+        print(f"Error reading {manifest_path}")
+    return name, main_script
+
+def long_path_to_filename(path):
     try:
         if not path or not isinstance(path, str):
             return None
@@ -248,6 +264,7 @@ def get_filename(path):
         print(f"Error extracting filename: {str(e)}")
         return None
 
+# Run the script in the current thread:
 def execute_script(script_source, is_file, lvgl_obj, return_to_launcher):
     thread_id = _thread.get_ident()
     print(f"Thread {thread_id}: executing script")
@@ -255,7 +272,8 @@ def execute_script(script_source, is_file, lvgl_obj, return_to_launcher):
         script_globals = {
             'lv': lv,
             'subwindow': lvgl_obj,
-            'run_app': run_app,
+            'start_app': start_app, # for launcher apps
+            'parse_manifest': parse_manifest, # for launcher apps
             '__name__': "__main__"
         }
         if is_file:
@@ -264,7 +282,7 @@ def execute_script(script_source, is_file, lvgl_obj, return_to_launcher):
                 script_source = f.read()
         print(f"Thread {thread_id}: starting script")
         try:
-            compile_name = 'script' if not is_file else get_filename(script_source) # Only filename, to avoid 'name too long' error
+            compile_name = 'script' if not is_file else long_path_to_filename(script_source) # Only filename, to avoid 'name too long' error
             compiled_script = compile(script_source, compile_name, 'exec')
             exec(compiled_script, script_globals)
         except Exception as e:
@@ -281,25 +299,29 @@ def execute_script(script_source, is_file, lvgl_obj, return_to_launcher):
         tb = getattr(e, '__traceback__', None)
         traceback.print_exception(type(e), e, tb)
 
-def run_app(scriptname, is_file, return_to_launcher=True):
-    gc.collect()
-    print("/main.py: free memory before starting thread:", gc.mem_free())
+# Run the script in a new thread:
+def execute_script_new_thread(scriptname, is_file, return_to_launcher):
+    print(f"/main.py: execute_script_new_thread({scriptname},{is_file},{return_to_launcher})")
     try:
-        print("/main.py: cleaning subwindow...")
+        print("/main.py: execute_script_new_thread(): cleaning subwindow...")
         subwindow.clean()
         # 168KB maximum at startup but 136KB after loading display, drivers, LVGL gui etc so let's go for 128KB for now, still a lot...
         # But then no additional threads can be created. A stacksize of 32KB allows for 4 threads, so 3 in the app itself, which might be tight.
         _thread.stack_size(16384) # A stack size of 16KB allows for around 10 threads in the app, which should be plenty.
         _thread.start_new_thread(execute_script, (scriptname, is_file, subwindow, return_to_launcher))
     except Exception as e:
-        print("/main.py: error starting new thread thread: ", e)
+        print("/main.py: execute_script_new_thread(): error starting new thread thread: ", e)
 
+def start_app(app_dir, return_to_launcher=True):
+    print(f"/main.py start_app({app_dir},{return_to_launcher}")
+    manifest_path = f"{app_dir}/META-INF/MANIFEST.MF"
+    app_name, main_script = parse_manifest(manifest_path)
+    main_script_fullpath = f"{app_dir}/{main_script}"
+    execute_script_new_thread(main_script_fullpath, True, return_to_launcher)
 
 def run_launcher():
-    run_app("/apps/com.example.launcher/assets/main.py", True, False)
+    start_app("/apps/com.example.launcher", False)
 
-#run_app("/autostart.py", True, subwindow, False)
+execute_script_new_thread("/autostart.py", True, False)
+run_launcher()
 
-execute_script("/autostart.py", True, subwindow, False)
-
-run_launcher() # not needed because autostart.py will return_to_launcher

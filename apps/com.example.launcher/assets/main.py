@@ -1,28 +1,4 @@
 import uos
-import uio
-import machine
-
-def parse_manifest(manifest_path):
-    name = "Unknown"
-    main_script = None  # Default to None if Main-Script is not found
-    try:
-        with uio.open(manifest_path, 'r') as f:
-            for line in f:
-                line = line.strip()
-                if line.startswith("Name:"):
-                    name = line.split(":", 1)[1].strip()
-                elif line.startswith("Main-Script:"):
-                    main_script = line.split(":", 1)[1].strip()
-    except OSError:
-        print(f"Error reading {manifest_path}")
-    return name, main_script
-
-
-def on_app_click(event, app_name, main_script, app_dir):
-    if event.get_code() == lv.EVENT.CLICKED:
-        print(f"Launching app: {app_name} by starting {main_script} in {app_dir})")
-        run_app(main_script, True)
-
 
 # Create a container for the grid
 cont = lv.obj(subwindow)
@@ -38,26 +14,20 @@ iconcont_width = icon_size + 24
 iconcont_height = icon_size + label_height
 
 # Get list of app directories
+# Should we skip 'Launcher' apps from the list here?
 apps_dir = "/apps"
-for app_dir in [d for d in uos.listdir(apps_dir) if uos.stat(f"{apps_dir}/{d}")[0] & 0x4000]: # TODO: skip 'Launcher' apps from the list here
+for app_dir in [d for d in uos.listdir(apps_dir) if uos.stat(f"{apps_dir}/{d}")[0] & 0x4000]:
     # Paths
-    base_path = f"{apps_dir}/{app_dir}"
-    #icon_path = f"{base_path}/res/mipmap-mdpi/launcher_icon.png"
-    icon_path = "/resources/icon_64x64.bin"
-    manifest_path = f"{base_path}/META-INF/MANIFEST.MF"
-    # Get app name from MANIFEST.MF
-    app_name, main_script = parse_manifest(manifest_path)
-    if main_script:
-        main_script = f"{base_path}/{main_script}"
-    else:
-        main_script = f"{base_path}/assets/main.py" # default
+    app_dir_fullpath = f"{apps_dir}/{app_dir}"
+    app_name, main_script = parse_manifest(f"{app_dir_fullpath}/META-INF/MANIFEST.MF")
     # Create a container for each app (icon + label)
     app_cont = lv.obj(cont)
     app_cont.set_size(iconcont_width, iconcont_height)
     app_cont.set_style_border_width(0, 0)
     app_cont.set_style_pad_all(0, 0)
-    #app_cont.set_style_bg_color(lv.color_hex(0x00FF00), 0)
     # Load and display icon
+    #icon_path = f"{base_path}/res/mipmap-mdpi/launcher_icon.png"
+    icon_path = "/resources/icon_64x64.bin"
     image = lv.image(app_cont)
     try:
         with open(icon_path, 'rb') as f:
@@ -77,7 +47,6 @@ for app_dir in [d for d in uos.listdir(apps_dir) if uos.stat(f"{apps_dir}/{d}")[
             image.set_src(image_dsc)
     except Exception as e:
         print(f"Error loading icon {icon_path}: {e}")
-        # Fallback: create a placeholder image
         image.set_src(lv.SYMBOL.DUMMY)  # Or use a default image
     image.align(lv.ALIGN.TOP_MID, 0, 0)
     image.set_size(icon_size, icon_size)
@@ -88,6 +57,6 @@ for app_dir in [d for d in uos.listdir(apps_dir) if uos.stat(f"{apps_dir}/{d}")[
     label.set_width(iconcont_width)
     label.align(lv.ALIGN.BOTTOM_MID, 0, 0)
     label.set_style_text_align(lv.TEXT_ALIGN.CENTER, 0)
-    app_cont.add_event_cb(lambda e, name=app_name, main_script=main_script, dir=app_dir: on_app_click(e, name, main_script, dir), lv.EVENT.CLICKED, None)
+    app_cont.add_event_cb(lambda e, app_dir=app_dir: start_app(app_dir_fullpath), lv.EVENT.CLICKED, None)
 
 
