@@ -1,2 +1,3 @@
 Manifest-Version: 1.0
 Name: App1
+Start-Script: assets/app1.py
