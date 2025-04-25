@@ -44,8 +44,13 @@ canary.add_flag(lv.obj.FLAG.HIDDEN)
 width = 240
 height = 240
 
-subwindow.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
-image = lv.image(subwindow)
+cont = lv.obj(subwindow)
+cont.set_style_pad_all(0, 0)
+cont.set_style_border_width(0, 0)
+cont.set_size(lv.pct(100), lv.pct(100))
+cont.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
+
+image = lv.image(cont)
 image.align(lv.ALIGN.LEFT_MID, 0, 0)
 #image.set_size(width, height)
 #image.set_size(height, width)
