@@ -34,15 +34,19 @@ subwindow.clean()
 canary = lv.obj(subwindow)
 canary.add_flag(lv.obj.FLAG.HIDDEN)
 
-width = 480
-height = 320
+#width = 480
+#height = 320
 #width = 320
 #height = 240
 #width = 120
 #height = 160
 
+width = 240
+height = 240
+
+subwindow.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
 image = lv.image(subwindow)
-image.align(lv.ALIGN.CENTER, 0, 0)
+image.align(lv.ALIGN.LEFT_MID, 0, 0)
 #image.set_size(width, height)
 #image.set_size(height, width)
 image.set_rotation(900)
@@ -62,13 +66,14 @@ cam = Camera(
     powerdown_pin=-1,
     reset_pin=-1,
     pixel_format=PixelFormat.RGB565,
-    frame_size=FrameSize.HVGA, # 480x320
+    frame_size=FrameSize.R240X240,
     grab_mode=GrabMode.LATEST 
 )
 
 #cam.reconfigure(frame_size=FrameSize.HVGA)
-
-#frame_size=FrameSize.VGA, # 320x240
+# R240X240
+#frame_size=FrameSize.HVGA, # 480x320
+#frame_size=FrameSize.QVGA, # 320x240
 #frame_size=FrameSize.QQVGA # 160x120
 
 #cam.init() done default (see above)
@@ -89,6 +94,7 @@ def try_capture():
         img = bytes(cam.capture())
         cam.free_buffer()
         # Swap bytes for each 16-bit pixel
+        # This is no longer needed because the esp-camera driver does {FORMAT_CTRL00, 0x6F}, // RGB565 (RGB) instead of {FORMAT_CTRL00, 0x61}, // RGB565 (BGR) now
         #img_swapped = bytearray(len(img))
         #for i in range(0, len(img), 2):
         #    img_swapped[i] = img[i+1]    # Swap high and low bytes
@@ -102,8 +108,15 @@ def try_capture():
 
 try_capture()
 
-while canary.is_valid():
-    try_capture()
+import time
+
+try:
+    while canary.is_valid():
+        try_capture()
+        time.sleep_ms(100) # Allow for the MicroPython REPL to still work
+except lv.LvReferenceError: # triggers when the canary dies
+    print("Canary died, deinitializing camera...")
+    cam.deinit()
 
 
 #pixel_format=PixelFormat.JPEG,frame_size=FrameSize.QVGA,grab_mode=GrabMode.LATEST
