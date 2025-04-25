@@ -7,7 +7,7 @@
 # All icons took: 1258ms
 # All icons took: 1457ms
 # All icons took: 1250ms
-
+# Most of this time is actually spent reading and parsing manifests.
 
 import uos
 
