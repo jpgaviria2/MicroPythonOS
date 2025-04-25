@@ -52,7 +52,7 @@ for app_dir in [d for d in uos.listdir(apps_dir) if uos.stat(f"{apps_dir}/{d}")[
                     "w": 64,
                     "h": 64,
                     "stride": 64 * 2,
-                    "cf": lv.COLOR_FORMAT.RGB565
+                    "cf": lv.COLOR_FORMAT.RGB565A8
                  },
                 'data_size': len(image_data),
                 'data': image_data
