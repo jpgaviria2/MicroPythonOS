@@ -78,14 +78,21 @@ cam = Camera(
 cam.set_vflip(True)
 
 
+buffer = bytearray(width * height * 2)  # RGB565 uses 2 bytes per pixel
 
 image = lv.image(cont)
 image.align(lv.ALIGN.LEFT_MID, 0, 0)
 image.set_rotation(900)
+image_dsc = lv.image_dsc_t({
+    "header": { "magic": lv.IMAGE_HEADER_MAGIC, "w": width, "h": height, "stride": width * 2, "cf": lv.COLOR_FORMAT.RGB565 },
+    'data_size': len(buffer),
+    'data': buffer
+})
+image.set_src(image_dsc)
 
 def try_capture():
     if cam.frame_available():
-        img = bytes(cam.capture())
+        buffer[:] = bytes(cam.capture())
         cam.free_buffer()
         # Swap bytes for each 16-bit pixel
         # This is no longer needed because the esp-camera driver does {FORMAT_CTRL00, 0x6F}, // RGB565 (RGB) instead of {FORMAT_CTRL00, 0x61}, // RGB565 (BGR) now
@@ -93,12 +100,8 @@ def try_capture():
         #for i in range(0, len(img), 2):
         #    img_swapped[i] = img[i+1]    # Swap high and low bytes
         #    img_swapped[i+1] = img[i]
-        image_dsc = lv.image_dsc_t({
-            "header": { "magic": lv.IMAGE_HEADER_MAGIC, "w": width, "h": height, "stride": width * 2, "cf": lv.COLOR_FORMAT.RGB565 },
-            'data_size': len(img),
-            'data': img
-        })
-        image.set_src(image_dsc)
+        # This seems needed:
+        #image.invalidate()
 
 try_capture()
 
