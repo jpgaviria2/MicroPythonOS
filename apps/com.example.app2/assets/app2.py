@@ -12,7 +12,7 @@ canary.add_flag(lv.obj.FLAG.HIDDEN)
 
 def app2_thread():
 	count=0
-	while should_continue and canary.get_class():
+	while should_continue and canary.is_valid():
 		print(f"app2_thread: thread_id {_thread.get_ident()} - {count}")
 		count+=1
 		time.sleep(1)
