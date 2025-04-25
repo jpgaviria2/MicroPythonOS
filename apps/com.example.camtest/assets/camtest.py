@@ -34,8 +34,10 @@ subwindow.clean()
 canary = lv.obj(subwindow)
 canary.add_flag(lv.obj.FLAG.HIDDEN)
 
-width = 160
-height = 120
+width = 480
+height = 320
+#width = 320
+#height = 240
 #width = 120
 #height = 160
 
@@ -43,7 +45,7 @@ image = lv.image(subwindow)
 image.align(lv.ALIGN.CENTER, 0, 0)
 #image.set_size(width, height)
 #image.set_size(height, width)
-#image.set_rotation(900)
+image.set_rotation(900)
 
 
 from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
@@ -59,8 +61,15 @@ cam = Camera(
     xclk_freq=20000000,
     powerdown_pin=-1,
     reset_pin=-1,
-    pixel_format=PixelFormat.RGB565,frame_size=FrameSize.QQVGA,grab_mode=GrabMode.LATEST # 160x120, FrameSize.QVGA = 320x240
+    pixel_format=PixelFormat.RGB565,
+    frame_size=FrameSize.HVGA, # 480x320
+    grab_mode=GrabMode.LATEST 
 )
+
+#cam.reconfigure(frame_size=FrameSize.HVGA)
+
+#frame_size=FrameSize.VGA, # 320x240
+#frame_size=FrameSize.QQVGA # 160x120
 
 #cam.init() done default (see above)
 
