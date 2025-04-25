@@ -50,12 +50,6 @@ cont.set_style_border_width(0, 0)
 cont.set_size(lv.pct(100), lv.pct(100))
 cont.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
 
-image = lv.image(cont)
-image.align(lv.ALIGN.LEFT_MID, 0, 0)
-#image.set_size(width, height)
-#image.set_size(height, width)
-image.set_rotation(900)
-
 
 from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
 
@@ -82,6 +76,12 @@ cam = Camera(
 #frame_size=FrameSize.QQVGA # 160x120
 
 cam.set_vflip(True)
+
+
+
+image = lv.image(cont)
+image.align(lv.ALIGN.LEFT_MID, 0, 0)
+image.set_rotation(900)
 
 def try_capture():
     if cam.frame_available():
