@@ -78,32 +78,53 @@ cam = Camera(
 cam.set_vflip(True)
 
 
-buffer = bytearray(width * height * 2)  # RGB565 uses 2 bytes per pixel
-
+# Initialize LVGL image widget
 image = lv.image(cont)
 image.align(lv.ALIGN.LEFT_MID, 0, 0)
 image.set_rotation(900)
+
+# Create image descriptor once
 image_dsc = lv.image_dsc_t({
-    "header": { "magic": lv.IMAGE_HEADER_MAGIC, "w": width, "h": height, "stride": width * 2, "cf": lv.COLOR_FORMAT.RGB565 },
-    'data_size': len(buffer),
-    'data': buffer
+    "header": {
+        "magic": lv.IMAGE_HEADER_MAGIC,
+        "w": width,
+        "h": height,
+        "stride": width * 2,
+        "cf": lv.COLOR_FORMAT.RGB565
+    },
+    'data_size': width * height * 2,
+    'data': None  # Will be updated per frame
 })
+
+# Set initial image source (optional, can be set in try_capture)
 image.set_src(image_dsc)
 
-def try_capture():
-    if cam.frame_available():
-        buffer[:] = bytes(cam.capture())
-        cam.free_buffer()
-        # Swap bytes for each 16-bit pixel
-        # This is no longer needed because the esp-camera driver does {FORMAT_CTRL00, 0x6F}, // RGB565 (RGB) instead of {FORMAT_CTRL00, 0x61}, // RGB565 (BGR) now
-        #img_swapped = bytearray(len(img))
-        #for i in range(0, len(img), 2):
-        #    img_swapped[i] = img[i+1]    # Swap high and low bytes
-        #    img_swapped[i+1] = img[i]
-        # This seems needed:
-        #image.invalidate()
+# Variable to hold the current memoryview to prevent garbage collection
+current_cam_buffer = None
 
+def try_capture():
+    global current_cam_buffer
+    if cam.frame_available():
+        # Get new memoryview from camera
+        new_cam_buffer = cam.capture()  # Returns memoryview
+        # Verify buffer size
+        #if len(new_cam_buffer) != width * height * 2:
+        #    print("Invalid buffer size:", len(new_cam_buffer))
+        #    cam.free_buffer()
+        #    return
+        # Update image descriptor with new memoryview
+        image_dsc.data = new_cam_buffer
+        # Set image source to update LVGL (implicitly invalidates widget)
+        image.set_src(image_dsc)
+        #image.invalidate() #does not work
+        # Free the previous buffer (if any) after setting new data
+        if current_cam_buffer is not None:
+            cam.free_buffer()  # Free the old buffer
+        current_cam_buffer = new_cam_buffer  # Store new buffer reference
+
+# Initial capture
 try_capture()
+
 
 import time
 
@@ -115,3 +136,4 @@ except lv.LvReferenceError: # triggers when the canary dies
     print("Canary died, deinitializing camera...")
     cam.deinit()
 
+cam.deinit()
