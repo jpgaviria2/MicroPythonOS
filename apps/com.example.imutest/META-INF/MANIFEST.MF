@@ -1,0 +1,3 @@
+Manifest-Version: 1.0
+Name: IMUTest
+Start-Script: assets/imutest.py
