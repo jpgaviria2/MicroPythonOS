@@ -17,6 +17,7 @@ OFFSET_BATTERY_ICON = -40
 
 CLOCK_UPDATE_INTERVAL = 100 # 10 or even 1 ms doesn't seem to change the framerate but 100ms is enough
 WIFI_ICON_UPDATE_INTERVAL = 1500
+TEMPERATURE_UPDATE_INTERVAL = 2000
 
 # Color palette
 DARKPINK = lv.color_hex(0xEC048C)
@@ -80,11 +81,16 @@ time_label.set_text("00:00:00.000")
 time_label.align(lv.ALIGN.LEFT_MID, 0, 0)
 time_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
 
+temp_label = lv.label(notification_bar)
+temp_label.set_text("")
+temp_label.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
+temp_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
+
 # Notification icon (bell)
-notif_icon = lv.label(notification_bar)
-notif_icon.set_text(lv.SYMBOL.BELL)
-notif_icon.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
-notif_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
+#notif_icon = lv.label(notification_bar)
+#notif_icon.set_text(lv.SYMBOL.BELL)
+#notif_icon.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
+#notif_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
 
 # WiFi icon
 wifi_icon = lv.label(notification_bar)
@@ -124,8 +130,14 @@ def update_wifi_icon(timer):
     else:
         wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
 
+import esp32
+def update_temperature(timer):
+    temp_label.set_text(f"{esp32.mcu_temperature()}°C")
+
 lv.timer_create(update_time, CLOCK_UPDATE_INTERVAL, None)
 lv.timer_create(update_wifi_icon, WIFI_ICON_UPDATE_INTERVAL, None)
+lv.timer_create(update_temperature, TEMPERATURE_UPDATE_INTERVAL, None)
+
 notification_bar.add_event_cb(toggle_drawer, lv.EVENT.CLICKED, None)
 
 
