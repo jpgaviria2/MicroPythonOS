@@ -23,7 +23,7 @@
 # OV5640 I2C address
 #sensor_addr = 0x3C
 #reg_addr = 0x4300
-#reg_value = 0x4F  # RGB565 (bit[6]=1) + sequence 0xF (bits[3:0]=0xF)
+#reg_value = 0x6F  # RGB565 (bit[6]=1) + sequence 0xF (bits[3:0]=0xF)
 #from machine import I2C, Pin
 #i2c = I2C(scl=Pin(16), sda=Pin(21))
 #i2c.readfrom_mem(0x3C, 0x4300, 1)
@@ -69,25 +69,14 @@ cam = Camera(
     frame_size=FrameSize.R240X240,
     grab_mode=GrabMode.LATEST 
 )
+#cam.init() automatically done when creating the Camera()
 
 #cam.reconfigure(frame_size=FrameSize.HVGA)
-# R240X240
 #frame_size=FrameSize.HVGA, # 480x320
 #frame_size=FrameSize.QVGA, # 320x240
 #frame_size=FrameSize.QQVGA # 160x120
 
-#cam.init() done default (see above)
-
 cam.set_vflip(True)
-
-# LVGL’s expected RGB565 format is likely little-endian: GGGBBBBB RRRRRGGG, since swapping bytes fixed the issue.
-# The sensor’s default sequence is 0x0 ({b[4:0],g[5:3]},{g[2:0],r[4:0]}), which is big-endian-like (BGR in the first byte, RG in the second).
-# After swapping bytes, you get {g[2:0],r[4:0]},{b[4:0],g[5:3]}, which matches LVGL’s expectation.
-# From the datasheet, the sequence {g[2:0],r[4:0]},{b[4:0],g[5:3]} corresponds to 0xF.
-# This suggests setting bits[3:0] to 0xF should produce the correct order without manual swapping.
-
-# default writes:
-# 0x1: {r[4:0],g[5:3]},{g[2:0],b[4:0]}   so that's RRRRR GGGGGG BBBBB
 
 def try_capture():
     if cam.frame_available():
@@ -117,13 +106,4 @@ try:
 except lv.LvReferenceError: # triggers when the canary dies
     print("Canary died, deinitializing camera...")
     cam.deinit()
-
-
-#pixel_format=PixelFormat.JPEG,frame_size=FrameSize.QVGA,grab_mode=GrabMode.LATEST
-
-#cam.reconfigure(pixel_format=PixelFormat.RAW,frame_size=FrameSize.QVGA,grab_mode=GrabMode.LATEST, fb_count=2)
-#cam.reconfigure(pixel_format=PixelFormat.YUV420,frame_size=FrameSize.QQVGA,grab_mode=GrabMode.LATEST, fb_count=2)
-#cam.reconfigure(pixel_format=PixelFormat.RGB565,frame_size=FrameSize.QQVGA,grab_mode=GrabMode.LATEST, fb_count=2)
-
-#memoryview_to_hex_spaced(img)
 
