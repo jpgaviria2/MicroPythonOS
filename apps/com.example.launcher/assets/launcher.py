@@ -4,7 +4,6 @@ import uos
 cont = lv.obj(subwindow)
 cont.set_size(lv.pct(100), lv.pct(100))
 cont.set_style_pad_all(10, 0)
-cont.set_style_border_width(0, 0)
 cont.set_flex_flow(lv.FLEX_FLOW.ROW_WRAP)
 
 # Grid parameters
