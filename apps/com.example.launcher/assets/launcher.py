@@ -57,6 +57,6 @@ for app_dir in [d for d in uos.listdir(apps_dir) if uos.stat(f"{apps_dir}/{d}")[
     label.set_width(iconcont_width)
     label.align(lv.ALIGN.BOTTOM_MID, 0, 0)
     label.set_style_text_align(lv.TEXT_ALIGN.CENTER, 0)
-    app_cont.add_event_cb(lambda e, app_dir=app_dir: start_app(app_dir_fullpath), lv.EVENT.CLICKED, None)
+    app_cont.add_event_cb(lambda e, app_dir_fullpath=app_dir_fullpath: start_app(app_dir_fullpath), lv.EVENT.CLICKED, None)
 
 
