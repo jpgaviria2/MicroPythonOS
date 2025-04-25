@@ -239,18 +239,18 @@ import uio
 
 def parse_manifest(manifest_path):
     name = "Unknown"
-    main_script = "assets/main.py"
+    start_script = "assets/start.py"
     try:
         with uio.open(manifest_path, 'r') as f:
             for line in f:
                 line = line.strip()
                 if line.startswith("Name:"):
                     name = line.split(":", 1)[1].strip()
-                elif line.startswith("Main-Script:"):
-                    main_script = line.split(":", 1)[1].strip()
+                elif line.startswith("Start-Script:"):
+                    start_script = line.split(":", 1)[1].strip()
     except OSError:
         print(f"Error reading {manifest_path}")
-    return name, main_script
+    return name, start_script
 
 def long_path_to_filename(path):
     try:
@@ -315,9 +315,9 @@ def execute_script_new_thread(scriptname, is_file, return_to_launcher):
 def start_app(app_dir, return_to_launcher=True):
     print(f"/main.py start_app({app_dir},{return_to_launcher}")
     manifest_path = f"{app_dir}/META-INF/MANIFEST.MF"
-    app_name, main_script = parse_manifest(manifest_path)
-    main_script_fullpath = f"{app_dir}/{main_script}"
-    execute_script_new_thread(main_script_fullpath, True, return_to_launcher)
+    app_name, start_script = parse_manifest(manifest_path)
+    start_script_fullpath = f"{app_dir}/{start_script}"
+    execute_script_new_thread(start_script_fullpath, True, return_to_launcher)
 
 def run_launcher():
     start_app("/apps/com.example.launcher", False)
