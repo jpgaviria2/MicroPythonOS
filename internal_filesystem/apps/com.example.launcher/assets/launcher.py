@@ -1,3 +1,14 @@
+# bin files:
+# All icons took: 1085ms
+# All icons took: 1051ms
+# All icons took: 1032ms
+# All icons took: 1118ms
+# png files:
+# All icons took: 1258ms
+# All icons took: 1457ms
+# All icons took: 1250ms
+
+
 import uos
 
 # Create a container for the grid
@@ -12,6 +23,9 @@ label_height = 24
 iconcont_width = icon_size + 24
 iconcont_height = icon_size + label_height
 
+import time
+start = time.ticks_ms()
+
 # Get list of app directories
 # Should we skip 'Launcher' apps from the list here?
 apps_dir = "/apps"
@@ -25,14 +39,21 @@ for app_dir in [d for d in uos.listdir(apps_dir) if uos.stat(f"{apps_dir}/{d}")[
     app_cont.set_style_border_width(0, 0)
     app_cont.set_style_pad_all(0, 0)
     # Load and display icon
-    #icon_path = f"{app_dir_fullpath}/res/mipmap-mdpi/launcher_icon.png"
-    icon_path = "/resources/icon_64x64.bin"
-    #icon_path = "/resources/icon_64x64.png"
+    icon_path = f"{app_dir_fullpath}/res/mipmap-mdpi/icon_64x64.bin"
+    #icon_path = "/resources/default_icon_64x64.bin"
     image = lv.image(app_cont)
     try:
         with open(icon_path, 'rb') as f:
+            f.seek(12) # first 12 bytes are headers
             image_data = f.read()
             image_dsc = lv.image_dsc_t({
+                "header": {
+                    "magic": lv.IMAGE_HEADER_MAGIC,
+                    "w": 64,
+                    "h": 64,
+                    "stride": 64 * 2,
+                    "cf": lv.COLOR_FORMAT.RGB565
+                 },
                 'data_size': len(image_data),
                 'data': image_data
             })
@@ -51,4 +72,5 @@ for app_dir in [d for d in uos.listdir(apps_dir) if uos.stat(f"{apps_dir}/{d}")[
     label.set_style_text_align(lv.TEXT_ALIGN.CENTER, 0)
     app_cont.add_event_cb(lambda e, app_dir_fullpath=app_dir_fullpath: start_app(app_dir_fullpath), lv.EVENT.CLICKED, None)
 
-
+end = time.ticks_ms()
+print(f"Displaying all icons took: {end-start}ms")
