@@ -56,20 +56,20 @@ def save_config():
 
 def scan_networks():
     print("scan_networks: Showing scanning label")
+    scanning_label.remove_flag(lv.obj.FLAG.HIDDEN)
     scanning_label.set_text("Scanning...")
-    scanning_label.set_hidden(False)
     lv.task_handler()
     print("scan_networks: Scanning for Wi-Fi networks")
     try:
         networks=wlan.scan()
         ssids=[n[0].decode() for n in networks]
         print(f"scan_networks: Found networks: {ssids}")
-        scanning_label.set_hidden(True)
+        scanning_label.add_flag(lv.obj.FLAG.HIDDEN)
         return ssids
     except Exception as e:
         print(f"scan_networks: Scan failed: {e}")
         show_error("Wi-Fi scan failed")
-        scanning_label.set_hidden(True)
+        scanning_label.add_flag(lv.obj.FLAG.HIDDEN)
         return []
 
 def attempt_connecting(ssid,password):
@@ -103,8 +103,8 @@ def show_error(message):
     print(f"show_error: Displaying error: {message}")
     global error_label
     error_label.set_text(message)
-    error_label.set_hidden(False)
-    timer=lv.timer_create(lambda t: error_label.set_hidden(True),3000,None)
+    error_label.remove_flag(lv.obj.FLAG.HIDDEN)
+    timer=lv.timer_create(lambda t: error_label.add_flag(lv.obj.FLAG.HIDDEN),3000,None)
     timer.set_repeat_count(1)
 
 def refresh_list():
@@ -139,28 +139,28 @@ def keyboard_cb(event):
     if code==lv.EVENT.READY:
         print("keyboard_cb: OK/Checkmark clicked, hiding keyboard")
         keyboard.set_height(0)
-        keyboard.clear_flag(lv.obj.FLAG_CLICKABLE)
+        keyboard.clear_flag(lv.obj.FLAG.CLICKABLE)
         print("keyboard_cb: Showing Connect, Cancel, and Back buttons")
-        connect_button.set_hidden(False)
-        cancel_button.set_hidden(False)
-        back_button.set_hidden(False)
+        connect_button.remove_flag(lv.obj.FLAG.HIDDEN)
+        cancel_button.remove_flag(lv.obj.FLAG.HIDDEN)
+        back_button.remove_flag(lv.obj.FLAG.HIDDEN)
 
 def password_ta_cb(event):
     print("password_ta_cb: Password textarea clicked")
     global keyboard,connect_button,cancel_button,back_button
     print("password_ta_cb: Hiding Connect, Cancel, and Back buttons")
-    connect_button.set_hidden(True)
-    cancel_button.set_hidden(True)
-    back_button.set_hidden(True)
+    connect_button.add_flag(lv.obj.FLAG.HIDDEN)
+    cancel_button.add_flag(lv.obj.FLAG.HIDDEN)
+    back_button.add_flag(lv.obj.FLAG.HIDDEN)
     print("password_ta_cb: Showing keyboard")
     keyboard.set_height(80)
-    keyboard.add_flag(lv.obj.FLAG_CLICKABLE)
+    keyboard.add_flag(lv.obj.FLAG.CLICKABLE)
 
 def toggle_password_cb(event):
     print("toggle_password_cb: Password visibility toggle clicked")
     global password_ta
     checkbox=event.get_target()
-    password_ta.set_password_mode(not checkbox.get_state())
+    # TODO: password_ta.set_password_mode(not checkbox.get_state())
 
 def show_password_page():
     global password_page,password_ta,keyboard,connect_button,cancel_button,back_button
@@ -247,12 +247,12 @@ def create_ui(subwindow):
     error_label=lv.label(subwindow)
     error_label.set_text("")
     error_label.align(lv.ALIGN.BOTTOM_MID,0,-40)
-    error_label.set_hidden(True)
+    error_label.add_flag(lv.obj.FLAG.HIDDEN)
     print("create_ui: Creating scanning label")
     scanning_label=lv.label(subwindow)
     scanning_label.set_text("Scanning...")
     scanning_label.align(lv.ALIGN.CENTER,0,0)
-    scanning_label.set_hidden(True)
+    scanning_label.add_flag(lv.obj.FLAG.HIDDEN)
     print("create_ui: Creating Scan button")
     scan_button=lv.button(subwindow)
     scan_button.set_size(80,30)
@@ -266,7 +266,6 @@ def create_ui(subwindow):
     refresh_list()
     print("create_ui: Loading config")
     load_config()
-
 
 subwindow.clean()
 create_ui(subwindow)
