@@ -2,7 +2,6 @@ import network
 import ujson
 import os
 import time
-import uhashlib
 import lvgl as lv
 
 wlan=network.WLAN(network.STA_IF)
@@ -55,13 +54,6 @@ def save_config():
         show_error("Failed to save config")
         print("save_config: Failed to save config")
 
-def hash_password(password):
-    print("hash_password: Hashing password")
-    hash_obj=uhashlib.sha256(password.encode())
-    hashed=hash_obj.digest().hex()
-    print("hash_password: Password hashed")
-    return hashed
-
 def scan_networks():
     print("scan_networks: Showing scanning label")
     scanning_label.set_text("Scanning...")
@@ -99,9 +91,9 @@ def attempt_connecting(ssid,password):
 
 def auto_connect():
     print("auto_connect: Attempting to connect to known networks")
-    for ssid,hashed_password in access_points.items():
+    for ssid,password in access_points.items():
         print(f"auto_connect: Trying SSID: {ssid}")
-        if attempt_connecting(ssid,hashed_password):
+        if attempt_connecting(ssid,password):
             print(f"auto_connect: Connected to {ssid}")
             return True
     print("auto_connect: No known networks connected")
@@ -226,8 +218,7 @@ def connect_cb(event):
     print("connect_cb: Connect button clicked")
     password=password_ta.get_text()
     print(f"connect_cb: Got password: {password}")
-    hashed_password=hash_password(password)
-    access_points[selected_ssid]=hashed_password
+    access_points[selected_ssid]=password
     print(f"connect_cb: Updated access_points: {access_points}")
     save_config()
     print("connect_cb: Deleting password page")
@@ -275,7 +266,6 @@ def create_ui(subwindow):
     refresh_list()
     print("create_ui: Loading config")
     load_config()
-
 
 
 subwindow.clean()
