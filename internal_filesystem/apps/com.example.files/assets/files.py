@@ -139,7 +139,10 @@ def file_explorer_event_cb(e):
         print(f"Selected file: {file_path}")
 
 
+subwindow.clean()
 explorer = lv.file_explorer(subwindow)
 explorer.set_size(lv.pct(100), lv.pct(100))
-explorer.set_root_path("L:/")
+explorer.explorer_set_quick_access_path(lv.EXPLORER.HOME_DIR,"/")
+explorer.explorer_open_dir("/apps")
+#explorer.set_root_path("L:/")
 explorer.add_event_cb(file_explorer_event_cb, lv.EVENT.VALUE_CHANGED, None)

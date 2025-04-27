@@ -354,7 +354,7 @@ def start_app(app_dir, return_to_launcher=True):
 def run_launcher():
     start_app("/apps/com.example.launcher", False)
 
-execute_script_new_thread("/autostart.py", True, False)
+execute_script_new_thread("/autorun.py", True, False)
 run_launcher()
 
 # If we got this far without crashing, then no need to rollback the update
