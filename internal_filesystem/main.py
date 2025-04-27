@@ -356,3 +356,6 @@ def run_launcher():
 execute_script_new_thread("/autostart.py", True, False)
 run_launcher()
 
+# If we got this far without crashing, then no need to rollback the update
+import ota.rollback
+ota.rollback.cancel()
