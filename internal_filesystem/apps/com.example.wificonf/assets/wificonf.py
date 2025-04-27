@@ -12,6 +12,7 @@ list=None
 password_ta=None
 password_page=None
 main_subwindow=None
+keyboard=None
 
 def load_config():
     print("load_config: Checking for /data directory")
@@ -90,7 +91,7 @@ def select_ssid_cb(event,ssid):
 
 def keyboard_cb(event):
     print("keyboard_cb: Keyboard event triggered")
-    keyboard=event.get_target()
+    global keyboard
     code=event.get_code()
     if code==lv.EVENT.READY:
         print("keyboard_cb: OK/Checkmark clicked, hiding keyboard")
@@ -99,14 +100,13 @@ def keyboard_cb(event):
 
 def password_ta_cb(event):
     print("password_ta_cb: Password textarea clicked")
-    global password_page
-    keyboard=password_page.get_child_by_type(lv.keyboard)
+    global keyboard
     print("password_ta_cb: Showing keyboard")
     keyboard.set_height(100)
     keyboard.add_flag(lv.obj.FLAG.CLICKABLE)
 
 def show_password_page():
-    global password_page,password_ta
+    global password_page,password_ta,keyboard
     print("show_password_page: Creating new password page")
     password_page=lv.obj()
     password_page.set_size(lv.pct(100),lv.pct(100))
