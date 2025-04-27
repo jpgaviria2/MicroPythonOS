@@ -1,17 +1,14 @@
 import lvgl as lv
 import uos
+import vfs
 import machine
 import time
-
-subwindow.clean()
-canary = lv.obj(subwindow)
-canary.add_flag(lv.obj.FLAG.HIDDEN)
 
 # LVGL File System Driver for LittleFS
 class LittleFSDriver:
     def __init__(self, letter='L'):
         self.letter = letter
-        self.files = {}  # Track open files
+        self.files = {}
     def init(self):
         drv = lv.fs_drv_t()
         lv.fs_drv_init(drv)
@@ -107,10 +104,9 @@ class LittleFSDriver:
             dir_obj = self.files[dir_id]
             if dir_obj['index'] < len(dir_obj['list']):
                 name = dir_obj['list'][dir_obj['index']]
-                # Check if it's a directory
                 try:
                     uos.stat(dir_obj['path'] + '/' + name + '/')
-                    name = '/' + name  # Prefix directories with '/'
+                    name = '/' + name
                 except:
                     pass
                 dir_obj['index'] += 1
@@ -131,19 +127,19 @@ class LittleFSDriver:
 fs_drv = LittleFSDriver('L')
 fs_drv.init()
 
+# Create subwindow
+subwindow = lv.obj()
+subwindow.set_size(lv.pct(100), lv.pct(100))
 # Create File Explorer
 def file_explorer_event_cb(e):
     code = e.get_code()
     obj = e.get_target()
-    if code == lv.EVENT_VALUE_CHANGED:
+    if code == lv.EVENT.VALUE_CHANGED:
         file_path = obj.get_selected_file_path()
         print(f"Selected file: {file_path}")
 
 
 explorer = lv.file_explorer(subwindow)
 explorer.set_size(lv.pct(100), lv.pct(100))
-#explorer.set_root_path("L:/")
+explorer.set_root_path("L:/")
 explorer.add_event_cb(file_explorer_event_cb, lv.EVENT.VALUE_CHANGED, None)
-
-while canary.is_valid():
-    time.sleep_ms(100)
