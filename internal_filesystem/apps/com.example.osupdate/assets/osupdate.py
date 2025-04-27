@@ -3,22 +3,21 @@ import ota.update
 from esp32 import Partition
 import urequests
 
-
 subwindow.clean()
 canary = lv.obj(subwindow)
 canary.add_flag(lv.obj.FLAG.HIDDEN)
-
 
 import ota.status
 ota.status.status()
 current = Partition(Partition.RUNNING)
 current
-current.get_next_update()
+next_partition = current.get_next_update()
+next_partition
 
-# Initialize LVGL display (assuming setup is done)
 label = lv.label(subwindow)
-label.set_text("OTA Update: 0.00%")
+label.set_text("OS Update: 0.00%")
 label.align(lv.ALIGN.CENTER, 0, -30)
+
 progress_bar = lv.bar(subwindow)
 progress_bar.set_size(200, 20)
 progress_bar.align(lv.ALIGN.BOTTOM_MID, 0, -50)
@@ -29,7 +28,7 @@ progress_bar.set_value(0, lv.ANIM.OFF)
 def update_with_lvgl(url):
     def progress_callback(percent):
         print(f"OTA Update: {percent:.1f}%")
-        label.set_text(f"OTA Update: {percent:.2f}%")  # Cloud upload symbol
+        label.set_text(f"OTA Update: {percent:.2f}%")
         progress_bar.set_value(int(percent), lv.ANIM.ON)
     current = Partition(Partition.RUNNING)
     next_partition = current.get_next_update()
@@ -59,4 +58,4 @@ def update_with_lvgl(url):
     machine.reset()
 
 # Start OTA update
-update_with_lvgl("http://demo.lnpiggy.com:2121/ESP32_GENERIC_S3-SPIRAM_OCT_micropython.bin")
+update_with_lvgl("http://demo.lnpiggy.com:2121/latest.bin")
