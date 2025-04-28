@@ -39,9 +39,7 @@ COLOR_SLIDER_INDICATOR=LIGHTPINK
 
 
 drawer=None
-underdrawer=None
 wifi_screen=None
-#wifi_icon=None
 drawer_open=False
 
 
@@ -52,18 +50,16 @@ rootlabel.set_text("Welcome to PiggyOS!")
 rootlabel.align(lv.ALIGN.CENTER, 0, 0)
 
 def open_drawer():
-    global drawer_open, underdrawer
+    global drawer_open
     if not drawer_open:
         drawer_open=True
-        underdrawer = lv.screen_active()
-        lv.screen_load(drawer)
+        drawer.set_y(0)
 
 def close_drawer():
-    global drawer_open, underdrawer
+    global drawer_open
     if drawer_open:
         drawer_open=False
-        lv.screen_load(underdrawer)
-
+        drawer.set_y(-TFT_VER_RES)
 
 def toggle_drawer(event):
 	global drawer_open
@@ -73,7 +69,6 @@ def toggle_drawer(event):
 		open_drawer()
 
 def add_notification_bar(screen):
-    #global wifi_icon
     # Create notification bar object
     notification_bar = lv.obj(screen)
     notification_bar.set_style_bg_color(COLOR_NOTIF_BAR_BG, 0)
@@ -150,21 +145,21 @@ def add_notification_bar(screen):
     timer2 = lv.timer_create(update_temperature, TEMPERATURE_UPDATE_INTERVAL, None)
     timer3 = lv.timer_create(update_memfree, MEMFREE_UPDATE_INTERVAL, None)
     timer4 = lv.timer_create(update_wifi_icon, WIFI_ICON_UPDATE_INTERVAL, None)
-    #timer4 = timer3
     notification_bar.add_event_cb(toggle_drawer, lv.EVENT.CLICKED, None)
     return timer1, timer2, timer3, timer4
 
 
-drawer=lv.obj()
-add_notification_bar(drawer)
-#drawer.set_size(TFT_HOR_RES,TFT_VER_RES-NOTIFICATION_BAR_HEIGHT)
+drawer=lv.obj(lv.layer_top())
+drawer.set_size(lv.pct(100),lv.pct(100))
+drawer.set_pos(0,-TFT_VER_RES) # off screen initially
 drawer.set_style_bg_color(COLOR_DRAWER_BG,0)
 drawer.set_scroll_dir(lv.DIR.NONE)
+add_notification_bar(drawer)
 slider=lv.slider(drawer)
 slider.set_range(SLIDER_MIN_VALUE,SLIDER_MAX_VALUE)
 slider.set_value(SLIDER_DEFAULT_VALUE,False)
 slider.set_width(TFT_HOR_RES-PADDING_LARGE)
-slider.align(lv.ALIGN.TOP_MID,0,PADDING_SMALL)
+slider.align(lv.ALIGN.TOP_MID,0,NOTIFICATION_BAR_HEIGHT+PADDING_SMALL)
 slider.set_style_bg_color(COLOR_SLIDER_BG,lv.PART.MAIN)
 slider.set_style_bg_color(COLOR_SLIDER_INDICATOR,lv.PART.INDICATOR)
 slider.set_style_bg_color(COLOR_SLIDER_KNOB,lv.PART.KNOB)
@@ -231,14 +226,6 @@ restart_label=lv.label(restart_btn)
 restart_label.set_text(lv.SYMBOL.POWER+" Reset")
 restart_label.center()
 restart_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
-def launcher_event(e):
-    print("Reset button pressed!")
-    global drawer_open
-    close_drawer()
-    drawer_open=False
-    run_app(launcher_script,False)
-
-
 restart_btn.add_event_cb(lambda event: machine.reset(),lv.EVENT.CLICKED,None)
 
 
@@ -325,12 +312,10 @@ def execute_script(script_source, is_file, is_launcher):
         print(f"Thread {thread_id}: script {compile_name} finished")
         if prevscreen and not is_launcher:
             print("/main.py: execute_script(): cleaning subwindow...")
-            #subwindow.clean()
             timer1.delete()
             timer2.delete()
             timer3.delete()
             timer4.delete()
-            #time.sleep(3)
             newscreen.delete() #still runs into timer errors, even though these timers have been deleted...
             print(f"Thread {thread_id}: finished, prevscreen is set and it's not a launcher so returning to previous screen...")
             lv.screen_load(prevscreen)
