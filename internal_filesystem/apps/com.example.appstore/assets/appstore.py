@@ -66,6 +66,7 @@ def download_and_unzip(zip_url, dest_folder="/apps"):
         os.stat(temp_zip_path)
         print(f"Stat says: {os.stat(temp_zip_path)}")
         with zipfile.ZipFile(temp_zip_path, "r") as zip_ref:
+            print("extracting...")
             zip_ref.extractall(dest_folder)
         print("Unzipped successfully")
         # Step 3: Clean up
