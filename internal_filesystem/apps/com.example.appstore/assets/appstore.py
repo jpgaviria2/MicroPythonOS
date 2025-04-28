@@ -10,7 +10,7 @@ please_wait_label = None
 app_detail_screen = None
 
 class App:
-    def __init__(self, name, publisher, short_description, long_description, icon_url, download_url):
+    def __init__(self, name, publisher, short_description, long_description, icon_url, download_url, fullname):
         self.name = name
         self.publisher = publisher
         self.short_description = short_description
@@ -18,6 +18,7 @@ class App:
         self.icon_url = icon_url
         self.image_dsc = None
         self.download_url = download_url
+        self.fullname = fullname
 
 def load_icon(url):
     print(f"downloading icon from {url}")
@@ -180,9 +181,9 @@ def show_app_detail(app):
     install_button.align_to(detail_cont, lv.ALIGN.OUT_BOTTOM_MID, 0, lv.pct(5))
     install_button.set_size(lv.pct(100), 40)
     install_button.add_flag(lv.obj.FLAG.CLICKABLE)
-    install_button.add_event_cb(lambda e, d=app.download_url: toggle_install(d), lv.EVENT.CLICKED, None)
+    install_button.add_event_cb(lambda e, d=app.download_url, f=app.fullname: toggle_install(d,f), lv.EVENT.CLICKED, None)
     install_label = lv.label(install_button)
-    install_label.set_text("(Re)Install") # TODO: check if already installed and if yes, change to "Uninstall" and "Open"
+    install_label.set_text("(Re)Install Latest Version") # TODO: check if already installed and if yes, change to "Uninstall" and "Open"
     install_label.center()
     long_desc_label = lv.label(cont)
     long_desc_label.align_to(install_button, lv.ALIGN.OUT_BOTTOM_MID, 0, lv.pct(5))
@@ -192,16 +193,19 @@ def show_app_detail(app):
     lv.screen_load(app_detail_screen)
 
 
-def toggle_install(download_url):
+def toggle_install(download_url, fullname):
     global install_button
     label = install_button.get_child(0)
-    if label.get_text() == "(Re)Install":
+    if label.get_text() == "(Re)Install Latest Version":
         install_button.remove_flag(lv.obj.FLAG.CLICKABLE) # TODO: change color so it's clear the button is not clickable
         label.set_text("Please wait...") # TODO: Put "Cancel" if cancellation is possible
         # TODO: do the download and install in a new thread with a few sleeps so it can be cancelled...
-        download_and_unzip(download_url, "/apps")
+        download_and_unzip(download_url, f"/apps/{fullname}")
         label.set_text("Open")
         install_button.add_flag(lv.obj.FLAG.CLICKABLE)
+    elif label.get_text() == "Open":
+        print("Open button clicked, starting app...")
+        start_app(f"/apps/{fullname}")
     else: # if the button text was "Please wait..." or "Uninstall" or "Installed!"
         label.set_text("Install")
 
@@ -221,13 +225,15 @@ please_wait_label.set_text("Downloading app index...")
 please_wait_label.center()
 
 import network
+import time
 if not network.WLAN(network.STA_IF).isconnected():
     please_wait_label.set_text("Error: WiFi is not connected.")
+    time.sleep(10)
 else:
     download_apps("http://demo.lnpiggy.com:2121/apps.json")
     # Wait until the user stops the app
     import time
     while appscreen == lv.screen_active() or app_detail_screen == lv.screen_active():
         time.sleep_ms(100)
-    
+
 print("appstore.py ending")
