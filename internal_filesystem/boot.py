@@ -99,7 +99,7 @@ def handle_gesture(pin):
         # Store the starting Y-coordinate
         start_y = y
         #print(f"Touch started at Y={start_y}")
-    elif gesture_id == 0x04:  # Swipe up
+    elif gesture_id == 0x04 and drawer_open:  # Swipe up
         # print("Swipe Up Detected")
         close_drawer()
         start_y = None  # Clear start_y after gesture

@@ -41,7 +41,7 @@ COLOR_SLIDER_INDICATOR=LIGHTPINK
 drawer=None
 underdrawer=None
 wifi_screen=None
-wifi_icon=None
+#wifi_icon=None
 drawer_open=False
 
 
@@ -54,7 +54,6 @@ rootlabel.align(lv.ALIGN.CENTER, 0, 0)
 def open_drawer():
     global drawer_open, underdrawer
     if not drawer_open:
-        #drawer.set_y(NOTIFICATION_BAR_HEIGHT)
         drawer_open=True
         underdrawer = lv.screen_active()
         lv.screen_load(drawer)
@@ -62,7 +61,6 @@ def open_drawer():
 def close_drawer():
     global drawer_open, underdrawer
     if drawer_open:
-        #drawer.set_y(-TFT_VER_RES+NOTIFICATION_BAR_HEIGHT)
         drawer_open=False
         lv.screen_load(underdrawer)
 
@@ -75,7 +73,7 @@ def toggle_drawer(event):
 		open_drawer()
 
 def add_notification_bar(screen):
-    global wifi_icon
+    #global wifi_icon
     # Create notification bar object
     notification_bar = lv.obj(screen)
     notification_bar.set_style_bg_color(COLOR_NOTIF_BAR_BG, 0)
@@ -132,14 +130,15 @@ def add_notification_bar(screen):
         seconds = (ticks // 1000) % 60
         milliseconds = ticks % 1000
         time_label.set_text(f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}")
-    
     import network
     def update_wifi_icon(timer):
-        if network.WLAN(network.STA_IF).isconnected():
-            global wifi_icon
-            wifi_icon.remove_flag(lv.obj.FLAG.HIDDEN)
-        else:
-            wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
+        try:
+            if network.WLAN(network.STA_IF).isconnected():
+                wifi_icon.remove_flag(lv.obj.FLAG.HIDDEN)
+            else:
+                wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
+        except lv.LvReferenceError:
+            print("update_wifi_icon caught LvReferenceError")
     import esp32
     def update_temperature(timer):
         temp_label.set_text(f"{esp32.mcu_temperature()}°C")
@@ -147,16 +146,18 @@ def add_notification_bar(screen):
     def update_memfree(timer):
         gc.collect()
         memfree_label.set_text(f"{gc.mem_free()}")
-    lv.timer_create(update_time, CLOCK_UPDATE_INTERVAL, None)
-    lv.timer_create(update_temperature, TEMPERATURE_UPDATE_INTERVAL, None)
-    lv.timer_create(update_memfree, MEMFREE_UPDATE_INTERVAL, None)
-    lv.timer_create(update_wifi_icon, WIFI_ICON_UPDATE_INTERVAL, None)
+    timer1 = lv.timer_create(update_time, CLOCK_UPDATE_INTERVAL, None)
+    timer2 = lv.timer_create(update_temperature, TEMPERATURE_UPDATE_INTERVAL, None)
+    timer3 = lv.timer_create(update_memfree, MEMFREE_UPDATE_INTERVAL, None)
+    timer4 = lv.timer_create(update_wifi_icon, WIFI_ICON_UPDATE_INTERVAL, None)
+    #timer4 = timer3
     notification_bar.add_event_cb(toggle_drawer, lv.EVENT.CLICKED, None)
-
+    return timer1, timer2, timer3, timer4
 
 
 drawer=lv.obj()
-drawer.set_size(TFT_HOR_RES,TFT_VER_RES-NOTIFICATION_BAR_HEIGHT)
+add_notification_bar(drawer)
+#drawer.set_size(TFT_HOR_RES,TFT_VER_RES-NOTIFICATION_BAR_HEIGHT)
 drawer.set_style_bg_color(COLOR_DRAWER_BG,0)
 drawer.set_scroll_dir(lv.DIR.NONE)
 slider=lv.slider(drawer)
@@ -252,6 +253,7 @@ restart_btn.add_event_cb(lambda event: machine.reset(),lv.EVENT.CLICKED,None)
 import _thread
 import traceback
 import uio
+import time
 
 def parse_manifest(manifest_path):
     name = "Unknown"
@@ -292,7 +294,7 @@ def execute_script(script_source, is_file, is_launcher):
             prevscreen = lv.screen_active()
             newscreen=lv.obj()
             newscreen.set_size(lv.pct(100),lv.pct(100))
-        add_notification_bar(newscreen)
+        timer1, timer2, timer3, timer4 = add_notification_bar(newscreen)
         subwindow = lv.obj(newscreen)
         subwindow.set_size(TFT_HOR_RES, TFT_VER_RES - NOTIFICATION_BAR_HEIGHT)
         subwindow.set_pos(0, NOTIFICATION_BAR_HEIGHT)
@@ -322,6 +324,14 @@ def execute_script(script_source, is_file, is_launcher):
             traceback.print_exception(type(e), e, tb)
         print(f"Thread {thread_id}: script {compile_name} finished")
         if prevscreen and not is_launcher:
+            print("/main.py: execute_script(): cleaning subwindow...")
+            subwindow.clean()
+            timer1.delete()
+            timer2.delete()
+            timer3.delete()
+            timer4.delete()
+            #time.sleep(3)
+            newscreen.delete() #still runs into timer errors, even though these timers have been deleted...
             print(f"Thread {thread_id}: finished, prevscreen is set and it's not a launcher so returning to previous screen...")
             lv.screen_load(prevscreen)
     except Exception as e:
@@ -333,8 +343,6 @@ def execute_script(script_source, is_file, is_launcher):
 def execute_script_new_thread(scriptname, is_file, is_launcher):
     print(f"/main.py: execute_script_new_thread({scriptname},{is_file},{is_launcher})")
     try:
-        print("/main.py: execute_script_new_thread(): cleaning subwindow...")
-        #subwindow.clean()
         # 168KB maximum at startup but 136KB after loading display, drivers, LVGL gui etc so let's go for 128KB for now, still a lot...
         # But then no additional threads can be created. A stacksize of 32KB allows for 4 threads, so 3 in the app itself, which might be tight.
         _thread.stack_size(16384) # A stack size of 16KB allows for around 10 threads in the app, which should be plenty.
@@ -352,7 +360,7 @@ def start_app(app_dir, is_launcher=False):
 def run_launcher():
     start_app("/apps/com.example.launcher", True)
 
-execute_script_new_thread("/autorun.py", True, False)
+#execute_script_new_thread("/autorun.py", True, False)
 run_launcher()
 
 # If we got this far without crashing, then no need to rollback the update
