@@ -30,11 +30,6 @@
 #i2c.writeto_mem(sensor_addr, reg_addr, bytes([reg_value]))
 
 
-
-#subwindow.clean()
-#canary = lv.obj(subwindow)
-#canary.add_flag(lv.obj.FLAG.HIDDEN)
-
 #width = 480
 #height = 320
 #width = 320

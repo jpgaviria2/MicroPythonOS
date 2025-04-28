@@ -6,10 +6,6 @@ import urandom
 import uhashlib
 import time
 
-subwindow.clean()
-canary = lv.obj(subwindow)
-canary.add_flag(lv.obj.FLAG.HIDDEN)
-
 def compute_accept_key(key):
     GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
     hash_obj = uhashlib.sha1(key + GUID)
@@ -197,7 +193,7 @@ try:
 
     print("Subscribing unconfirmed transactions...")
     ws_send_text(sock, ujson.dumps({"op": "unconfirmed_sub"}))
-    while canary.is_valid():
+    while appscreen == lv.screen_active():
         time.sleep(1)            
         data = ws_read_frame(sock) # Bug: when a giant response comes in, it cuts off after 5470 bytes and then the rest is read as a new (garbled) response
         if data:

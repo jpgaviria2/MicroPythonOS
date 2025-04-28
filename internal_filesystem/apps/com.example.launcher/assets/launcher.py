@@ -11,9 +11,6 @@
 
 import uos
 
-
-#myscreen = lv.screen_active()
-
 # Create a container for the grid
 cont = lv.obj(subwindow)
 cont.set_size(lv.pct(100), lv.pct(100))
@@ -85,7 +82,3 @@ for app_dir in [d for d in uos.listdir(apps_dir) if uos.stat(f"{apps_dir}/{d}")[
 end = time.ticks_ms()
 print(f"Displaying all icons took: {end-start}ms")
 
-#print("checking active...")
-#while myscreen == lv.screen_active():
-#    print("still active")
-#    time.sleep_ms(500)

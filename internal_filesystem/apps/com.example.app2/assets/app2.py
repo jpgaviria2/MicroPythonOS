@@ -7,12 +7,9 @@ print("App2 running")
 # Quit flag
 should_continue = True
 
-canary = lv.obj(subwindow)
-canary.add_flag(lv.obj.FLAG.HIDDEN)
-
 def app2_thread():
 	count=0
-	while should_continue and canary.is_valid():
+	while should_continue and appscreen == lv.screen_active():
 		print(f"app2_thread: thread_id {_thread.get_ident()} - {count}")
 		count+=1
 		time.sleep(1)

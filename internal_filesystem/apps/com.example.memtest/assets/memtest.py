@@ -40,7 +40,7 @@ def test_allocation(buffer_size, n):
     count = 0
     
     try:
-        while canary.is_valid():
+        while appscreen == lv.screen_active():
             # Measure time for allocation
             start_time = time.ticks_ms()
             # Allocate a new buffer
