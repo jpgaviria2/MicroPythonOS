@@ -18,7 +18,6 @@ error_label=None
 scanning_label=None
 connect_button=None
 cancel_button=None
-back_button=None
 
 def load_config():
     print("load_config: Checking for /data directory")
@@ -134,30 +133,28 @@ def select_ssid_cb(event,ssid):
 
 def keyboard_cb(event):
     print("keyboard_cb: Keyboard event triggered")
-    global keyboard,connect_button,cancel_button,back_button
+    global keyboard,connect_button,cancel_button
     code=event.get_code()
     if code==lv.EVENT.READY:
         print("keyboard_cb: OK/Checkmark clicked, hiding keyboard")
         keyboard.set_height(0)
         keyboard.remove_flag(lv.obj.FLAG.CLICKABLE)
-        print("keyboard_cb: Showing Connect, Cancel, and Back buttons")
+        print("keyboard_cb: Showing Connect and Cancel buttons")
         connect_button.remove_flag(lv.obj.FLAG.HIDDEN)
         cancel_button.remove_flag(lv.obj.FLAG.HIDDEN)
-        back_button.remove_flag(lv.obj.FLAG.HIDDEN)
 
 def password_ta_cb(event):
     print("password_ta_cb: Password textarea clicked")
-    global keyboard,connect_button,cancel_button,back_button
-    print("password_ta_cb: Hiding Connect, Cancel, and Back buttons")
+    global keyboard,connect_button,cancel_button
+    print("password_ta_cb: Hiding Connect and Cancel buttons")
     connect_button.add_flag(lv.obj.FLAG.HIDDEN)
     cancel_button.add_flag(lv.obj.FLAG.HIDDEN)
-    back_button.add_flag(lv.obj.FLAG.HIDDEN)
     print("password_ta_cb: Showing keyboard")
     keyboard.set_height(160)
     keyboard.add_flag(lv.obj.FLAG.CLICKABLE)
 
 def show_password_page(ssid):
-    global password_page,password_ta,keyboard,connect_button,cancel_button,back_button
+    global password_page,password_ta,keyboard,connect_button,cancel_button
     print("show_password_page: Creating new password page")
     password_page=lv.obj()
     password_page.set_size(lv.pct(100),lv.pct(100))
@@ -218,7 +215,7 @@ def connect_cb(event):
     refresh_list()
 
 def cancel_cb(event):
-    print("cancel_cb: Cancel/Back button clicked")
+    print("cancel_cb: Cancel button clicked")
     print("Deleting password screen...")
     password_page.delete()
     print("cancel_cb: Restoring main subwindow")
@@ -262,4 +259,4 @@ create_ui(appscreen)
 
 import time
 while appscreen == lv.screen_active() or password_page == lv.screen_active():
-    time.sleep(1)
+    time.sleep_ms(100) # not too long, otherwise touch events get lost
