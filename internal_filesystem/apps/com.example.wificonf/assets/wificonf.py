@@ -240,6 +240,7 @@ def cancel_cb(event):
 
 def create_ui(subwindow):
     global list,main_subwindow,error_label,scanning_label
+    # TODO: create main_subwindow as a separate screen using lv.obj() and do screen_load() of it?
     main_subwindow=subwindow
     print("create_ui: Creating list widget")
     list=lv.list(subwindow)
