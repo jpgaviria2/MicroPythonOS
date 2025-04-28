@@ -59,7 +59,6 @@ def scan_networks():
     print("scan_networks: Showing scanning label")
     scanning_label.remove_flag(lv.obj.FLAG.HIDDEN)
     scanning_label.set_text("Scanning...")
-    lv.task_handler()
     print("scan_networks: Scanning for Wi-Fi networks")
     try:
         networks=wlan.scan()
@@ -131,7 +130,7 @@ def select_ssid_cb(event,ssid):
     global selected_ssid
     print(f"select_ssid_cb: SSID selected: {ssid}")
     selected_ssid=ssid
-    show_password_page()
+    show_password_page(ssid)
 
 def keyboard_cb(event):
     print("keyboard_cb: Keyboard event triggered")
@@ -157,13 +156,7 @@ def password_ta_cb(event):
     keyboard.set_height(160)
     keyboard.add_flag(lv.obj.FLAG.CLICKABLE)
 
-def toggle_password_cb(event):
-    print("toggle_password_cb: Password visibility toggle clicked")
-    global password_ta
-    checkbox=event.get_target()
-    # TODO: password_ta.set_password_mode(not checkbox.get_state())
-
-def show_password_page():
+def show_password_page(ssid):
     global password_page,password_ta,keyboard,connect_button,cancel_button,back_button
     print("show_password_page: Creating new password page")
     password_page=lv.obj()
@@ -175,17 +168,15 @@ def show_password_page():
     print("show_password_page: Creating password textarea")
     password_ta=lv.textarea(password_page)
     password_ta.set_size(200,30)
-    #password_ta.align(lv.ALIGN.CENTER,0,-30)
+    password_ta.set_one_line(True)
     password_ta.align_to(label, lv.ALIGN.OUT_BOTTOM_MID, 5, 0)
+    # try to find saved password:
+    for apssid,password in access_points.items():
+        if ssid == apssid:
+            password_ta.set_text(password)
+            break
     password_ta.set_placeholder_text("Password")
-    #password_ta.set_password_mode(True)
-    password_ta.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
     password_ta.add_event_cb(password_ta_cb,lv.EVENT.CLICKED,None)
-    #print("show_password_page: Creating show password checkbox")
-    #checkbox=lv.checkbox(password_page)
-    #checkbox.set_text("Show password")
-    #checkbox.align(lv.ALIGN.CENTER,0,0)
-    #checkbox.add_event_cb(toggle_password_cb,lv.EVENT.VALUE_CHANGED,None)
     print("show_password_page: Creating keyboard (hidden by default)")
     keyboard=lv.keyboard(password_page)
     keyboard.set_size(lv.pct(100),0)
