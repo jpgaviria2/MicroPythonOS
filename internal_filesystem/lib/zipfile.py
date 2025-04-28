@@ -1978,7 +1978,6 @@ class ZipFile:
         with self.open(member, pwd=pwd) as source, open(targetpath, "wb") as target:
             copyfileobj(source, target)
 
-        gc.collect()  # Free memory after extraction
         return targetpath
     
     def _writecheck(self, zinfo):

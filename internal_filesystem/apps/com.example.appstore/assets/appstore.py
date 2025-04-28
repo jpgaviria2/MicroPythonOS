@@ -10,14 +10,14 @@ please_wait_label = None
 app_detail_screen = None
 
 class App:
-    def __init__(self, name, publisher, short_description, long_description, icon_url):
+    def __init__(self, name, publisher, short_description, long_description, icon_url, download_url):
         self.name = name
         self.publisher = publisher
         self.short_description = short_description
         self.long_description = long_description
         self.icon_url = icon_url
         self.image_dsc = None
-
+        self.download_url = download_url
 
 def load_icon(url):
     print(f"downloading icon from {url}")
@@ -40,7 +40,7 @@ try:
 except ImportError:
     zipfile = None
 
-def download_and_unzip(zip_url, dest_folder="/apps"):
+def download_and_unzip(zip_url, dest_folder):
     try:
         # Step 1: Download the .zip file
         print("Downloading .zip file from:", zip_url)
@@ -50,10 +50,10 @@ def download_and_unzip(zip_url, dest_folder="/apps"):
             response.close()
             return False
         # Save the .zip file to a temporary location
-        temp_zip_path = f"{dest_folder}/temp.zip"
+        os.mkdir("/tmp")
+        temp_zip_path = "/tmp/temp.zip"
         print(f"Writing to temporary zip path: {temp_zip_path}")
-        #if os.stat(temp_zip_path):
-        #    os.remove(temp_zip_path) # make sure it's gone
+        # TODO: check free available space first!
         with open(temp_zip_path, "wb") as f:
             f.write(response.content)
         response.close()
@@ -63,15 +63,11 @@ def download_and_unzip(zip_url, dest_folder="/apps"):
             print("Error: zipfile module not available in this MicroPython build")
             return False
         print("Unzipping it to:", dest_folder)
-        os.stat(temp_zip_path)
-        print(f"Stat says: {os.stat(temp_zip_path)}")
         with zipfile.ZipFile(temp_zip_path, "r") as zip_ref:
-            print("extracting...")
             zip_ref.extractall(dest_folder)
         print("Unzipped successfully")
         # Step 3: Clean up
-        #if os.stat(temp_zip_path):
-        os.remove(temp_zip_path) # make sure it's gone
+        os.remove(temp_zip_path)
         print("Removed temporary .zip file")
         return True
     except Exception as e:
@@ -176,17 +172,17 @@ def show_app_detail(app):
     publisher_label.set_text(app.publisher)
     publisher_label.set_style_text_font(lv.font_montserrat_16, 0)
     #
-    progress_bar = lv.bar(cont)
-    progress_bar.set_width(lv.pct(100))
-    progress_bar.set_range(0, 100)
-    progress_bar.set_value(50, lv.ANIM.OFF)
+    #progress_bar = lv.bar(cont)
+    #progress_bar.set_width(lv.pct(100))
+    #progress_bar.set_range(0, 100)
+    #progress_bar.set_value(50, lv.ANIM.OFF)
     install_button = lv.button(cont)
     install_button.align_to(detail_cont, lv.ALIGN.OUT_BOTTOM_MID, 0, lv.pct(5))
     install_button.set_size(lv.pct(100), 40)
     install_button.add_flag(lv.obj.FLAG.CLICKABLE)
-    install_button.add_event_cb(toggle_install, lv.EVENT.CLICKED, None)
+    install_button.add_event_cb(lambda e, d=app.download_url: toggle_install(d), lv.EVENT.CLICKED, None)
     install_label = lv.label(install_button)
-    install_label.set_text("Install")
+    install_label.set_text("(Re)Install") # TODO: check if already installed and if yes, change to "Uninstall" and "Open"
     install_label.center()
     long_desc_label = lv.label(cont)
     long_desc_label.align_to(install_button, lv.ALIGN.OUT_BOTTOM_MID, 0, lv.pct(5))
@@ -196,12 +192,17 @@ def show_app_detail(app):
     lv.screen_load(app_detail_screen)
 
 
-def toggle_install(event):
+def toggle_install(download_url):
     global install_button
     label = install_button.get_child(0)
-    if label.get_text() == "Install":
-        label.set_text("Cancel")
-    else:
+    if label.get_text() == "(Re)Install":
+        install_button.remove_flag(lv.obj.FLAG.CLICKABLE) # TODO: change color so it's clear the button is not clickable
+        label.set_text("Please wait...") # TODO: Put "Cancel" if cancellation is possible
+        # TODO: do the download and install in a new thread with a few sleeps so it can be cancelled...
+        download_and_unzip(download_url, "/apps")
+        label.set_text("Open")
+        install_button.add_flag(lv.obj.FLAG.CLICKABLE)
+    else: # if the button text was "Please wait..." or "Uninstall" or "Installed!"
         label.set_text("Install")
 
 
