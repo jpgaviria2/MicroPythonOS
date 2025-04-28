@@ -30,7 +30,6 @@
 #i2c.writeto_mem(sensor_addr, reg_addr, bytes([reg_value]))
 
 
-myscreen = lv.screen_active()
 
 #subwindow.clean()
 #canary = lv.obj(subwindow)
@@ -129,7 +128,7 @@ try_capture()
 
 
 import time
-while myscreen == lv.screen_active():
+while appscreen == lv.screen_active():
     try_capture()
     time.sleep_ms(100) # Allow for the MicroPython REPL to still work
 

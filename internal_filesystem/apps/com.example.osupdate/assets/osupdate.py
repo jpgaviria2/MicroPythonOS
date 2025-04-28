@@ -2,12 +2,8 @@ import lvgl as lv
 import ota.update
 from esp32 import Partition
 import urequests
-
-subwindow.clean()
-canary = lv.obj(subwindow)
-canary.add_flag(lv.obj.FLAG.HIDDEN)
-
 import ota.status
+
 ota.status.status()
 current = Partition(Partition.RUNNING)
 current
@@ -38,7 +34,7 @@ def update_with_lvgl(url):
     chunk_size = 4096
     i = 0
     print(f"Starting OTA update of size: {total_size}")
-    while canary.is_valid():
+    while appscreen == lv.screen_active():
         chunk = response.raw.read(chunk_size)
         if not chunk:
             print("No chunk, breaking...")

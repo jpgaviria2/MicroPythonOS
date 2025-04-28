@@ -1,6 +1,5 @@
 from machine import Pin, I2C
 from qmi8658 import QMI8658
-import time
 import machine
 
 sensor = QMI8658(I2C(0, sda=machine.Pin(48), scl=machine.Pin(47)))
@@ -35,11 +34,8 @@ def map_nonlinear(value: float) -> int:
     scaled = (sqrt_value / max_sqrt) * 50.0  # Scale to [0, 50]
     return int(50.0 + (sign * scaled))  # Shift to [0, 100]
 
-
-
-canary = lv.obj(subwindow)
-canary.add_flag(lv.obj.FLAG.HIDDEN)
-while canary.is_valid():
+import time
+while appscreen == lv.screen_active():
     #print(f"""{sensor.temperature=} {sensor.acceleration=} {sensor.gyro=}""")
     templabel.set_text(f"Temperature: {sensor.temperature:.2f}")
     ax = sensor.acceleration[0]

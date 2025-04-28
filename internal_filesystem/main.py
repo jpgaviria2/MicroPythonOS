@@ -275,6 +275,10 @@ def execute_script(script_source, is_file, is_launcher, is_graphical):
     thread_id = _thread.get_ident()
     print(f"Thread {thread_id}: executing script")
     try:
+        if is_file:
+            print(f"Thread {thread_id}: reading script from file {script_source}")
+            with open(script_source, 'r') as f: # TODO: check if file exists first?
+                script_source = f.read()
         if not is_graphical:
             script_globals = {
                 '__name__': "__main__"
@@ -296,15 +300,12 @@ def execute_script(script_source, is_file, is_launcher, is_graphical):
             lv.screen_load(newscreen)
             script_globals = {
                 'lv': lv,
+                'appscreen': newscreen,
                 'subwindow': subwindow,
                 'start_app': start_app, # for launcher apps
                 'parse_manifest': parse_manifest, # for launcher apps
                 '__name__': "__main__"
             }
-        if is_file:
-            print(f"Thread {thread_id}: reading script from file {script_source}")
-            with open(script_source, 'r') as f: # TODO: check if file exists first?
-                script_source = f.read()
         print(f"Thread {thread_id}: starting script")
         try:
             compile_name = 'script' if not is_file else long_path_to_filename(script_source) # Only filename, to avoid 'name too long' error
