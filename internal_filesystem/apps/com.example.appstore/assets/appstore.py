@@ -102,11 +102,13 @@ def show_app_detail(app):
     cont = lv.obj(app_detail_screen)
     cont.set_size(lv.pct(100), lv.pct(100))
     cont.set_pos(0, 40)
-    cont.set_flex_flow(lv.FLEX_FLOW.ROW)
+    cont.set_flex_flow(lv.FLEX_FLOW.COLUMN)
+    #
     icon_spacer = lv.image(cont)
     if app.image_dsc:
         icon_spacer.set_src(app.image_dsc)
     icon_spacer.set_size(64, 64)
+    #
     detail_cont = lv.obj(cont)
     detail_cont.set_flex_flow(lv.FLEX_FLOW.COLUMN)
     detail_cont.set_size(lv.pct(100), lv.SIZE_CONTENT)
@@ -116,7 +118,9 @@ def show_app_detail(app):
     publisher_label = lv.label(detail_cont)
     publisher_label.set_text(app.publisher)
     publisher_label.set_style_text_font(lv.font_montserrat_16, 0)
+    #
     install_button = lv.button(cont)
+    install_button.align_to(detail_cont, lv.ALIGN.OUT_BOTTOM_MID, 0, lv.pct(5))
     install_button.set_size(lv.pct(100), 40)
     install_button.add_flag(lv.obj.FLAG.CLICKABLE)
     install_button.add_event_cb(toggle_install, lv.EVENT.CLICKED, None)
@@ -124,6 +128,7 @@ def show_app_detail(app):
     install_label.set_text("Install")
     install_label.center()
     long_desc_label = lv.label(cont)
+    long_desc_label.align_to(install_button, lv.ALIGN.OUT_BOTTOM_MID, 0, lv.pct(5))
     long_desc_label.set_text(app.long_description)
     long_desc_label.set_style_text_font(lv.font_montserrat_12, 0)
     long_desc_label.set_width(lv.pct(100))
