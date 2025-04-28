@@ -34,6 +34,52 @@ def load_icon(url):
         print("Failed to download image: Status code", response.status_code)
         return None
 
+import os
+try:
+    import zipfile
+except ImportError:
+    zipfile = None
+
+def download_and_unzip(zip_url, dest_folder="/apps"):
+    try:
+        # Step 1: Download the .zip file
+        print("Downloading .zip file from:", zip_url)
+        response = urequests.get(zip_url, timeout=10)
+        if response.status_code != 200:
+            print("Download failed: Status code", response.status_code)
+            response.close()
+            return False
+        # Save the .zip file to a temporary location
+        temp_zip_path = f"{dest_folder}/temp.zip"
+        print(f"Writing to temporary zip path: {temp_zip_path}")
+        #if os.stat(temp_zip_path):
+        #    os.remove(temp_zip_path) # make sure it's gone
+        with open(temp_zip_path, "wb") as f:
+            f.write(response.content)
+        response.close()
+        print("Downloaded .zip file, size:", os.stat(temp_zip_path)[6], "bytes")
+        # Step 2: Unzip the file
+        if zipfile is None:
+            print("Error: zipfile module not available in this MicroPython build")
+            return False
+        print("Unzipping it to:", dest_folder)
+        os.stat(temp_zip_path)
+        print(f"Stat says: {os.stat(temp_zip_path)}")
+        with zipfile.ZipFile(temp_zip_path, "r") as zip_ref:
+            zip_ref.extractall(dest_folder)
+        print("Unzipped successfully")
+        # Step 3: Clean up
+        #if os.stat(temp_zip_path):
+        os.remove(temp_zip_path) # make sure it's gone
+        print("Removed temporary .zip file")
+        return True
+    except Exception as e:
+        print("Operation failed:", str(e))
+        return False
+    finally:
+        if 'response' in locals():
+            response.close()
+
 
 def download_apps(json_url):
     global apps
@@ -121,7 +167,7 @@ def show_app_detail(app):
     detail_cont = lv.obj(headercont)
     detail_cont.set_style_pad_all(0, 0)
     detail_cont.set_flex_flow(lv.FLEX_FLOW.COLUMN)
-    detail_cont.set_size(lv.pct(80), lv.SIZE_CONTENT)
+    detail_cont.set_size(lv.pct(75), lv.SIZE_CONTENT)
     name_label = lv.label(detail_cont)
     name_label.set_text(app.name)
     name_label.set_style_text_font(lv.font_montserrat_24, 0)
@@ -131,7 +177,6 @@ def show_app_detail(app):
     #
     progress_bar = lv.bar(cont)
     progress_bar.set_width(lv.pct(100))
-    #progress_bar.align(lv.ALIGN.BOTTOM_MID, 0, -50)
     progress_bar.set_range(0, 100)
     progress_bar.set_value(50, lv.ANIM.OFF)
     install_button = lv.button(cont)
