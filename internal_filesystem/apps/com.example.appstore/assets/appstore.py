@@ -123,7 +123,7 @@ app_store = AppStore(subwindow, "http://demo.lnpiggy.com:2121/apps.json")
 
 # Wait until the user stops the app
 import time
-while appscreen == lv.screen_active() or (app_store.app_detail_screen and app_store.app_detail_screen == lv.screen_active()):
-    time.sleep_ms(50)
+while (app_store.app_detail_screen and app_store.app_detail_screen == lv.screen_active()) or appscreen == lv.screen_active():
+    time.sleep_ms(100)
 
 print("reached end of appstore")
