@@ -6,6 +6,7 @@ import lvgl as lv
 
 wlan=network.WLAN(network.STA_IF)
 wlan.active(True)
+
 access_points={}
 selected_ssid=None
 list=None
@@ -233,15 +234,14 @@ def connect_cb(event):
     refresh_list()
 
 def cancel_cb(event):
-    print("cancel_cb: Cancel/Back button clicked, deleting password page")
+    print("cancel_cb: Cancel/Back button clicked")
+    print("Not deleting password page right now...")
     password_page.delete()
     print("cancel_cb: Restoring main subwindow")
     lv.screen_load(main_subwindow)
 
 def create_ui(subwindow):
     global list,main_subwindow,error_label,scanning_label
-    # TODO: create main_subwindow as a separate screen using lv.obj() and do screen_load() of it?
-    main_subwindow=subwindow
     print("create_ui: Creating list widget")
     list=lv.list(subwindow)
     list.set_size(240,180)
@@ -270,5 +270,11 @@ def create_ui(subwindow):
     print("create_ui: Loading config")
     load_config()
 
-subwindow.clean()
+
+main_subwindow=appscreen
 create_ui(subwindow)
+
+
+import time
+while appscreen == lv.screen_active() or password_page == lv.screen_active():
+    time.sleep(1)
