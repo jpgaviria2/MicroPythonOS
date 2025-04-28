@@ -10,7 +10,7 @@ please_wait_label = None
 app_detail_screen = None
 
 class App:
-    def __init__(self, name, publisher, short_description, long_description, icon_url, download_url, fullname):
+    def __init__(self, name, publisher, short_description, long_description, icon_url, download_url, fullname, version):
         self.name = name
         self.publisher = publisher
         self.short_description = short_description
@@ -19,6 +19,7 @@ class App:
         self.image_dsc = None
         self.download_url = download_url
         self.fullname = fullname
+        self.version = version
 
 def load_icon(url):
     print(f"downloading icon from {url}")
@@ -201,8 +202,8 @@ def toggle_install(download_url, fullname):
         label.set_text("Please wait...") # TODO: Put "Cancel" if cancellation is possible
         # TODO: do the download and install in a new thread with a few sleeps so it can be cancelled...
         download_and_unzip(download_url, f"/apps/{fullname}")
-        label.set_text("Open")
-        install_button.add_flag(lv.obj.FLAG.CLICKABLE)
+        label.set_text("Installed!") # Opening doesn't work because it races along with the launcher to use the screen...
+        #install_button.add_flag(lv.obj.FLAG.CLICKABLE)
     elif label.get_text() == "Open":
         print("Open button clicked, starting app...")
         start_app(f"/apps/{fullname}")
