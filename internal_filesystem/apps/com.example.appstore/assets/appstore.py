@@ -55,14 +55,17 @@ def create_apps_list():
     global apps
     print("create_apps_list")
     apps_list = lv.list(subwindow)
+    apps_list.set_style_pad_all(0, 0)
     apps_list.set_size(lv.pct(100), lv.pct(100))
     print("create_apps_list iterating")
     for app in apps:
         item = apps_list.add_button(None, "Test")
+        item.set_style_pad_all(0, 0)
         item.add_flag(lv.obj.FLAG.CLICKABLE)
         item.set_size(lv.pct(100), lv.SIZE_CONTENT)
         item.add_event_cb(lambda e, a=app: show_app_detail(a), lv.EVENT.CLICKED, None)
         cont = lv.obj(item)
+        cont.set_style_pad_all(0, 0)
         cont.set_flex_flow(lv.FLEX_FLOW.ROW)
         cont.set_size(lv.pct(100), lv.SIZE_CONTENT)
         cont.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
@@ -94,7 +97,7 @@ def show_app_detail(app):
     app_detail_screen = lv.obj()
     app_detail_screen.set_size(lv.pct(100), lv.pct(100))
     back_button = lv.button(app_detail_screen)
-    back_button.set_size(30, 30)
+    back_button.set_width(lv.pct(15))
     back_button.add_flag(lv.obj.FLAG.CLICKABLE)
     back_button.add_event_cb(back_to_main, lv.EVENT.CLICKED, None)
     back_label = lv.label(back_button)
@@ -108,6 +111,7 @@ def show_app_detail(app):
     headercont = lv.obj(cont)
     headercont.set_flex_flow(lv.FLEX_FLOW.ROW)
     headercont.set_size(lv.pct(100), lv.SIZE_CONTENT)
+    headercont.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
     icon_spacer = lv.image(headercont)
     if app.image_dsc:
         icon_spacer.set_src(app.image_dsc)
@@ -175,4 +179,4 @@ import time
 while appscreen == lv.screen_active() or app_detail_screen == lv.screen_active():
     time.sleep_ms(100)
 
-print("reached end of appstore")
+print("appstore.py ending")
