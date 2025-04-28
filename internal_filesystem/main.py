@@ -213,7 +213,7 @@ launcher_label.center()
 launcher_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
 def launcher_event(e):
     print("Launcher button pressed!")
-    global drawer_open
+    global drawer_open,rootscreen
     close_drawer()
     lv.screen_load(rootscreen)
 
@@ -318,12 +318,12 @@ def execute_script(script_source, is_file, is_launcher, is_graphical):
             traceback.print_exception(type(e), e, tb)
         print(f"Thread {thread_id}: script {compile_name} finished")
         if is_graphical and not is_launcher:
-            print("/main.py: execute_script(): cleaning subwindow...")
+            print("/main.py: execute_script(): deleting timers...")
             timer1.delete()
             timer2.delete()
             timer3.delete()
             timer4.delete()
-            newscreen.delete() #still runs into timer errors, even though these timers have been deleted...
+            newscreen.delete()
             print(f"Thread {thread_id}: finished, prevscreen is set and it's not a launcher so returning to previous screen...")
             lv.screen_load(prevscreen)
     except Exception as e:
