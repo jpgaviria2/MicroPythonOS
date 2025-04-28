@@ -39,23 +39,32 @@ COLOR_SLIDER_INDICATOR=LIGHTPINK
 
 
 drawer=None
+underdrawer=None
 wifi_screen=None
+wifi_icon=None
 drawer_open=False
 
-lv.screen_active().set_style_bg_color(lv.color_hex(0x444444), 0)
+
+rootscreen = lv.screen_active()
+rootscreen.set_style_bg_color(lv.color_hex(0x444444), 0)
+rootlabel = lv.label(rootscreen)
+rootlabel.set_text("Welcome to PiggyOS!")
+rootlabel.align(lv.ALIGN.CENTER, 0, 0)
 
 def open_drawer():
-    global drawer_open
+    global drawer_open, underdrawer
     if not drawer_open:
-        drawer.set_y(NOTIFICATION_BAR_HEIGHT)
+        #drawer.set_y(NOTIFICATION_BAR_HEIGHT)
         drawer_open=True
-
+        underdrawer = lv.screen_active()
+        lv.screen_load(drawer)
 
 def close_drawer():
-    global drawer_open
+    global drawer_open, underdrawer
     if drawer_open:
-        drawer.set_y(-TFT_VER_RES+NOTIFICATION_BAR_HEIGHT)
+        #drawer.set_y(-TFT_VER_RES+NOTIFICATION_BAR_HEIGHT)
         drawer_open=False
+        lv.screen_load(underdrawer)
 
 
 def toggle_drawer(event):
@@ -65,97 +74,84 @@ def toggle_drawer(event):
 	else:
 		open_drawer()
 
-# Create notification bar object
-notification_bar = lv.obj(lv.screen_active())
-notification_bar.set_style_bg_color(COLOR_NOTIF_BAR_BG, 0)
-notification_bar.set_size(320, NOTIFICATION_BAR_HEIGHT)
-notification_bar.set_pos(0, 0)
-notification_bar.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
-notification_bar.set_scroll_dir(lv.DIR.VER)
-notification_bar.set_style_border_width(0, 0)
-notification_bar.set_style_radius(0, 0)
-
-# Time label
-time_label = lv.label(notification_bar)
-time_label.set_text("00:00:00.000")
-time_label.align(lv.ALIGN.LEFT_MID, 0, 0)
-time_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
-
-temp_label = lv.label(notification_bar)
-temp_label.set_text("00°C")
-temp_label.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
-temp_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
-
-memfree_label = lv.label(notification_bar)
-memfree_label.set_text("")
-memfree_label.align_to(temp_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
-memfree_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
-#style = lv.style_t()
-#style.init()
-#style.set_text_font(lv.font_montserrat_8)  # tiny font
-#memfree_label.add_style(style, 0)
-
-# Notification icon (bell)
-#notif_icon = lv.label(notification_bar)
-#notif_icon.set_text(lv.SYMBOL.BELL)
-#notif_icon.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
-#notif_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
-
-# Battery icon
-battery_icon = lv.label(notification_bar)
-battery_icon.set_text(lv.SYMBOL.BATTERY_FULL)
-battery_icon.align(lv.ALIGN.RIGHT_MID, -PADDING_TINY, 0)
-battery_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
-
-# WiFi icon
-wifi_icon = lv.label(notification_bar)
-wifi_icon.set_text(lv.SYMBOL.WIFI)
-wifi_icon.align_to(battery_icon, lv.ALIGN.OUT_LEFT_MID, -PADDING_TINY, 0)
-wifi_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
-wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
-
-# Battery percentage - not shown to conserve space
-#battery_label = lv.label(notification_bar)
-#battery_label.set_text("100%")
-#battery_label.align(lv.ALIGN.RIGHT_MID, 0, 0)
-#battery_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
-
-
-# Update time
-import time
-def update_time(timer):
-    ticks = time.ticks_ms()
-    hours = (ticks // 3600000) % 24
-    minutes = (ticks // 60000) % 60
-    seconds = (ticks // 1000) % 60
-    milliseconds = ticks % 1000
-    time_label.set_text(f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}")
-
-import network
-def update_wifi_icon(timer):
-    if network.WLAN(network.STA_IF).isconnected():
-        global wifi_icon
-        wifi_icon.remove_flag(lv.obj.FLAG.HIDDEN)
-    else:
-        wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
-
-import esp32
-def update_temperature(timer):
-    temp_label.set_text(f"{esp32.mcu_temperature()}°C")
-
-import gc
-def update_memfree(timer):
-    gc.collect()
-    memfree_label.set_text(f"{gc.mem_free()}")
-
-lv.timer_create(update_time, CLOCK_UPDATE_INTERVAL, None)
-lv.timer_create(update_temperature, TEMPERATURE_UPDATE_INTERVAL, None)
-lv.timer_create(update_memfree, MEMFREE_UPDATE_INTERVAL, None)
-lv.timer_create(update_wifi_icon, WIFI_ICON_UPDATE_INTERVAL, None)
-
-
-
-notification_bar.add_event_cb(toggle_drawer, lv.EVENT.CLICKED, None)
+def add_notification_bar(screen):
+    global wifi_icon
+    # Create notification bar object
+    notification_bar = lv.obj(screen)
+    notification_bar.set_style_bg_color(COLOR_NOTIF_BAR_BG, 0)
+    notification_bar.set_size(320, NOTIFICATION_BAR_HEIGHT)
+    notification_bar.set_pos(0, 0)
+    notification_bar.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
+    notification_bar.set_scroll_dir(lv.DIR.VER)
+    notification_bar.set_style_border_width(0, 0)
+    notification_bar.set_style_radius(0, 0)
+    # Time label
+    time_label = lv.label(notification_bar)
+    time_label.set_text("00:00:00.000")
+    time_label.align(lv.ALIGN.LEFT_MID, 0, 0)
+    time_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
+    temp_label = lv.label(notification_bar)
+    temp_label.set_text("00°C")
+    temp_label.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
+    temp_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
+    memfree_label = lv.label(notification_bar)
+    memfree_label.set_text("")
+    memfree_label.align_to(temp_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
+    memfree_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
+    #style = lv.style_t()
+    #style.init()
+    #style.set_text_font(lv.font_montserrat_8)  # tiny font
+    #memfree_label.add_style(style, 0)
+    # Notification icon (bell)
+    #notif_icon = lv.label(notification_bar)
+    #notif_icon.set_text(lv.SYMBOL.BELL)
+    #notif_icon.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
+    #notif_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
+    # Battery icon
+    battery_icon = lv.label(notification_bar)
+    battery_icon.set_text(lv.SYMBOL.BATTERY_FULL)
+    battery_icon.align(lv.ALIGN.RIGHT_MID, -PADDING_TINY, 0)
+    battery_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
+    # WiFi icon
+    wifi_icon = lv.label(notification_bar)
+    wifi_icon.set_text(lv.SYMBOL.WIFI)
+    wifi_icon.align_to(battery_icon, lv.ALIGN.OUT_LEFT_MID, -PADDING_TINY, 0)
+    wifi_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
+    wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
+    # Battery percentage - not shown to conserve space
+    #battery_label = lv.label(notification_bar)
+    #battery_label.set_text("100%")
+    #battery_label.align(lv.ALIGN.RIGHT_MID, 0, 0)
+    #battery_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
+    # Update time
+    import time
+    def update_time(timer):
+        ticks = time.ticks_ms()
+        hours = (ticks // 3600000) % 24
+        minutes = (ticks // 60000) % 60
+        seconds = (ticks // 1000) % 60
+        milliseconds = ticks % 1000
+        time_label.set_text(f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}")
+    
+    import network
+    def update_wifi_icon(timer):
+        if network.WLAN(network.STA_IF).isconnected():
+            global wifi_icon
+            wifi_icon.remove_flag(lv.obj.FLAG.HIDDEN)
+        else:
+            wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
+    import esp32
+    def update_temperature(timer):
+        temp_label.set_text(f"{esp32.mcu_temperature()}°C")
+    import gc
+    def update_memfree(timer):
+        gc.collect()
+        memfree_label.set_text(f"{gc.mem_free()}")
+    lv.timer_create(update_time, CLOCK_UPDATE_INTERVAL, None)
+    lv.timer_create(update_temperature, TEMPERATURE_UPDATE_INTERVAL, None)
+    lv.timer_create(update_memfree, MEMFREE_UPDATE_INTERVAL, None)
+    lv.timer_create(update_wifi_icon, WIFI_ICON_UPDATE_INTERVAL, None)
+    notification_bar.add_event_cb(toggle_drawer, lv.EVENT.CLICKED, None)
 
 
 
@@ -165,17 +161,17 @@ notification_bar.add_event_cb(toggle_drawer, lv.EVENT.CLICKED, None)
 # Instead of giving the apps access to the subwindow, potentially corrupting it,
 # it might be better to give a subcontainer in the subwindow.
 # But if that's a performance impact, then properly restoring the subwindow along with subwindow.clean() is also an option.
-screen = lv.screen_active()
-subwindow = lv.obj(screen)
-subwindow.set_size(TFT_HOR_RES, TFT_VER_RES - NOTIFICATION_BAR_HEIGHT)
-subwindow.set_pos(0, NOTIFICATION_BAR_HEIGHT)
-subwindow.set_style_border_width(0, 0)
-subwindow.set_style_pad_all(0, 0)
+#rootscreen = lv.screen_active()
+#subwindow = lv.obj(rootscreen)
+#subwindow.set_size(TFT_HOR_RES, TFT_VER_RES - NOTIFICATION_BAR_HEIGHT)
+#subwindow.set_pos(0, NOTIFICATION_BAR_HEIGHT)
+#subwindow.set_style_border_width(0, 0)
+#subwindow.set_style_pad_all(0, 0)
 
 
-drawer=lv.obj(lv.screen_active())
+drawer=lv.obj()
 drawer.set_size(TFT_HOR_RES,TFT_VER_RES-NOTIFICATION_BAR_HEIGHT)
-drawer.set_pos(0,-TFT_VER_RES+NOTIFICATION_BAR_HEIGHT)
+#drawer.set_pos(0,-TFT_VER_RES+NOTIFICATION_BAR_HEIGHT)
 drawer.set_style_bg_color(COLOR_DRAWER_BG,0)
 drawer.set_scroll_dir(lv.DIR.NONE)
 slider=lv.slider(drawer)
@@ -194,6 +190,7 @@ def slider_event(e):
     value=slider.get_value()
     slider_label.set_text(f"{value}%")
     display.set_backlight(value)
+
 slider.add_event_cb(slider_event,lv.EVENT.VALUE_CHANGED,None)
 wifi_btn=lv.button(drawer)
 wifi_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
@@ -208,6 +205,7 @@ def wifi_event(e):
     #wifi_screen.set_y(0) # TODO: make this
     close_drawer()
     drawer_open=False
+
 wifi_btn.add_event_cb(wifi_event,lv.EVENT.CLICKED,None)
 #
 settings_btn=lv.button(drawer)
@@ -222,6 +220,7 @@ def settings_event(e):
     global drawer_open
     close_drawer()
     drawer_open=False
+
 settings_btn.add_event_cb(settings_event,lv.EVENT.CLICKED,None)
 #
 launcher_btn=lv.button(drawer)
@@ -238,6 +237,7 @@ def launcher_event(e):
     close_drawer()
     drawer_open=False
     run_launcher()
+
 launcher_btn.add_event_cb(launcher_event,lv.EVENT.CLICKED,None)
 #
 restart_btn=lv.button(drawer)
@@ -254,6 +254,8 @@ def launcher_event(e):
     close_drawer()
     drawer_open=False
     run_app(launcher_script,False)
+
+
 restart_btn.add_event_cb(lambda event: machine.reset(),lv.EVENT.CLICKED,None)
 
 
@@ -297,13 +299,24 @@ def long_path_to_filename(path):
         return None
 
 # Run the script in the current thread:
-def execute_script(script_source, is_file, lvgl_obj, return_to_launcher):
+def execute_script(script_source, is_file, return_to_previous):
     thread_id = _thread.get_ident()
     print(f"Thread {thread_id}: executing script")
     try:
+        prevscreen = lv.screen_active()
+        newscreen=lv.obj()
+        newscreen.set_size(lv.pct(100),lv.pct(100))
+        add_notification_bar(newscreen)
+        #notification_bar.set_parent(newscreen)
+        subwindow = lv.obj(newscreen)
+        subwindow.set_size(TFT_HOR_RES, TFT_VER_RES - NOTIFICATION_BAR_HEIGHT)
+        subwindow.set_pos(0, NOTIFICATION_BAR_HEIGHT)
+        subwindow.set_style_border_width(0, 0)
+        subwindow.set_style_pad_all(0, 0)
+        lv.screen_load(newscreen)
         script_globals = {
             'lv': lv,
-            'subwindow': lvgl_obj,
+            'subwindow': subwindow,
             'start_app': start_app, # for launcher apps
             'parse_manifest': parse_manifest, # for launcher apps
             '__name__': "__main__"
@@ -322,34 +335,35 @@ def execute_script(script_source, is_file, lvgl_obj, return_to_launcher):
             # Print stack trace with exception type, value, and traceback
             tb = getattr(e, '__traceback__', None)
             traceback.print_exception(type(e), e, tb)
-        print(f"Thread {thread_id}: script finished")
-        if return_to_launcher:
-            print(f"Thread {thread_id}: finished, return_to_launcher=True so running launcher_script...")
-            run_launcher()
+        print(f"Thread {thread_id}: script {compile_name} finished")
+        if prevscreen and return_to_previous:
+            print(f"Thread {thread_id}: finished, prevscreen is set so returning to previous screen...")
+            #run_launcher()
+            lv.screen_load(prevscreen)
     except Exception as e:
         print(f"Thread {thread_id}: error:")
         tb = getattr(e, '__traceback__', None)
         traceback.print_exception(type(e), e, tb)
 
 # Run the script in a new thread:
-def execute_script_new_thread(scriptname, is_file, return_to_launcher):
-    print(f"/main.py: execute_script_new_thread({scriptname},{is_file},{return_to_launcher})")
+def execute_script_new_thread(scriptname, is_file, return_to_previous):
+    print(f"/main.py: execute_script_new_thread({scriptname},{is_file},{return_to_previous})")
     try:
         print("/main.py: execute_script_new_thread(): cleaning subwindow...")
-        subwindow.clean()
+        #subwindow.clean()
         # 168KB maximum at startup but 136KB after loading display, drivers, LVGL gui etc so let's go for 128KB for now, still a lot...
         # But then no additional threads can be created. A stacksize of 32KB allows for 4 threads, so 3 in the app itself, which might be tight.
         _thread.stack_size(16384) # A stack size of 16KB allows for around 10 threads in the app, which should be plenty.
-        _thread.start_new_thread(execute_script, (scriptname, is_file, subwindow, return_to_launcher))
+        _thread.start_new_thread(execute_script, (scriptname, is_file, return_to_previous))
     except Exception as e:
         print("/main.py: execute_script_new_thread(): error starting new thread thread: ", e)
 
-def start_app(app_dir, return_to_launcher=True):
-    print(f"/main.py start_app({app_dir},{return_to_launcher}")
+def start_app(app_dir, return_to_previous=True):
+    print(f"/main.py start_app({app_dir},{return_to_previous}")
     manifest_path = f"{app_dir}/META-INF/MANIFEST.MF"
     app_name, start_script = parse_manifest(manifest_path)
     start_script_fullpath = f"{app_dir}/{start_script}"
-    execute_script_new_thread(start_script_fullpath, True, return_to_launcher)
+    execute_script_new_thread(start_script_fullpath, True, return_to_previous)
 
 def run_launcher():
     start_app("/apps/com.example.launcher", False)
