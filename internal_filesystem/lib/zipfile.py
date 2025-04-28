@@ -1905,79 +1905,79 @@ class ZipFile:
         arcname = pathsep.join(x for x in arcname if x)
         return arcname
 
-    # Path manipulation helpers
-    def path_join(*parts):
+    # Existing class methods and attributes (e.g., open, getinfo) assumed to be defined
+    def path_join(self, *parts):
         return "/".join(part.strip("/") for part in parts)
-    
-    def path_normpath(path):
+
+    def path_normpath(self, path):
         # Remove redundant slashes and leading/trailing slashes
         parts = [part for part in path.split("/") if part]
         return "/" + "/".join(parts)
-    
-    def path_dirname(path):
+
+    def path_dirname(self, path):
         parts = path.strip("/").split("/")
         if len(parts) <= 1:
             return ""
         return "/".join(parts[:-1])
-    
-    def path_exists(path):
+
+    def path_exists(self, path):
         try:
             os.stat(path)
             return True
         except OSError:
             return False
-    
-    def path_isdir(path):
+
+    def path_isdir(self, path):
         try:
             return (os.stat(path)[0] & 0x4000) != 0  # Check if directory
         except OSError:
             return False
-    
-    def makedirs(path):
-        if not path or path_exists(path):
+
+    def makedirs(self, path):
+        if not path or self.path_exists(path):
             return
-        parent = path_dirname(path)
+        parent = self.path_dirname(path)
         if parent:
-            makedirs(parent)  # Recursively create parent directories
-        if not path_exists(path):
+            self.makedirs(parent)  # Recursively create parent directories
+        if not self.path_exists(path):
             os.mkdir(path)
-    
+
     def _extract_member(self, member, targetpath, pwd):
         """Extract the ZipInfo object 'member' to a physical
-        file on the path targetpath.
+           file on the path targetpath.
         """
         if not isinstance(member, ZipInfo):
             member = self.getinfo(member)
-    
+
         # Build the destination pathname, using / as separator
         arcname = member.filename.replace("/", "/")  # Already using / in MicroPython
-    
+
         # Remove absolute path prefix and redundant components
         invalid_path_parts = ("", ".", "..")
         arcname = "/".join(x for x in arcname.strip("/").split("/") if x not in invalid_path_parts)
-    
+
         if not arcname and not member.is_dir():
             raise ValueError("Empty filename.")
-    
+
         # Construct target path
-        targetpath = path_join(targetpath, arcname)
-        targetpath = path_normpath(targetpath)
-    
+        targetpath = self.path_join(targetpath, arcname)
+        targetpath = self.path_normpath(targetpath)
+
         # Create all parent directories if necessary
-        upperdirs = path_dirname(targetpath)
-        if upperdirs and not path_exists(upperdirs):
-            makedirs(upperdirs)
-    
+        upperdirs = self.path_dirname(targetpath)
+        if upperdirs and not self.path_exists(upperdirs):
+            self.makedirs(upperdirs)
+
         # Handle directories
         if member.is_dir():
-            if not path_isdir(targetpath):
+            if not self.path_isdir(targetpath):
                 os.mkdir(targetpath)
             return targetpath
-    
+
         # Extract file
         with self.open(member, pwd=pwd) as source, open(targetpath, "wb") as target:
             copyfileobj(source, target)
-    
+
         gc.collect()  # Free memory after extraction
         return targetpath
     
