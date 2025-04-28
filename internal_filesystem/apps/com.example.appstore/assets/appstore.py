@@ -53,15 +53,19 @@ class AppStore:
             cont.add_event_cb(lambda e, a=app: self.show_app_detail(a), lv.EVENT.CLICKED, None)
             icon_spacer = lv.obj(cont)
             icon_spacer.set_size(40, 40)
+            icon_spacer.add_event_cb(lambda e, a=app: self.show_app_detail(a), lv.EVENT.CLICKED, None)
             label_cont = lv.obj(cont)
             label_cont.set_flex_flow(lv.FLEX_FLOW.COLUMN)
             label_cont.set_size(lv.pct(100), lv.SIZE_CONTENT)
+            label_cont.add_event_cb(lambda e, a=app: self.show_app_detail(a), lv.EVENT.CLICKED, None)
             name_label = lv.label(label_cont)
             name_label.set_text(app.name)
             name_label.set_style_text_font(lv.font_montserrat_16, 0)
+            name_label.add_event_cb(lambda e, a=app: self.show_app_detail(a), lv.EVENT.CLICKED, None)
             desc_label = lv.label(label_cont)
             desc_label.set_text(app.short_description)
             desc_label.set_style_text_font(lv.font_montserrat_12, 0)
+            desc_label.add_event_cb(lambda e, a=app: self.show_app_detail(a), lv.EVENT.CLICKED, None)
             print("create_apps_list app one done")
         print("create_apps_list app done")
     def show_app_detail(self, app):
@@ -109,8 +113,8 @@ class AppStore:
             label.set_text("Install")
     def back_to_main(self, event):
         if self.app_detail_screen:
-            self.app_detail_screen.delete()
-            self.app_detail_screen = None
+            #self.app_detail_screen.delete()
+            #self.app_detail_screen = None
             lv.screen_load(appscreen)
 
 
@@ -119,5 +123,7 @@ app_store = AppStore(subwindow, "http://demo.lnpiggy.com:2121/apps.json")
 
 # Wait until the user stops the app
 import time
-while appscreen == lv.screen_active() or app_store.app_detail_screen == lv.screen_active():
+while appscreen == lv.screen_active() or (app_store.app_detail_screen and app_store.app_detail_screen == lv.screen_active()):
     time.sleep_ms(50)
+
+print("reached end of appstore")
