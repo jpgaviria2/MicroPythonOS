@@ -69,7 +69,7 @@ class AppStore:
             print("create_apps_list app one done")
         print("create_apps_list app done")
     def show_app_detail(self, app):
-        self.app_detail_screen = lv.obj(None)
+        self.app_detail_screen = lv.obj()
         self.app_detail_screen.set_size(lv.pct(100), lv.pct(100))
         back_button = lv.button(self.app_detail_screen)
         back_button.set_size(30, 30)
@@ -123,7 +123,7 @@ app_store = AppStore(subwindow, "http://demo.lnpiggy.com:2121/apps.json")
 
 # Wait until the user stops the app
 import time
-while (app_store.app_detail_screen and app_store.app_detail_screen == lv.screen_active()) or appscreen == lv.screen_active():
+while appscreen == lv.screen_active() or app_store.app_detail_screen == lv.screen_active():
     time.sleep_ms(100)
 
 print("reached end of appstore")
