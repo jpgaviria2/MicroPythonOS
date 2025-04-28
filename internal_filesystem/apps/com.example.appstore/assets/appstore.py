@@ -28,7 +28,7 @@ class AppStore:
         self.download_apps()
     def download_apps(self):
         try:
-            response = urequests.get(self.json_url)
+            response = urequests.get(self.json_url, timeout=10)
             print("download_apps")
             if response.status_code == 200:
                 print(f"Got response text: {response.text}")
@@ -44,19 +44,13 @@ class AppStore:
         self.apps_list.set_size(lv.pct(100), lv.pct(100))
         print("create_apps_list iterating")
         for app in self.apps:
-            print("create_apps_list app found")
             item = self.apps_list.add_button(None, "Test")
-            print("create_apps_list app found 1")
             item.add_flag(lv.obj.FLAG.CLICKABLE)
-            print("create_apps_list app found 2")
             item.add_event_cb(lambda e, a=app: self.show_app_detail(a), lv.EVENT.CLICKED, None)
-            print("create_apps_list app found 3")
             cont = lv.obj(item)
-            print("create_apps_list app found 4")
             cont.set_flex_flow(lv.FLEX_FLOW.ROW)
-            print("create_apps_list app found 5")
             cont.set_size(lv.pct(100), lv.SIZE_CONTENT)
-            print("create_apps_list app found 6")
+            cont.add_event_cb(lambda e, a=app: self.show_app_detail(a), lv.EVENT.CLICKED, None)
             icon_spacer = lv.obj(cont)
             icon_spacer.set_size(40, 40)
             label_cont = lv.obj(cont)
@@ -117,11 +111,11 @@ class AppStore:
         if self.app_detail_screen:
             self.app_detail_screen.delete()
             self.app_detail_screen = None
-            lv.screen_load(self.subwindow)
+            lv.screen_load(appscreen)
 
 
 # Example usage:
-app_store = AppStore(appscreen, "http://demo.lnpiggy.com:2121/apps.json")
+app_store = AppStore(subwindow, "http://demo.lnpiggy.com:2121/apps.json")
 
 # Wait until the user stops the app
 import time
