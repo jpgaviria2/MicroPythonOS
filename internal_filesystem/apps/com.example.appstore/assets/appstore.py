@@ -18,6 +18,22 @@ class App:
         self.icon_url = icon_url
 
 
+def load_icon(url):
+    print(f"downloading icon from {url}")
+    response = urequests.get(url, timeout=5)
+    if response.status_code == 200:
+        image_data = response.content
+        print("Downloaded image, size:", len(image_data), "bytes")
+        image_dsc = lv.image_dsc_t({
+            'data_size': len(image_data),
+            'data': image_data
+        })
+        return image_dsc
+    else:
+        print("Failed to download image: Status code", response.status_code)
+        return None
+
+
 def download_apps(json_url):
     global apps
     try:
@@ -47,8 +63,10 @@ def create_apps_list():
         cont.set_flex_flow(lv.FLEX_FLOW.ROW)
         cont.set_size(lv.pct(100), lv.SIZE_CONTENT)
         cont.add_event_cb(lambda e, a=app: show_app_detail(a), lv.EVENT.CLICKED, None)
-        icon_spacer = lv.obj(cont)
-        icon_spacer.set_size(40, 40)
+        icon_spacer = lv.image(cont)
+        image_dsc = load_icon(app.icon_url)
+        icon_spacer.set_src(image_dsc)
+        icon_spacer.set_size(64, 64)
         icon_spacer.add_event_cb(lambda e, a=app: show_app_detail(a), lv.EVENT.CLICKED, None)
         label_cont = lv.obj(cont)
         label_cont.set_flex_flow(lv.FLEX_FLOW.COLUMN)
@@ -116,6 +134,7 @@ def toggle_install(event):
 
 
 def back_to_main(event):
+    global app_detail_screen
     if app_detail_screen:
         app_detail_screen.delete()
         app_detail_screen = None
