@@ -48,6 +48,7 @@ def download_apps(json_url):
             create_apps_list()
     except Exception as e:
         print("Download failed:", e)
+        please_wait_label.set_text(f"Error downloading app index: {e}")
 
 
 def create_apps_list():
@@ -104,12 +105,15 @@ def show_app_detail(app):
     cont.set_pos(0, 40)
     cont.set_flex_flow(lv.FLEX_FLOW.COLUMN)
     #
-    icon_spacer = lv.image(cont)
+    headercont = lv.obj(cont)
+    headercont.set_flex_flow(lv.FLEX_FLOW.ROW)
+    headercont.set_size(lv.pct(100), lv.SIZE_CONTENT)
+    icon_spacer = lv.image(headercont)
     if app.image_dsc:
         icon_spacer.set_src(app.image_dsc)
     icon_spacer.set_size(64, 64)
     #
-    detail_cont = lv.obj(cont)
+    detail_cont = lv.obj(headercont)
     detail_cont.set_flex_flow(lv.FLEX_FLOW.COLUMN)
     detail_cont.set_size(lv.pct(100), lv.SIZE_CONTENT)
     name_label = lv.label(detail_cont)
@@ -153,9 +157,17 @@ def back_to_main(event):
 
 
 print("appstore.py starting")
+
 please_wait_label = lv.label(subwindow)
-please_wait_label.set_text("Please wait...")
+please_wait_label.set_text("Downloading app index...")
 please_wait_label.center()
+
+import network
+if not network.WLAN(network.STA_IF).isconnected():
+    please_wait_label.set_text("Error: WiFi is not connected.")
+    import sys
+    sys.exit() # stops the script but doesn't return to launcher so the user can read the error
+
 download_apps("http://demo.lnpiggy.com:2121/apps.json")
 
 # Wait until the user stops the app
