@@ -197,13 +197,6 @@ def show_password_page(ssid):
     label=lv.label(cancel_button)
     label.set_text("Cancel")
     cancel_button.add_event_cb(cancel_cb,lv.EVENT.CLICKED,None)
-    print("show_password_page: Creating Back button")
-    back_button=lv.button(password_page)
-    back_button.set_size(80,30)
-    back_button.align(lv.ALIGN.BOTTOM_MID,0,-40)
-    label=lv.label(back_button)
-    label.set_text("Back")
-    back_button.add_event_cb(cancel_cb,lv.EVENT.CLICKED,None)
     print("show_password_page: Loading password page")
     lv.screen_load(password_page)
 
@@ -226,7 +219,7 @@ def connect_cb(event):
 
 def cancel_cb(event):
     print("cancel_cb: Cancel/Back button clicked")
-    print("Not deleting password page right now...")
+    print("Deleting password screen...")
     password_page.delete()
     print("cancel_cb: Restoring main subwindow")
     lv.screen_load(main_subwindow)
@@ -235,8 +228,8 @@ def create_ui(subwindow):
     global list,main_subwindow,error_label,scanning_label
     print("create_ui: Creating list widget")
     list=lv.list(subwindow)
-    list.set_size(240,180)
-    list.align(lv.ALIGN.CENTER,0,-10)
+    list.set_size(lv.pct(100),180)
+    list.align(lv.ALIGN.TOP_MID,0,0)
     print("create_ui: Creating error label")
     error_label=lv.label(subwindow)
     error_label.set_text("")
@@ -263,7 +256,8 @@ def create_ui(subwindow):
 
 
 main_subwindow=appscreen
-create_ui(subwindow)
+#create_ui(subwindow)
+create_ui(appscreen)
 
 
 import time
