@@ -317,14 +317,14 @@ def execute_script(script_source, is_file, is_launcher, is_graphical):
             tb = getattr(e, '__traceback__', None)
             traceback.print_exception(type(e), e, tb)
         print(f"Thread {thread_id}: script {compile_name} finished")
-        if is_graphical and not is_launcher:
+        if is_graphical and prevscreen and not is_launcher:
             print("/main.py: execute_script(): deleting timers...")
             timer1.delete()
             timer2.delete()
             timer3.delete()
             timer4.delete()
             newscreen.delete()
-            print(f"Thread {thread_id}: finished, prevscreen is set and it's not a launcher so returning to previous screen...")
+            print(f"Thread {thread_id}: finished. It's not a launcher so returning to previous screen...")
             lv.screen_load(prevscreen)
     except Exception as e:
         print(f"Thread {thread_id}: error:")

@@ -1,3 +1,0 @@
-Manifest-Version: 1.0
-Name: Files
-Start-Script: assets/files.py

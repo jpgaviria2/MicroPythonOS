@@ -71,10 +71,6 @@ def test_allocation(buffer_size, n):
 # Test buffer sizes of 2^n, starting from n=1 (2 bytes)
 n = 1
 
-subwindow.clean()
-canary = lv.obj(subwindow)
-canary.add_flag(lv.obj.FLAG.HIDDEN)
-
 status = lv.label(subwindow)
 status.align(lv.ALIGN.TOP_LEFT, 5, 10)
 status.set_style_text_color(lv.color_hex(0xFFFFFF), 0)
@@ -85,7 +81,7 @@ summary += "Buffer Size (bytes) | Max Allocated\n"
 summary += "-----------------------------------\n"
 status.set_text(summary)
 
-while canary.is_valid():
+while appscreen == lv.screen_active():
    buffer_size = 2 ** n
    summary += f"{buffer_size:>12} | "
    status.set_text(summary)
@@ -112,5 +108,5 @@ summary += "Test completed.\n"
 status.set_text(summary)
 
 # Wait until the user stops the app
-while canary.is_valid():
-    time.sleep_ms(100)
+while appscreen == lv.screen_active():
+    time.sleep(1)

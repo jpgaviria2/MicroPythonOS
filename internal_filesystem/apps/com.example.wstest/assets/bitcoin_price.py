@@ -6,10 +6,6 @@ import urandom
 import uhashlib
 import time
 
-subwindow.clean()
-canary = lv.obj(subwindow)
-canary.add_flag(lv.obj.FLAG.HIDDEN)
-
 def compute_accept_key(key):
     GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
     hash_obj = uhashlib.sha1(key + GUID)
@@ -201,7 +197,7 @@ try:
             break
     print("Subscribing to price updates...")
     ws_send_text(sock, ujson.dumps({"type": "subscribe","product_ids": ["BTC-USD"],"channels": ["ticker_batch"]}))
-    while canary.is_valid():
+    while appscreen == lv.screen_active():
         time.sleep(1)            
         data = ws_read_frame(sock)
         if data:

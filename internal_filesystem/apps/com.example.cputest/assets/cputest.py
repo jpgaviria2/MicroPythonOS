@@ -5,7 +5,7 @@
 # Busy loop with yield: 40303.37 iterations/second
 # SHA-256 (1KB): 7357.60 iterations/second
 #
-# Adding the canary.is_valid() test reduces the results to:
+# Adding the appscreen == lv.screen_active() test reduces the results to:
 # Busy loop: 22289 iterations/second
 # Busy loop with yield: 15923 iterations/second
 # SHA-256 (1KB): 5269 iterations/second
@@ -19,16 +19,12 @@ TEST_DURATION = 5  # Duration of each test in seconds
 DATA_SIZE = 1024   # 1KB of data for SHA-256 test
 DATA = os.urandom(DATA_SIZE)  # Generate 1KB of random data for SHA-256
 
-subwindow.clean()
-canary = lv.obj(subwindow)
-canary.add_flag(lv.obj.FLAG.HIDDEN)
-
 def stress_test_busy_loop():
     print("\nStarting busy loop stress test...")
     iterations = 0
     start_time = time.ticks_ms()
     end_time = start_time + (TEST_DURATION * 1000)
-    while time.ticks_ms() < end_time and canary.is_valid():
+    while time.ticks_ms() < end_time and appscreen == lv.screen_active():
         iterations += 1
     duration_ms = time.ticks_diff(time.ticks_ms(), start_time)
     iterations_per_second = (iterations / duration_ms) * 1000
@@ -41,7 +37,7 @@ def stress_test_busy_loop_with_yield():
     iterations = 0
     start_time = time.ticks_ms()
     end_time = start_time + (TEST_DURATION * 1000)
-    while time.ticks_ms() < end_time and canary.is_valid():
+    while time.ticks_ms() < end_time and appscreen == lv.screen_active():
         iterations += 1
         time.sleep_ms(0)  # Yield to other tasks
     duration_ms = time.ticks_diff(time.ticks_ms(), start_time)
@@ -55,7 +51,7 @@ def stress_test_sha256():
     iterations = 0
     start_time = time.ticks_ms()
     end_time = start_time + (TEST_DURATION * 1000)
-    while time.ticks_ms() < end_time and canary.is_valid():
+    while time.ticks_ms() < end_time and appscreen == lv.screen_active():
         hashlib.sha256(DATA).digest()  # Compute SHA-256 on 1KB data
         iterations += 1
     duration_ms = time.ticks_diff(time.ticks_ms(), start_time)
@@ -93,6 +89,6 @@ summary += f"SHA-256 (1KB): {sha256_ips:.2f}/second\n"
 summary += "\nAll tests completed."
 status.set_text(summary)    
 
-# Wait until the user stops the app
-while canary.is_valid():
-    time.sleep_ms(100)
+# Wait until the user closes the app
+while appscreen == lv.screen_active():
+    time.sleep_ms(5000)

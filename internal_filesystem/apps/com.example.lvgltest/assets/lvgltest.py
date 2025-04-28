@@ -3,15 +3,10 @@ import random
 
 # Configuration
 SPINNER_SIZE = 40   # Size of each spinner in pixels
-UPDATE_INTERVAL_MS = 3000  # Add spinner and update metrics every 100ms
 
 # Global variables
 spinner_count = 0
 metrics_label = None
-
-subwindow.clean()
-canary = lv.obj(subwindow)
-canary.add_flag(lv.obj.FLAG.HIDDEN)
 
 def add_spinner_and_update():
     global spinner_count, metrics_label
@@ -44,9 +39,9 @@ def run_benchmark():
     metrics_label.set_pos(10, 10)
     metrics_label.set_text("Spinners: 0")
     
-    while canary.is_valid():
+    while appscreen == lv.screen_active():
         add_spinner_and_update()
-        time.sleep_ms(UPDATE_INTERVAL_MS)
+        time.sleep(3)
 
        
 try:
