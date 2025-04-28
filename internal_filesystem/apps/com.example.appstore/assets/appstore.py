@@ -45,7 +45,7 @@ class AppStore:
         print("create_apps_list iterating")
         for app in self.apps:
             print("create_apps_list app found")
-            item = self.apps_list.add_button(lv.SYMBOL.REFRESH, "Test")
+            item = self.apps_list.add_button(None, "Test")
             print("create_apps_list app found 1")
             item.add_flag(lv.obj.FLAG.CLICKABLE)
             print("create_apps_list app found 2")
@@ -118,11 +118,10 @@ class AppStore:
             self.app_detail_screen.delete()
             self.app_detail_screen = None
             lv.screen_load(self.subwindow)
-            gc.collect()
 
 
 # Example usage:
-app_store = AppStore(subwindow, "http://demo.lnpiggy.com:2121/apps.json")
+app_store = AppStore(appscreen, "http://demo.lnpiggy.com:2121/apps.json")
 
 # Wait until the user stops the app
 import time
