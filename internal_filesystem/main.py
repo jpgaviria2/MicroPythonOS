@@ -325,7 +325,7 @@ def execute_script(script_source, is_file, is_launcher):
         print(f"Thread {thread_id}: script {compile_name} finished")
         if prevscreen and not is_launcher:
             print("/main.py: execute_script(): cleaning subwindow...")
-            subwindow.clean()
+            #subwindow.clean()
             timer1.delete()
             timer2.delete()
             timer3.delete()

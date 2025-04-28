@@ -30,9 +30,11 @@
 #i2c.writeto_mem(sensor_addr, reg_addr, bytes([reg_value]))
 
 
-subwindow.clean()
-canary = lv.obj(subwindow)
-canary.add_flag(lv.obj.FLAG.HIDDEN)
+myscreen = lv.screen_active()
+
+#subwindow.clean()
+#canary = lv.obj(subwindow)
+#canary.add_flag(lv.obj.FLAG.HIDDEN)
 
 #width = 480
 #height = 320
@@ -127,13 +129,9 @@ try_capture()
 
 
 import time
+while myscreen == lv.screen_active():
+    try_capture()
+    time.sleep_ms(100) # Allow for the MicroPython REPL to still work
 
-try:
-    while canary.is_valid():
-        try_capture()
-        time.sleep_ms(100) # Allow for the MicroPython REPL to still work
-except lv.LvReferenceError: # triggers when the canary dies
-    print("Canary died, deinitializing camera...")
-    cam.deinit()
-
+print("App backgrounded, deinitializing camera...")
 cam.deinit()
