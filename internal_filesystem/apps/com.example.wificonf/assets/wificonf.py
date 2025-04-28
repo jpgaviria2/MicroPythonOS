@@ -89,6 +89,8 @@ def attempt_connecting(ssid,password):
         return False
 
 def auto_connect():
+    # scan for wifi networks
+    # for each one that is known, try to connect
     print("auto_connect: Attempting to connect to known networks")
     for ssid,password in access_points.items():
         print(f"auto_connect: Trying SSID: {ssid}")
@@ -244,8 +246,8 @@ def create_ui(subwindow):
     label=lv.label(scan_button)
     label.set_text("Scan")
     scan_button.add_event_cb(scan_cb,lv.EVENT.CLICKED,None)
-    print("create_ui: Attempting auto-connect")
-    auto_connect()
+    #print("create_ui: Attempting auto-connect")
+    #auto_connect()
     print("create_ui: Refreshing list with initial scan")
     refresh_list()
     print("create_ui: Loading config")
