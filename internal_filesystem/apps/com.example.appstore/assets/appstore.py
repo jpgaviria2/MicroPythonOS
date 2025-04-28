@@ -31,7 +31,7 @@ class AppStore:
             response = urequests.get(self.json_url)
             print("download_apps")
             if response.status_code == 200:
-                print(f"Got response text: {reponse.text}")
+                print(f"Got response text: {response.text}")
                 self.apps = [App(**app) for app in json.loads(response.text)]
                 response.close()
                 self.please_wait_label.add_flag(lv.obj.FLAG.HIDDEN)
@@ -45,11 +45,11 @@ class AppStore:
         print("create_apps_list iterating")
         for app in self.apps:
             print("create_apps_list app found")
-            item = self.apps_list.add_button("", "")
+            item = self.apps_list.add_button(lv.SYMBOL.REFRESH, "Test")
             print("create_apps_list app found 1")
             item.add_flag(lv.obj.FLAG.CLICKABLE)
             print("create_apps_list app found 2")
-            item.add_event_cb(lambda e, a=app: self.show_app_detail(a), lv.EVENT.CLICKED)
+            item.add_event_cb(lambda e, a=app: self.show_app_detail(a), lv.EVENT.CLICKED, None)
             print("create_apps_list app found 3")
             cont = lv.obj(item)
             print("create_apps_list app found 4")
@@ -76,7 +76,7 @@ class AppStore:
         back_button = lv.button(self.app_detail_screen)
         back_button.set_size(30, 30)
         back_button.add_flag(lv.obj.FLAG.CLICKABLE)
-        back_button.add_event_cb(self.back_to_main, lv.EVENT.CLICKED)
+        back_button.add_event_cb(self.back_to_main, lv.EVENT.CLICKED, None)
         back_label = lv.label(back_button)
         back_label.set_text(lv.SYMBOL.LEFT)
         back_label.center()
@@ -98,7 +98,7 @@ class AppStore:
         self.install_button = lv.button(detail_cont)
         self.install_button.set_size(lv.pct(100), 40)
         self.install_button.add_flag(lv.obj.FLAG.CLICKABLE)
-        self.install_button.add_event_cb(self.toggle_install, lv.EVENT.CLICKED)
+        self.install_button.add_event_cb(self.toggle_install, lv.EVENT.CLICKED, None)
         install_label = lv.label(self.install_button)
         install_label.set_text("Install")
         install_label.center()
@@ -122,5 +122,9 @@ class AppStore:
 
 
 # Example usage:
-#app_store = AppStore(lv.screen_active(), "http://demo.lnpiggy.com:2121/apps.json")
 app_store = AppStore(subwindow, "http://demo.lnpiggy.com:2121/apps.json")
+
+# Wait until the user stops the app
+import time
+while appscreen == lv.screen_active() or app_store.app_detail_screen == lv.screen_active():
+    time.sleep_ms(50)
