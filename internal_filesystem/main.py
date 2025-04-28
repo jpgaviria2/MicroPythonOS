@@ -349,11 +349,8 @@ def start_app(app_dir, is_launcher=False):
     start_script_fullpath = f"{app_dir}/{start_script}"
     execute_script_new_thread(start_script_fullpath, True, is_launcher, True)
 
-def run_launcher():
-    start_app("/apps/com.example.launcher", True)
-
 execute_script_new_thread("/autorun.py", True, False, False)
-run_launcher()
+start_app("/apps/com.example.launcher", True)
 
 # If we got this far without crashing, then no need to rollback the update
 import ota.rollback
