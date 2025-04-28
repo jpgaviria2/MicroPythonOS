@@ -155,23 +155,8 @@ def add_notification_bar(screen):
 
 
 
-
-
-# Subwindow is created before drawer so that drawer is on top
-# Instead of giving the apps access to the subwindow, potentially corrupting it,
-# it might be better to give a subcontainer in the subwindow.
-# But if that's a performance impact, then properly restoring the subwindow along with subwindow.clean() is also an option.
-#rootscreen = lv.screen_active()
-#subwindow = lv.obj(rootscreen)
-#subwindow.set_size(TFT_HOR_RES, TFT_VER_RES - NOTIFICATION_BAR_HEIGHT)
-#subwindow.set_pos(0, NOTIFICATION_BAR_HEIGHT)
-#subwindow.set_style_border_width(0, 0)
-#subwindow.set_style_pad_all(0, 0)
-
-
 drawer=lv.obj()
 drawer.set_size(TFT_HOR_RES,TFT_VER_RES-NOTIFICATION_BAR_HEIGHT)
-#drawer.set_pos(0,-TFT_VER_RES+NOTIFICATION_BAR_HEIGHT)
 drawer.set_style_bg_color(COLOR_DRAWER_BG,0)
 drawer.set_scroll_dir(lv.DIR.NONE)
 slider=lv.slider(drawer)
@@ -204,7 +189,6 @@ def wifi_event(e):
     global drawer_open
     #wifi_screen.set_y(0) # TODO: make this
     close_drawer()
-    drawer_open=False
 
 wifi_btn.add_event_cb(wifi_event,lv.EVENT.CLICKED,None)
 #
@@ -219,7 +203,6 @@ settings_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
 def settings_event(e):
     global drawer_open
     close_drawer()
-    drawer_open=False
 
 settings_btn.add_event_cb(settings_event,lv.EVENT.CLICKED,None)
 #
@@ -235,8 +218,7 @@ def launcher_event(e):
     print("Launcher button pressed!")
     global drawer_open
     close_drawer()
-    drawer_open=False
-    run_launcher()
+    lv.screen_load(rootscreen)
 
 launcher_btn.add_event_cb(launcher_event,lv.EVENT.CLICKED,None)
 #
@@ -299,15 +281,18 @@ def long_path_to_filename(path):
         return None
 
 # Run the script in the current thread:
-def execute_script(script_source, is_file, return_to_previous):
+def execute_script(script_source, is_file, is_launcher):
     thread_id = _thread.get_ident()
     print(f"Thread {thread_id}: executing script")
     try:
-        prevscreen = lv.screen_active()
-        newscreen=lv.obj()
-        newscreen.set_size(lv.pct(100),lv.pct(100))
+        if is_launcher:
+            prevscreen = None
+            newscreen = rootscreen
+        else:
+            prevscreen = lv.screen_active()
+            newscreen=lv.obj()
+            newscreen.set_size(lv.pct(100),lv.pct(100))
         add_notification_bar(newscreen)
-        #notification_bar.set_parent(newscreen)
         subwindow = lv.obj(newscreen)
         subwindow.set_size(TFT_HOR_RES, TFT_VER_RES - NOTIFICATION_BAR_HEIGHT)
         subwindow.set_pos(0, NOTIFICATION_BAR_HEIGHT)
@@ -323,7 +308,7 @@ def execute_script(script_source, is_file, return_to_previous):
         }
         if is_file:
             print(f"Thread {thread_id}: reading script from file {script_source}")
-            with open(script_source, 'r') as f:
+            with open(script_source, 'r') as f: # TODO: check if file exists first?
                 script_source = f.read()
         print(f"Thread {thread_id}: starting script")
         try:
@@ -336,9 +321,8 @@ def execute_script(script_source, is_file, return_to_previous):
             tb = getattr(e, '__traceback__', None)
             traceback.print_exception(type(e), e, tb)
         print(f"Thread {thread_id}: script {compile_name} finished")
-        if prevscreen and return_to_previous:
-            print(f"Thread {thread_id}: finished, prevscreen is set so returning to previous screen...")
-            #run_launcher()
+        if prevscreen and not is_launcher:
+            print(f"Thread {thread_id}: finished, prevscreen is set and it's not a launcher so returning to previous screen...")
             lv.screen_load(prevscreen)
     except Exception as e:
         print(f"Thread {thread_id}: error:")
@@ -346,27 +330,27 @@ def execute_script(script_source, is_file, return_to_previous):
         traceback.print_exception(type(e), e, tb)
 
 # Run the script in a new thread:
-def execute_script_new_thread(scriptname, is_file, return_to_previous):
-    print(f"/main.py: execute_script_new_thread({scriptname},{is_file},{return_to_previous})")
+def execute_script_new_thread(scriptname, is_file, is_launcher):
+    print(f"/main.py: execute_script_new_thread({scriptname},{is_file},{is_launcher})")
     try:
         print("/main.py: execute_script_new_thread(): cleaning subwindow...")
         #subwindow.clean()
         # 168KB maximum at startup but 136KB after loading display, drivers, LVGL gui etc so let's go for 128KB for now, still a lot...
         # But then no additional threads can be created. A stacksize of 32KB allows for 4 threads, so 3 in the app itself, which might be tight.
         _thread.stack_size(16384) # A stack size of 16KB allows for around 10 threads in the app, which should be plenty.
-        _thread.start_new_thread(execute_script, (scriptname, is_file, return_to_previous))
+        _thread.start_new_thread(execute_script, (scriptname, is_file, is_launcher))
     except Exception as e:
         print("/main.py: execute_script_new_thread(): error starting new thread thread: ", e)
 
-def start_app(app_dir, return_to_previous=True):
-    print(f"/main.py start_app({app_dir},{return_to_previous}")
+def start_app(app_dir, is_launcher=False):
+    print(f"/main.py start_app({app_dir},{is_launcher}")
     manifest_path = f"{app_dir}/META-INF/MANIFEST.MF"
     app_name, start_script = parse_manifest(manifest_path)
     start_script_fullpath = f"{app_dir}/{start_script}"
-    execute_script_new_thread(start_script_fullpath, True, return_to_previous)
+    execute_script_new_thread(start_script_fullpath, True, is_launcher)
 
 def run_launcher():
-    start_app("/apps/com.example.launcher", False)
+    start_app("/apps/com.example.launcher", True)
 
 execute_script_new_thread("/autorun.py", True, False)
 run_launcher()
