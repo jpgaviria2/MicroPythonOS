@@ -271,31 +271,36 @@ def long_path_to_filename(path):
         return None
 
 # Run the script in the current thread:
-def execute_script(script_source, is_file, is_launcher):
+def execute_script(script_source, is_file, is_launcher, is_graphical):
     thread_id = _thread.get_ident()
     print(f"Thread {thread_id}: executing script")
     try:
-        if is_launcher:
-            prevscreen = None
-            newscreen = rootscreen
-        else:
-            prevscreen = lv.screen_active()
-            newscreen=lv.obj()
-            newscreen.set_size(lv.pct(100),lv.pct(100))
-        timer1, timer2, timer3, timer4 = add_notification_bar(newscreen)
-        subwindow = lv.obj(newscreen)
-        subwindow.set_size(TFT_HOR_RES, TFT_VER_RES - NOTIFICATION_BAR_HEIGHT)
-        subwindow.set_pos(0, NOTIFICATION_BAR_HEIGHT)
-        subwindow.set_style_border_width(0, 0)
-        subwindow.set_style_pad_all(0, 0)
-        lv.screen_load(newscreen)
-        script_globals = {
-            'lv': lv,
-            'subwindow': subwindow,
-            'start_app': start_app, # for launcher apps
-            'parse_manifest': parse_manifest, # for launcher apps
-            '__name__': "__main__"
-        }
+        if not is_graphical:
+            script_globals = {
+                '__name__': "__main__"
+            }
+        else: # is_graphical
+            if is_launcher:
+                prevscreen = None
+                newscreen = rootscreen
+            else:
+                prevscreen = lv.screen_active()
+                newscreen=lv.obj()
+                newscreen.set_size(lv.pct(100),lv.pct(100))
+            timer1, timer2, timer3, timer4 = add_notification_bar(newscreen)
+            subwindow = lv.obj(newscreen)
+            subwindow.set_size(TFT_HOR_RES, TFT_VER_RES - NOTIFICATION_BAR_HEIGHT)
+            subwindow.set_pos(0, NOTIFICATION_BAR_HEIGHT)
+            subwindow.set_style_border_width(0, 0)
+            subwindow.set_style_pad_all(0, 0)
+            lv.screen_load(newscreen)
+            script_globals = {
+                'lv': lv,
+                'subwindow': subwindow,
+                'start_app': start_app, # for launcher apps
+                'parse_manifest': parse_manifest, # for launcher apps
+                '__name__': "__main__"
+            }
         if is_file:
             print(f"Thread {thread_id}: reading script from file {script_source}")
             with open(script_source, 'r') as f: # TODO: check if file exists first?
@@ -311,7 +316,7 @@ def execute_script(script_source, is_file, is_launcher):
             tb = getattr(e, '__traceback__', None)
             traceback.print_exception(type(e), e, tb)
         print(f"Thread {thread_id}: script {compile_name} finished")
-        if prevscreen and not is_launcher:
+        if is_graphical and not is_launcher:
             print("/main.py: execute_script(): cleaning subwindow...")
             timer1.delete()
             timer2.delete()
@@ -326,13 +331,13 @@ def execute_script(script_source, is_file, is_launcher):
         traceback.print_exception(type(e), e, tb)
 
 # Run the script in a new thread:
-def execute_script_new_thread(scriptname, is_file, is_launcher):
+def execute_script_new_thread(scriptname, is_file, is_launcher, is_graphical):
     print(f"/main.py: execute_script_new_thread({scriptname},{is_file},{is_launcher})")
     try:
         # 168KB maximum at startup but 136KB after loading display, drivers, LVGL gui etc so let's go for 128KB for now, still a lot...
         # But then no additional threads can be created. A stacksize of 32KB allows for 4 threads, so 3 in the app itself, which might be tight.
         _thread.stack_size(16384) # A stack size of 16KB allows for around 10 threads in the app, which should be plenty.
-        _thread.start_new_thread(execute_script, (scriptname, is_file, is_launcher))
+        _thread.start_new_thread(execute_script, (scriptname, is_file, is_launcher, is_graphical))
     except Exception as e:
         print("/main.py: execute_script_new_thread(): error starting new thread thread: ", e)
 
@@ -341,12 +346,12 @@ def start_app(app_dir, is_launcher=False):
     manifest_path = f"{app_dir}/META-INF/MANIFEST.MF"
     app_name, start_script = parse_manifest(manifest_path)
     start_script_fullpath = f"{app_dir}/{start_script}"
-    execute_script_new_thread(start_script_fullpath, True, is_launcher)
+    execute_script_new_thread(start_script_fullpath, True, is_launcher, True)
 
 def run_launcher():
     start_app("/apps/com.example.launcher", True)
 
-#execute_script_new_thread("/autorun.py", True, False)
+execute_script_new_thread("/autorun.py", True, False, False)
 run_launcher()
 
 # If we got this far without crashing, then no need to rollback the update
