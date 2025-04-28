@@ -78,7 +78,7 @@ def create_apps_list():
         icon_spacer.add_event_cb(lambda e, a=app: show_app_detail(a), lv.EVENT.CLICKED, None)
         label_cont = lv.obj(cont)
         label_cont.set_flex_flow(lv.FLEX_FLOW.COLUMN)
-        label_cont.set_size(lv.pct(100), lv.SIZE_CONTENT)
+        label_cont.set_size(lv.pct(75), lv.SIZE_CONTENT)
         label_cont.add_event_cb(lambda e, a=app: show_app_detail(a), lv.EVENT.CLICKED, None)
         name_label = lv.label(label_cont)
         name_label.set_text(app.name)
@@ -109,6 +109,7 @@ def show_app_detail(app):
     cont.set_flex_flow(lv.FLEX_FLOW.COLUMN)
     #
     headercont = lv.obj(cont)
+    headercont.set_style_pad_all(0, 0)
     headercont.set_flex_flow(lv.FLEX_FLOW.ROW)
     headercont.set_size(lv.pct(100), lv.SIZE_CONTENT)
     headercont.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
@@ -118,8 +119,9 @@ def show_app_detail(app):
     icon_spacer.set_size(64, 64)
     #
     detail_cont = lv.obj(headercont)
+    detail_cont.set_style_pad_all(0, 0)
     detail_cont.set_flex_flow(lv.FLEX_FLOW.COLUMN)
-    detail_cont.set_size(lv.pct(100), lv.SIZE_CONTENT)
+    detail_cont.set_size(lv.pct(80), lv.SIZE_CONTENT)
     name_label = lv.label(detail_cont)
     name_label.set_text(app.name)
     name_label.set_style_text_font(lv.font_montserrat_24, 0)
@@ -127,6 +129,11 @@ def show_app_detail(app):
     publisher_label.set_text(app.publisher)
     publisher_label.set_style_text_font(lv.font_montserrat_16, 0)
     #
+    progress_bar = lv.bar(cont)
+    progress_bar.set_width(lv.pct(100))
+    #progress_bar.align(lv.ALIGN.BOTTOM_MID, 0, -50)
+    progress_bar.set_range(0, 100)
+    progress_bar.set_value(50, lv.ANIM.OFF)
     install_button = lv.button(cont)
     install_button.align_to(detail_cont, lv.ALIGN.OUT_BOTTOM_MID, 0, lv.pct(5))
     install_button.set_size(lv.pct(100), 40)
@@ -169,14 +176,11 @@ please_wait_label.center()
 import network
 if not network.WLAN(network.STA_IF).isconnected():
     please_wait_label.set_text("Error: WiFi is not connected.")
-    import sys
-    sys.exit() # stops the script but doesn't return to launcher so the user can read the error
-
-download_apps("http://demo.lnpiggy.com:2121/apps.json")
-
-# Wait until the user stops the app
-import time
-while appscreen == lv.screen_active() or app_detail_screen == lv.screen_active():
-    time.sleep_ms(100)
-
+else:
+    download_apps("http://demo.lnpiggy.com:2121/apps.json")
+    # Wait until the user stops the app
+    import time
+    while appscreen == lv.screen_active() or app_detail_screen == lv.screen_active():
+        time.sleep_ms(100)
+    
 print("appstore.py ending")
