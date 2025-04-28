@@ -116,13 +116,13 @@ else:
         # TODO: support PathLike objects
         return path
 
-    def makedirs(path):
-        parts = path.split(OS_SEP)
-        for i in range(1, len(parts)+1):
-            sub = parts[0:i]
-            p = OS_SEP.join(sub)
-            if not os.path.exists(p):
-                os.mkdir(p)
+#    def makedirs(path):
+#        parts = path.split(OS_SEP)
+#        for i in range(1, len(parts)+1):
+#            sub = parts[0:i]
+#            p = OS_SEP.join(sub)
+#            if not os.path.exists(p):
+#                os.mkdir(p)
 
     def os_path_splitdrive(p):
         """Split a pathname into drive and path. On Posix, drive is always empty."""
@@ -1905,51 +1905,82 @@ class ZipFile:
         arcname = pathsep.join(x for x in arcname if x)
         return arcname
 
+    # Path manipulation helpers
+    def path_join(*parts):
+        return "/".join(part.strip("/") for part in parts)
+    
+    def path_normpath(path):
+        # Remove redundant slashes and leading/trailing slashes
+        parts = [part for part in path.split("/") if part]
+        return "/" + "/".join(parts)
+    
+    def path_dirname(path):
+        parts = path.strip("/").split("/")
+        if len(parts) <= 1:
+            return ""
+        return "/".join(parts[:-1])
+    
+    def path_exists(path):
+        try:
+            os.stat(path)
+            return True
+        except OSError:
+            return False
+    
+    def path_isdir(path):
+        try:
+            return (os.stat(path)[0] & 0x4000) != 0  # Check if directory
+        except OSError:
+            return False
+    
+    def makedirs(path):
+        if not path or path_exists(path):
+            return
+        parent = path_dirname(path)
+        if parent:
+            makedirs(parent)  # Recursively create parent directories
+        if not path_exists(path):
+            os.mkdir(path)
+    
     def _extract_member(self, member, targetpath, pwd):
         """Extract the ZipInfo object 'member' to a physical
-           file on the path targetpath.
+        file on the path targetpath.
         """
         if not isinstance(member, ZipInfo):
             member = self.getinfo(member)
-
-        # build the destination pathname, replacing
-        # forward slashes to platform specific separators.
-        arcname = member.filename.replace('/', OS_PATH_SEP)
-
-        if ALTSEP:
-            arcname = arcname.replace(ALTSEP, OS_PATH_SEP)
-        # interpret absolute pathname as relative, remove drive letter or
-        # UNC path, redundant separators, "." and ".." components.
-        arcname = os_path_splitdrive(arcname)[1]
-        invalid_path_parts = ('', CURDIR, PARDIR)
-        arcname = OS_PATH_SEP.join(x for x in arcname.split(OS_PATH_SEP)
-                                   if x not in invalid_path_parts)
-        if OS_PATH_SEP == '\\':
-            # filter illegal characters on Windows
-            arcname = self._sanitize_windows_name(arcname, OS_PATH_SEP)
-
+    
+        # Build the destination pathname, using / as separator
+        arcname = member.filename.replace("/", "/")  # Already using / in MicroPython
+    
+        # Remove absolute path prefix and redundant components
+        invalid_path_parts = ("", ".", "..")
+        arcname = "/".join(x for x in arcname.strip("/").split("/") if x not in invalid_path_parts)
+    
         if not arcname and not member.is_dir():
             raise ValueError("Empty filename.")
-
-        targetpath = os.path.join(targetpath, arcname)
-        targetpath = os.path.normpath(targetpath)
-
-        # Create all upper directories if necessary.
-        upperdirs = os.path.dirname(targetpath)
-        if upperdirs and not os.path.exists(upperdirs):
+    
+        # Construct target path
+        targetpath = path_join(targetpath, arcname)
+        targetpath = path_normpath(targetpath)
+    
+        # Create all parent directories if necessary
+        upperdirs = path_dirname(targetpath)
+        if upperdirs and not path_exists(upperdirs):
             makedirs(upperdirs)
-
+    
+        # Handle directories
         if member.is_dir():
-            if not os.path.isdir(targetpath):
+            if not path_isdir(targetpath):
                 os.mkdir(targetpath)
             return targetpath
-
-        with self.open(member, pwd=pwd) as source, \
-             open(targetpath, "wb") as target:
+    
+        # Extract file
+        with self.open(member, pwd=pwd) as source, open(targetpath, "wb") as target:
             copyfileobj(source, target)
-
+    
+        gc.collect()  # Free memory after extraction
         return targetpath
-
+    
     def _writecheck(self, zinfo):
         """Check for errors before writing a file to the archive."""
         if zinfo.filename in self.NameToInfo:
