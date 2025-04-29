@@ -85,7 +85,7 @@ for app_dir_fullpath in app_dirs:
         image.set_src(load_icon(icon_path))
     except Exception as e:
         print(f"Error loading icon {icon_path}: {e} - loading default icon")
-        icon_path = "/builtin/resources/default_icon_64x64.bin"
+        icon_path = "/builtin/res/mipmap-mdpi/default_icon_64x64.bin"
         try:
             image.set_src(load_icon(icon_path))
         except Exception as e:
