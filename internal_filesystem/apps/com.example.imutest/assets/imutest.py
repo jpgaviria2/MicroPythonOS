@@ -37,7 +37,7 @@ def map_nonlinear(value: float) -> int:
 import time
 while appscreen == lv.screen_active():
     #print(f"""{sensor.temperature=} {sensor.acceleration=} {sensor.gyro=}""")
-    templabel.set_text(f"Temperature: {sensor.temperature:.2f}°C")
+    templabel.set_text(f"IMU chip temperature: {sensor.temperature:.2f}°C")
     ax = sensor.acceleration[0]
     axp = int((ax * 100 + 100)/2)
     ay = sensor.acceleration[1]
