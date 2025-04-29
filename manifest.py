@@ -1,8 +1,4 @@
-freeze('', 'include_in_build.py')
-freeze('internal_filesystem/', 'boot.py')
-freeze('internal_filesystem/', 'main.py')
-freeze('internal_filesystem/lib', '')
-freeze('internal_filesystem/', 'apps')
-#freeze_as_str('internal_filesystem/apps/com.example.launcher/META-INF/MANIFEST.MF')
-#freeze_as_str('internal_filesystem/resources/default_icon_64x64.bin')
-#freeze('internal_filesystem/lib/ota', '')
+freeze('internal_filesystem/', 'boot.py') # Hardware initialization
+freeze('internal_filesystem/', 'main.py') # User Interface initialization
+freeze('internal_filesystem/lib', '') # Additional libraries
+freeze('internal_filesystem/', 'apps_builtin') # Built-in apps
