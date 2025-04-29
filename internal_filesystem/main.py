@@ -352,8 +352,23 @@ def start_app(app_dir, is_launcher=False):
     start_script_fullpath = f"{app_dir}/{start_script}"
     execute_script_new_thread(start_script_fullpath, True, is_launcher, True)
 
+# Execute this if it exists
 execute_script_new_thread("/autorun.py", True, False, False)
-start_app("/apps/com.example.launcher", True)
+
+try:
+    import freezefs_mount
+except Exception as e:
+    print("/main.py: WARNING: could not import freezefs_mount: ", e)
+
+# The launcher might have been updated from the builtin one, so check that:
+import uos
+custom_launcher = "/apps/com.example.launcher"
+builtin_launcher = "/apps_builtin/com.example.launcher"
+try:
+    stat = uos.stat(custom_launcher)
+    start_app(custom_launcher, True)
+except OSError:
+    start_app(builtin_launcher, True)
 
 # If we got this far without crashing, then no need to rollback the update
 import ota.rollback
