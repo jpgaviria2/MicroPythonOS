@@ -4,7 +4,6 @@ import lcd_bus
 import machine
 import cst816s
 import i2c
-import urequests
 
 import lvgl as lv
 import task_handler

@@ -1,3 +1,6 @@
+import lvgl as lv
+import task_handler
+
 # Constants
 CURRENT_VERSION = "0.0.1"
 TFT_HOR_RES=320
