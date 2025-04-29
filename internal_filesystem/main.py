@@ -84,7 +84,7 @@ def add_notification_bar(screen):
     time_label.align(lv.ALIGN.LEFT_MID, 0, 0)
     time_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
     temp_label = lv.label(notification_bar)
-    temp_label.set_text("00°C")
+    temp_label.set_text("00.00°C")
     temp_label.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
     temp_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
     memfree_label = lv.label(notification_bar)
@@ -136,7 +136,7 @@ def add_notification_bar(screen):
             print("update_wifi_icon caught LvReferenceError")
     import esp32
     def update_temperature(timer):
-        temp_label.set_text(f"{esp32.mcu_temperature()}°C")
+        temp_label.set_text(f"{esp32.mcu_temperature():.2f}°C")
     import gc
     def update_memfree(timer):
         gc.collect()
