@@ -46,7 +46,7 @@ def load_icon(icon_path):
 
 # Check and collect subdirectories from existing directories
 apps_dir = "/apps"
-apps_dir_builtin = "/apps_builtin"
+apps_dir_builtin = "/builtin/apps"
 app_dirs = []
 seen_base_names = set()
 
@@ -71,9 +71,7 @@ for dir_path in [apps_dir, apps_dir_builtin]:
         pass
 
 # Should we skip 'Launcher' apps from the list here?
-for app_dir in app_dirs:
-    # Paths
-    app_dir_fullpath = f"{apps_dir}/{app_dir}"
+for app_dir_fullpath in app_dirs:
     app_name, main_script = parse_manifest(f"{app_dir_fullpath}/META-INF/MANIFEST.MF")
     # Create a container for each app (icon + label)
     app_cont = lv.obj(cont)
@@ -87,7 +85,7 @@ for app_dir in app_dirs:
         image.set_src(load_icon(icon_path))
     except Exception as e:
         print(f"Error loading icon {icon_path}: {e} - loading default icon")
-        icon_path = "/resources/default_icon_64x64.bin"
+        icon_path = "/builtin/resources/default_icon_64x64.bin"
         try:
             image.set_src(load_icon(icon_path))
         except Exception as e:

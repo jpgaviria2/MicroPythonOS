@@ -363,7 +363,7 @@ except Exception as e:
 # The launcher might have been updated from the builtin one, so check that:
 import uos
 custom_launcher = "/apps/com.example.launcher"
-builtin_launcher = "/apps_builtin/com.example.launcher"
+builtin_launcher = "/builtin/apps/com.example.launcher"
 try:
     stat = uos.stat(custom_launcher)
     start_app(custom_launcher, True)
