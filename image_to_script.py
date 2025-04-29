@@ -7,11 +7,9 @@ try:
 except IndexError:
     print('No file or directory given using current working directory')
     input_file = os.getcwd()
-    
 
 def run(in_file):
     output_file = os.path.splitext(in_file)[0] + '.py'
-
     ext = os.path.splitext(in_file)[1][1:]
 
     with open(in_file, 'rb') as f:
@@ -33,17 +31,19 @@ _{ext} = bytearray(binascii.unhexlify(
     with open(output_file, 'w') as f:
         f.write(output)
 
+def process_directory(directory):
+    for root, _, files in os.walk(directory):
+        for file in files:
+            file_ext = os.path.splitext(file)[1][1:]
+            if file_ext not in ('bmp', 'jpg', 'gif', 'png', 'bin', 'MF'):
+                continue
+
+            thisfile = os.path.join(root, file)
+            print('found file:', thisfile)
+            run(thisfile)
 
 if os.path.isdir(input_file):
-    for file in os.listdir(input_file):
-        file_ext = os.path.splitext(file)[1][1:]
-        if file_ext not in ('bmp', 'jpg', 'gif', 'png', 'bin', 'MF'):
-            continue
-        
-        thisfile = os.path.join(input_file, file)
-        print('found file:', thisfile)
-        run(thisfile)
-
+    process_directory(input_file)
 else:
     file_ext = os.path.splitext(input_file)[1][1:]
     if file_ext not in ('bmp', 'jpg', 'gif', 'png', 'bin'):
