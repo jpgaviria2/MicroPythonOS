@@ -356,9 +356,9 @@ def start_app(app_dir, is_launcher=False):
 execute_script_new_thread("/autorun.py", True, False, False)
 
 try:
-    import freezefs_mount
+    import freezefs_mount_builtin
 except Exception as e:
-    print("/main.py: WARNING: could not import freezefs_mount: ", e)
+    print("/main.py: WARNING: could not import/run freezefs_mount_builtin: ", e)
 
 # The launcher might have been updated from the builtin one, so check that:
 import uos
