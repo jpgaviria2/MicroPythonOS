@@ -1,0 +1,10 @@
+diff --git a/ports/esp32/main_esp32s3/idf_component.yml b/ports/esp32/main_esp32s3/idf_component.yml
+index 05ab2f2..0ce3878 100644
+--- a/ports/esp32/main_esp32s3/idf_component.yml
++++ b/ports/esp32/main_esp32s3/idf_component.yml
+@@ -4,3 +4,5 @@ dependencies:
+   espressif/esp_tinyusb: "~1.0.0"
+   idf:
+     version: ">=5.0.4"
++  espressif/esp32-camera:
++    git: https://github.com/cnadler86/esp32-camera.git

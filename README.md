@@ -42,3 +42,26 @@ Furthermore, these apps are also built-in for convenience:
 - /builtin/apps: apps that are builtin and necessary for minimal facilities (launcher, wificonf, appstore etc)
 - /builtin/res/mipmap-mdpi/default_icon_64x64.bin: default icon for apps that don't have one
 
+# Building
+
+mkdir ~/sources/
+cd ~/sources/
+
+git clone https://github.com/LightningPiggy/PiggyOS.git
+
+git clone https://github.com/bixb922/freezeFS
+~/sources/PiggyOS/scripts/build_freezefs_mount_builtin.sh
+
+git clone https://github.com/cnadler86/micropython-camera-API
+echo 'include("~/sources/lvgl_micropython/build/manifest.py")' >> micropython-camera-API/src/manifest.py
+
+git clone https://github.com/lvgl-micropython/lvgl_micropython
+# TODO: apply patches from ~/sources/PiggyOS/patches/
+
+cp ~/sources/PiggyOS/patches/lv_conf.h lvgl_micropython/lib/
+
+cd lvgl_micropython/
+~/sources/PiggyOS/scripts/build_lvgl_micropython.sh
+
+# Now install it with:
+~/sources/PiggyOS/scripts/flash_over_usb.sh
