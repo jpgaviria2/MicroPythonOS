@@ -1,0 +1,12 @@
+--- ports/esp32/managed_components/espressif__esp32-camera/sensors/private_include/ov5640_settings.h.orig	2025-04-30 13:55:08.270061607 +0200
++++ ports/esp32/managed_components/espressif__esp32-camera/sensors/private_include/ov5640_settings.h	2025-04-25 11:34:00.519068438 +0200
+@@ -232,7 +232,8 @@
+ 
+ static const DRAM_ATTR uint16_t sensor_fmt_rgb565[][2] = {
+     {FORMAT_CTRL, 0x01}, // RGB
+-    {FORMAT_CTRL00, 0x61}, // RGB565 (BGR) 
++    //{FORMAT_CTRL00, 0x61}, // RGB565 (BGR) 
++    {FORMAT_CTRL00, 0x6F}, // RGB565 (RGB) 
+     {REGLIST_TAIL, 0x00}
+ };
+ 
