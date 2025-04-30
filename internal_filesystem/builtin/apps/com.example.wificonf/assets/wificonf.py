@@ -88,18 +88,6 @@ def attempt_connecting(ssid,password):
         show_error("Connection failed")
         return False
 
-def auto_connect():
-    # scan for wifi networks
-    # for each one that is known, try to connect
-    print("auto_connect: Attempting to connect to known networks")
-    for ssid,password in access_points.items():
-        print(f"auto_connect: Trying SSID: {ssid}")
-        if attempt_connecting(ssid,password):
-            print(f"auto_connect: Connected to {ssid}")
-            return True
-    print("auto_connect: No known networks connected")
-    return False
-
 def show_error(message):
     print(f"show_error: Displaying error: {message}")
     global error_label

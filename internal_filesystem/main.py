@@ -355,6 +355,10 @@ def start_app(app_dir, is_launcher=False):
 # Execute this if it exists
 execute_script_new_thread("/autorun.py", True, False, False)
 
+# A generic "start at boot" mechanism hasn't been implemented yet, so do it like this:
+execute_script_new_thread("/builtin/apps/com.example.wificonf/assets/auto_connect.py", True, False, False)
+
+
 try:
     import freezefs_mount_builtin
 except Exception as e:
