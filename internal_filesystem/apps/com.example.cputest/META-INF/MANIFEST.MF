@@ -1,3 +1,4 @@
 Manifest-Version: 1.0
 Name: CPUTest
 Start-Script: assets/cputest.py
+Version: 0.0.1
