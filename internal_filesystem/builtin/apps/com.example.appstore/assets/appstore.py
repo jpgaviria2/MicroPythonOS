@@ -341,5 +341,7 @@ else:
     import time
     while mainscreen == lv.screen_active() or app_detail_screen == lv.screen_active():
         time.sleep_ms(100)
+    print("User navigated away from the appstore, restarting launcher to refresh...")
+    restart_launcher() # refresh the launcher
 
 print("appstore.py ending")

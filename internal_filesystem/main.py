@@ -1,5 +1,6 @@
 import lvgl as lv
 import task_handler
+import machine
 
 # Constants
 CURRENT_VERSION = "0.0.1"
@@ -192,19 +193,19 @@ def wifi_event(e):
 
 wifi_btn.add_event_cb(wifi_event,lv.EVENT.CLICKED,None)
 #
-settings_btn=lv.button(drawer)
-settings_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
-settings_btn.align(lv.ALIGN.RIGHT_MID,-PADDING_MEDIUM,0)
-settings_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
-settings_label=lv.label(settings_btn)
-settings_label.set_text(lv.SYMBOL.SETTINGS+" Settings")
-settings_label.center()
-settings_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
-def settings_event(e):
-    global drawer_open
-    close_drawer()
+#settings_btn=lv.button(drawer)
+#settings_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
+#settings_btn.align(lv.ALIGN.RIGHT_MID,-PADDING_MEDIUM,0)
+#settings_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
+#settings_label=lv.label(settings_btn)
+#settings_label.set_text(lv.SYMBOL.SETTINGS+" Settings")
+#settings_label.center()
+#settings_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
+#def settings_event(e):
+#    global drawer_open
+#    close_drawer()
 
-settings_btn.add_event_cb(settings_event,lv.EVENT.CLICKED,None)
+#settings_btn.add_event_cb(settings_event,lv.EVENT.CLICKED,None)
 #
 launcher_btn=lv.button(drawer)
 launcher_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
@@ -224,7 +225,7 @@ launcher_btn.add_event_cb(launcher_event,lv.EVENT.CLICKED,None)
 #
 restart_btn=lv.button(drawer)
 restart_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
-restart_btn.align(lv.ALIGN.BOTTOM_RIGHT,-PADDING_MEDIUM,-PADDING_MEDIUM)
+restart_btn.align(lv.ALIGN.RIGHT_MID,-PADDING_MEDIUM,0)
 restart_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
 restart_label=lv.label(restart_btn)
 restart_label.set_text(lv.SYMBOL.POWER+" Reset")
@@ -307,6 +308,7 @@ def execute_script(script_source, is_file, is_launcher, is_graphical):
                 'subwindow': subwindow,
                 'start_app': start_app, # for launcher apps
                 'parse_manifest': parse_manifest, # for launcher apps
+                'restart_launcher': restart_launcher, # for appstore apps
                 '__name__': "__main__"
             }
         print(f"Thread {thread_id}: starting script")
@@ -352,6 +354,18 @@ def start_app(app_dir, is_launcher=False):
     start_script_fullpath = f"{app_dir}/{start_script}"
     execute_script_new_thread(start_script_fullpath, True, is_launcher, True)
 
+
+def restart_launcher():
+    # The launcher might have been updated from the builtin one, so check that:
+    custom_launcher = "/apps/com.example.launcher"
+    builtin_launcher = "/builtin/apps/com.example.launcher"
+    try:
+        stat = uos.stat(custom_launcher)
+        start_app(custom_launcher, True)
+    except OSError:
+        start_app(builtin_launcher, True)
+
+
 # Execute this if it exists
 execute_script_new_thread("/autorun.py", True, False, False)
 
@@ -376,14 +390,7 @@ except OSError:
     except OSError:
         print("Couldn't execute {builtin_auto_connect}, continuing...")
 
-# The launcher might have been updated from the builtin one, so check that:
-custom_launcher = "/apps/com.example.launcher"
-builtin_launcher = "/builtin/apps/com.example.launcher"
-try:
-    stat = uos.stat(custom_launcher)
-    start_app(custom_launcher, True)
-except OSError:
-    start_app(builtin_launcher, True)
+restart_launcher()
 
 # If we got this far without crashing, then no need to rollback the update
 import ota.rollback
