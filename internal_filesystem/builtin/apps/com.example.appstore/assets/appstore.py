@@ -64,6 +64,28 @@ try:
 except ImportError:
     zipfile = None
 
+
+def uninstall_app(app_folder, label):
+    global install_button, progress_bar
+    install_button.remove_flag(lv.obj.FLAG.CLICKABLE) # TODO: change color so it's clear the button is not clickable
+    label.set_text("Please wait...") # TODO: Put "Cancel" if cancellation is possible
+    progress_bar.remove_flag(lv.obj.FLAG.HIDDEN)
+    progress_bar.set_value(33, lv.ANIM.ON)
+    time.sleep_ms(500)
+    try:
+        import shutil
+        shutil.rmtree(app_folder)
+        progress_bar.set_value(66, lv.ANIM.ON)
+        time.sleep_ms(500)
+    except Exception as e:
+        print(f"Removing app_folder {app_folder} got error: {e}")
+    progress_bar.set_value(100, lv.ANIM.OFF)
+    time.sleep(1)
+    progress_bar.add_flag(lv.obj.FLAG.HIDDEN)
+    progress_bar.set_value(0, lv.ANIM.OFF)
+    label.set_text(action_label_install)
+    install_button.add_flag(lv.obj.FLAG.CLICKABLE)
+
 def download_and_unzip(zip_url, dest_folder, label):
     global install_button, progress_bar
     install_button.remove_flag(lv.obj.FLAG.CLICKABLE) # TODO: change color so it's clear the button is not clickable
@@ -119,8 +141,9 @@ def download_and_unzip(zip_url, dest_folder, label):
             progress_bar.set_value(80, lv.ANIM.OFF)
     progress_bar.set_value(100, lv.ANIM.OFF)
     time.sleep(1)
-    label.set_text("Uninstall")
     progress_bar.add_flag(lv.obj.FLAG.HIDDEN)
+    progress_bar.set_value(0, lv.ANIM.OFF)
+    label.set_text(action_label_uninstall)
     install_button.add_flag(lv.obj.FLAG.CLICKABLE)
 
 
@@ -260,10 +283,11 @@ def toggle_install(download_url, fullname):
             print("Could not start download_and_unzip thread: ", e)
     elif label.get_text() == action_label_uninstall:
         print("Uninstalling app....")
-        import shutil
-        if fullname:
-            shutil.rmtree(f"/apps/{fullname}")
-            label.set_text("Install")
+        try:
+            _thread.stack_size(16384)
+            _thread.start_new_thread(uninstall_app, (f"/apps/{fullname}", label))
+        except Exception as e:
+            print("Could not start download_and_unzip thread: ", e)
 
 
 def back_to_main(event):
