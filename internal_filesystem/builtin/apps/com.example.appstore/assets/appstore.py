@@ -64,7 +64,13 @@ try:
 except ImportError:
     zipfile = None
 
-def download_and_unzip(zip_url, dest_folder):
+def download_and_unzip(zip_url, dest_folder, label):
+    global install_button, progress_bar
+    install_button.remove_flag(lv.obj.FLAG.CLICKABLE) # TODO: change color so it's clear the button is not clickable
+    label.set_text("Please wait...") # TODO: Put "Cancel" if cancellation is possible
+    progress_bar.remove_flag(lv.obj.FLAG.HIDDEN)
+    progress_bar.set_value(20, lv.ANIM.ON)
+    time.sleep_ms(500)
     try:
         # Step 1: Download the .zip file
         print(f"Downloading .zip file from: {zip_url}")
@@ -72,34 +78,50 @@ def download_and_unzip(zip_url, dest_folder):
         if response.status_code != 200:
             print("Download failed: Status code", response.status_code)
             response.close()
-            return False
+            label.set_text(action_label_install)
+        progress_bar.set_value(40, lv.ANIM.ON)
+        time.sleep_ms(500)
         # Save the .zip file to a temporary location
-        os.mkdir("/tmp")
+        try:
+            os.remove(temp_zip_path)
+        except Exception:
+            pass
+        try:
+            os.mkdir("/tmp")
+        except Exception:
+            pass
         temp_zip_path = "/tmp/temp.zip"
         print(f"Writing to temporary zip path: {temp_zip_path}")
         # TODO: check free available space first!
         with open(temp_zip_path, "wb") as f:
             f.write(response.content)
+        progress_bar.set_value(60, lv.ANIM.ON)
+        time.sleep_ms(500)
         response.close()
         print("Downloaded .zip file, size:", os.stat(temp_zip_path)[6], "bytes")
         # Step 2: Unzip the file
         if zipfile is None:
-            print("Error: zipfile module not available in this MicroPython build")
-            return False
+            print("WARNING: zipfile module not available in this MicroPython build, unzip will fail!")
         print("Unzipping it to:", dest_folder)
         with zipfile.ZipFile(temp_zip_path, "r") as zip_ref:
             zip_ref.extractall(dest_folder)
+        progress_bar.set_value(80, lv.ANIM.ON)
+        time.sleep_ms(500)
         print("Unzipped successfully")
         # Step 3: Clean up
         os.remove(temp_zip_path)
         print("Removed temporary .zip file")
-        return True
     except Exception as e:
         print("Operation failed:", str(e))
-        return False
     finally:
         if 'response' in locals():
             response.close()
+            progress_bar.set_value(80, lv.ANIM.OFF)
+    progress_bar.set_value(100, lv.ANIM.OFF)
+    time.sleep(1)
+    label.set_text("Uninstall")
+    progress_bar.add_flag(lv.obj.FLAG.HIDDEN)
+    install_button.add_flag(lv.obj.FLAG.CLICKABLE)
 
 
 def download_apps(json_url):
@@ -227,35 +249,21 @@ def show_app_detail(app):
 
 
 def toggle_install(download_url, fullname):
-    global install_button, progress_bar, action_label_install, action_label_uninstall
+    global install_button, action_label_install, action_label_uninstall
     print(f"Install button clicked for {download_url} and fullname {fullname}")
     label = install_button.get_child(0)
     if label.get_text() == action_label_install:
-        install_button.remove_flag(lv.obj.FLAG.CLICKABLE) # TODO: change color so it's clear the button is not clickable
-        label.set_text("Please wait...") # TODO: Put "Cancel" if cancellation is possible
-        progress_bar.remove_flag(lv.obj.FLAG.HIDDEN)
-        progress_bar.set_value(40, lv.ANIM.OFF)
-        # TODO: do the download and install in a new thread with a few sleeps so it can be cancelled...
-        #try:
-        #    _thread.stack_size(16384)
-        #    _thread.start_new_thread(execute_script, (scriptname, is_file, is_launcher, is_graphical))
-        #except Exception as e:
-        #    print("Could not start download_and_unzip thread: ", e)
-        download_and_unzip(download_url, f"/apps/{fullname}")
-        progress_bar.set_value(80, lv.ANIM.OFF)
-        time.sleep(1)
-        progress_bar.set_value(100, lv.ANIM.OFF)
-        time.sleep(1)
-        label.set_text("Uninstall") # Opening doesn't work because it races along with the launcher to use the screen...
-        progress_bar.add_flag(lv.obj.FLAG.HIDDEN)
-        install_button.add_flag(lv.obj.FLAG.CLICKABLE)
-    elif label.get_text() == "Open":
-        print("Open button clicked, starting app...")
-        start_app(f"/apps/{fullname}")
+        try:
+            _thread.stack_size(16384)
+            _thread.start_new_thread(download_and_unzip, (download_url, f"/apps/{fullname}", label))
+        except Exception as e:
+            print("Could not start download_and_unzip thread: ", e)
     elif label.get_text() == action_label_uninstall:
         print("Uninstalling app....")
-    else: # if the button text was "Please wait..." or "Uninstall" or "Installed!"
-        label.set_text("Install")
+        import shutil
+        if fullname:
+            shutil.rmtree(f"/apps/{fullname}")
+            label.set_text("Install")
 
 
 def back_to_main(event):
