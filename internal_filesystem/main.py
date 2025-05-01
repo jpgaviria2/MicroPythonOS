@@ -355,17 +355,28 @@ def start_app(app_dir, is_launcher=False):
 # Execute this if it exists
 execute_script_new_thread("/autorun.py", True, False, False)
 
-# A generic "start at boot" mechanism hasn't been implemented yet, so do it like this:
-execute_script_new_thread("/builtin/apps/com.example.wificonf/assets/auto_connect.py", True, False, False)
-
-
 try:
     import freezefs_mount_builtin
 except Exception as e:
     print("/main.py: WARNING: could not import/run freezefs_mount_builtin: ", e)
 
-# The launcher might have been updated from the builtin one, so check that:
+
+# A generic "start at boot" mechanism hasn't been implemented yet, so do it like this:
 import uos
+custom_auto_connect = "/apps/com.example.wificonf/assets/auto_connect.py"
+builtin_auto_connect = "/builtin/apps/com.example.wificonf/assets/auto_connect.py"
+try:
+    stat = uos.stat(custom_auto_connect)
+    execute_script_new_thread(custom_auto_connect, True, False, False)
+except OSError:
+    try:
+        print(f"Couldn't execute {custom_auto_connect}, trying {builtin_auto_connect}...")
+        stat = uos.stat(builtin_auto_connect)
+        execute_script_new_thread(builtin_auto_connect, True, False, False)
+    except OSError:
+        print("Couldn't execute {builtin_auto_connect}, continuing...")
+
+# The launcher might have been updated from the builtin one, so check that:
 custom_launcher = "/apps/com.example.launcher"
 builtin_launcher = "/builtin/apps/com.example.launcher"
 try:

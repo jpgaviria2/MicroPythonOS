@@ -1,3 +1,5 @@
 Manifest-Version: 1.0
 Name: WiFiConf
 Start-Script: assets/wificonf.py
+WiFi-Connect-Script: assets/auto_connect.py
+WiFi-Configure-Script: assets/wificonf.py
