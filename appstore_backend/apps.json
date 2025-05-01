@@ -58,35 +58,5 @@
         "download_url": "http://demo.lnpiggy.com:2121/apps/com.example.memtest_0.0.1.mpk",
         "fullname": "com.example.memtest",
         "version": "0.0.1"
-    },
-    {
-        "name": "Weather Pro",
-        "publisher": "SkyTech",
-        "short_description": "Real-time weather updates",
-        "long_description": "Weather Pro provides accurate, real-time forecasts with detailed hourly and daily predictions, radar maps, and severe weather alerts.",
-        "icon_url": "http://demo.lnpiggy.com:2121/icons/weather_pro.png",
-        "download_url": "http://demo.lnpiggy.com:2121/zips/com.example.app1_0.0.1.zip",
-        "fullname": "com_example_app1",
-        "version": "0.0.1"
-    },
-    {
-        "name": "Task Manager (broken download link)",
-        "publisher": "Productivity Inc.",
-        "short_description": "Organize your tasks",
-        "long_description": "Task Manager helps you stay organized with customizable to-do lists, reminders, and progress tracking for personal and team projects.",
-        "icon_url": "http://demo.lnpiggy.com:2121/icons/task_manager.png",
-        "download_url": "httpppp://completelybrokendownloadlink",
-        "fullname": "com.productivityinc.taskmanager",
-        "version": "0.0.1"
-    },
-    {
-        "name": "Fitness Tracker (broken icon)",
-        "publisher": "HealthCo",
-        "short_description": "Track your workouts",
-        "long_description": "Fitness Tracker monitors your daily activities, workouts, and sleep patterns, offering insights to help you achieve your fitness goals.",
-        "icon_url": "httppp://completelybrokeniconurl",
-        "download_url": "http://demo.lnpiggy.com:2121/zips/com.example.imutest_0.0.1.zip",
-        "fullname": "com.healthco.fitnesstracker",
-        "version": "0.0.1"
     }
 ]
