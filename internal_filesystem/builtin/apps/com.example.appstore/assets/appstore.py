@@ -23,11 +23,11 @@ class App:
         self.short_description = short_description
         self.long_description = long_description
         self.icon_url = icon_url
-        self.image_dsc = None
         self.download_url = download_url
         self.fullname = fullname
         self.version = version
-
+        self.image = None
+        self.image_dsc = None
 
 def is_installed_by_path(dir_path):
     try:
@@ -43,7 +43,7 @@ def is_installed_by_name(app_fullname):
     print(f"Checking if app {app_fullname} is installed...")
     return is_installed_by_path(f"/apps/{app_fullname}") or is_installed_by_path(f"/builtin/apps/{app_fullname}")
 
-def load_icon(url):
+def download_icon(url):
     print(f"downloading icon from {url}")
     response = urequests.get(url, timeout=5)
     if response.status_code == 200:
@@ -163,8 +163,27 @@ def download_apps(json_url):
         please_wait_label.set_text(f"Error downloading app index: {e}")
 
 
+def download_icons():
+    global apps
+    for app in apps:
+        image_dsc = download_icon(app.icon_url)
+        app.image_dsc = image_dsc
+        app.image.set_src(image_dsc)
+        print(f"Changed image_dsc for {app.icon_url}")
+    print("finished downloading all icons")
+
+def load_icon(icon_path):
+    with open(icon_path, 'rb') as f:
+        image_data = f.read()
+        image_dsc = lv.image_dsc_t({
+            'data_size': len(image_data),
+            'data': image_data
+        })
+    return image_dsc
+
 def create_apps_list():
     global apps
+    default_icon_dsc = load_icon("/builtin/res/mipmap-mdpi/default_icon_64x64.png")
     print("create_apps_list")
     apps_list = lv.list(mainscreen)
     apps_list.set_style_pad_all(0, 0)
@@ -182,11 +201,12 @@ def create_apps_list():
         cont.set_size(lv.pct(100), lv.SIZE_CONTENT)
         cont.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
         cont.add_event_cb(lambda e, a=app: show_app_detail(a), lv.EVENT.CLICKED, None)
-        image_dsc = load_icon(app.icon_url)
-        app.image_dsc = image_dsc
         icon_spacer = lv.image(cont)
-        icon_spacer.set_src(image_dsc)
+        #image_dsc = default_icon_dsc
+        #app.image_dsc = image_dsc
+        #icon_spacer.set_src(image_dsc)
         icon_spacer.set_size(64, 64)
+        app.image = icon_spacer
         icon_spacer.add_event_cb(lambda e, a=app: show_app_detail(a), lv.EVENT.CLICKED, None)
         label_cont = lv.obj(cont)
         label_cont.set_flex_flow(lv.FLEX_FLOW.COLUMN)
@@ -202,6 +222,11 @@ def create_apps_list():
         desc_label.add_event_cb(lambda e, a=app: show_app_detail(a), lv.EVENT.CLICKED, None)
         print("create_apps_list app one done")
     print("create_apps_list app done")
+    try:
+        _thread.stack_size(16384)
+        _thread.start_new_thread(download_icons,())
+    except Exception as e:
+        print("Could not start thread to download icons: ", e)
 
 
 def show_app_detail(app):
