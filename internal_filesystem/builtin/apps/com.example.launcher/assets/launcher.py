@@ -45,17 +45,12 @@ seen_base_names = set()
 # Check and collect unique subdirectories from existing directories
 for dir_path in [apps_dir, apps_dir_builtin]:
     try:
-        # Verify directory exists and is a directory
-        if uos.stat(dir_path)[0] & 0x4000:
-            # Iterate over subdirectories
-            for d in uos.listdir(dir_path):
+        if uos.stat(dir_path)[0] & 0x4000: # Verify directory exists and is a directory
+            for d in uos.listdir(dir_path): # Iterate over subdirectories
                 full_path = f"{dir_path}/{d}"
-                # Check if it's a directory
-                if uos.stat(full_path)[0] & 0x4000:
-                    # Extract base name (e.g., 'example' from '/apps/example')
-                    base_name = d
-                    # Only add if base name hasn't been seen
-                    if base_name not in seen_base_names:
+                if uos.stat(full_path)[0] & 0x4000: # Check if it's a directory
+                    base_name = d # Extract base name (e.g., 'example' from '/apps/example')
+                    if base_name not in seen_base_names: # Only add if base name hasn't been seen (no duplicates)
                         app_dirs.append(full_path)
                         seen_base_names.add(base_name)
     except OSError:
