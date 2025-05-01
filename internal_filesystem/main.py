@@ -187,8 +187,8 @@ wifi_label.center()
 wifi_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
 def wifi_event(e):
     global drawer_open
-    #wifi_screen.set_y(0) # TODO: make this
     close_drawer()
+    start_app("/builtin/apps/com.example.wificonf")
 
 wifi_btn.add_event_cb(wifi_event,lv.EVENT.CLICKED,None)
 #
