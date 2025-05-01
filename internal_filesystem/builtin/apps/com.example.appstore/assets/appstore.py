@@ -4,6 +4,7 @@ import urequests
 import gc
 import os
 import time
+import _thread
 
 mainscreen = lv.screen_active()
 
