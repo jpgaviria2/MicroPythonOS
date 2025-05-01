@@ -1,5 +1,25 @@
 [
     {
+        "name": "Animation Tester",
+        "publisher": "ACME Inc",
+        "short_description": "Testing on-display animations",
+        "long_description": "Stress testing multiple concurrent animations on the display by adding more and more spinners",
+        "icon_url": "http://demo.lnpiggy.com:2121/apps/com.example.lvgltest_0.0.1.mpk_icon_64x64.png",
+        "download_url": "http://demo.lnpiggy.com:2121/apps/com.example.lvgltest_0.0.1.mpk",
+        "fullname": "com.example.imutest",
+        "version": "0.0.1"
+    },
+    {
+        "name": "BTC Ticker",
+        "publisher": "ACME Inc",
+        "short_description": "Bitcoin Price Ticker",
+        "long_description": "Uses a websocket to show the current price of Bitcoin in US Dollar.",
+        "icon_url": "http://demo.lnpiggy.com:2121/apps/com.example.btcticker_0.0.1.mpk_icon_64x64.png",
+        "download_url": "http://demo.lnpiggy.com:2121/apps/com.example.btcticker_0.0.1.mpk",
+        "fullname": "com.example.btcticker",
+        "version": "0.0.1"
+    },
+    {
         "name": "Camera Tester",
         "publisher": "ACME Inc",
         "short_description": "Simple test of the camera",
@@ -7,6 +27,16 @@
         "icon_url": "http://demo.lnpiggy.com:2121/apps/com.example.camtest_0.0.1.mpk_icon_64x64.png",
         "download_url": "http://demo.lnpiggy.com:2121/apps/com.example.camtest_0.0.1.mpk",
         "fullname": "com.example.camtest",
+        "version": "0.0.1"
+    },
+    {
+        "name": "CPU Tester",
+        "publisher": "ACME Inc",
+        "short_description": "Testing the CPU speed",
+        "long_description": "Experimentally determines how many idle loops and sha256-hashing loops the CPU can perform per second.",
+        "icon_url": "http://demo.lnpiggy.com:2121/apps/com.example.cputest_0.0.1.mpk_icon_64x64.png",
+        "download_url": "http://demo.lnpiggy.com:2121/apps/com.example.cputest_0.0.1.mpk",
+        "fullname": "com.example.cputest",
         "version": "0.0.1"
     },
     {
@@ -20,20 +50,20 @@
         "version": "0.0.1"
     },
     {
-        "name": "Animation Tester",
+        "name": "Memory Tester",
         "publisher": "ACME Inc",
-        "short_description": "Testing on-display animations",
-        "long_description": "Stress testing multiple concurrent animations on the display by adding more and more spinners",
-        "icon_url": "http://demo.lnpiggy.com:2121/apps/com.example.lvgltest_0.0.1.mpk_icon_64x64.png",
-        "download_url": "http://demo.lnpiggy.com:2121/apps/com.example.lvgltest_0.0.1.mpk",
-        "fullname": "com.example.imutest",
+        "short_description": "RAM Memory Test",
+        "long_description": "Experimentally determines how many RAM memory buffers can be allocated.",
+        "icon_url": "http://demo.lnpiggy.com:2121/apps/com.example.memtest_0.0.1.mpk_icon_64x64.png",
+        "download_url": "http://demo.lnpiggy.com:2121/apps/com.example.memtest_0.0.1.mpk",
+        "fullname": "com.example.memtest",
         "version": "0.0.1"
     },
     {
         "name": "Weather Pro",
         "publisher": "SkyTech",
         "short_description": "Real-time weather updates",
-        "long_description": "Weather Pro provides accurate, real-time weather forecasts with detailed hourly and daily predictions, radar maps, and severe weather alerts.",
+        "long_description": "Weather Pro provides accurate, real-time forecasts with detailed hourly and daily predictions, radar maps, and severe weather alerts.",
         "icon_url": "http://demo.lnpiggy.com:2121/icons/weather_pro.png",
         "download_url": "http://demo.lnpiggy.com:2121/zips/com.example.app1_0.0.1.zip",
         "fullname": "com_example_app1",
@@ -53,7 +83,7 @@
         "name": "Fitness Tracker (broken icon)",
         "publisher": "HealthCo",
         "short_description": "Track your workouts",
-        "long_description": "Fitness Tracker monitors your daily activities, workouts, and sleep patterns, offering personalized insights to help you achieve your fitness goals.",
+        "long_description": "Fitness Tracker monitors your daily activities, workouts, and sleep patterns, offering insights to help you achieve your fitness goals.",
         "icon_url": "httppp://completelybrokeniconurl",
         "download_url": "http://demo.lnpiggy.com:2121/zips/com.example.imutest_0.0.1.zip",
         "fullname": "com.healthco.fitnesstracker",
