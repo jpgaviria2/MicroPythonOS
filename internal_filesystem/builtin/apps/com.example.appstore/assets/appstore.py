@@ -2,6 +2,10 @@ import lvgl as lv
 import json
 import urequests
 import gc
+import os
+import time
+
+mainscreen = lv.screen_active()
 
 apps = []
 app_detail_screen = None
@@ -9,6 +13,8 @@ install_button = None
 please_wait_label = None
 app_detail_screen = None
 progress_bar = None
+action_label_install = "Install Latest Version"
+action_label_uninstall = "Uninstall"
 
 class App:
     def __init__(self, name, publisher, short_description, long_description, icon_url, download_url, fullname, version):
@@ -21,6 +27,21 @@ class App:
         self.download_url = download_url
         self.fullname = fullname
         self.version = version
+
+
+def is_installed_by_path(dir_path):
+    try:
+        if os.stat(dir_path)[0] & 0x4000:
+            manifest = f"{dir_path}/META-INF/MANIFEST.MF"
+            if os.stat(manifest)[0] & 0x8000:
+                return True
+    except OSError:
+        pass # Skip if directory or manifest doesn't exist
+    return False
+
+def is_installed_by_name(app_fullname):
+    print(f"Checking if app {app_fullname} is installed...")
+    return is_installed_by_path(f"/apps/{app_fullname}") or is_installed_by_path(f"/builtin/apps/{app_fullname}")
 
 def load_icon(url):
     print(f"downloading icon from {url}")
@@ -37,7 +58,7 @@ def load_icon(url):
         print("Failed to download image: Status code", response.status_code)
         return None
 
-import os
+
 try:
     import zipfile
 except ImportError:
@@ -46,7 +67,7 @@ except ImportError:
 def download_and_unzip(zip_url, dest_folder):
     try:
         # Step 1: Download the .zip file
-        print("Downloading .zip file from:", zip_url)
+        print(f"Downloading .zip file from: {zip_url}")
         response = urequests.get(zip_url, timeout=10)
         if response.status_code != 200:
             print("Download failed: Status code", response.status_code)
@@ -100,7 +121,7 @@ def download_apps(json_url):
 def create_apps_list():
     global apps
     print("create_apps_list")
-    apps_list = lv.list(subwindow)
+    apps_list = lv.list(mainscreen)
     apps_list.set_style_pad_all(0, 0)
     apps_list.set_size(lv.pct(100), lv.pct(100))
     print("create_apps_list iterating")
@@ -139,7 +160,7 @@ def create_apps_list():
 
 
 def show_app_detail(app):
-    global app_detail_screen, install_button, progress_bar
+    global app_detail_screen, install_button, progress_bar, action_label_install, action_label_uninstall
     app_detail_screen = lv.obj()
     app_detail_screen.set_size(lv.pct(100), lv.pct(100))
     back_button = lv.button(app_detail_screen)
@@ -176,16 +197,21 @@ def show_app_detail(app):
     publisher_label.set_style_text_font(lv.font_montserrat_16, 0)
     #
     progress_bar = lv.bar(cont)
-    progress_bar.add_flag(lv.obj.FLAG.HIDDEN)
     progress_bar.set_width(lv.pct(100))
     progress_bar.set_range(0, 100)
+    progress_bar.add_flag(lv.obj.FLAG.HIDDEN)
     install_button = lv.button(cont)
     install_button.align_to(detail_cont, lv.ALIGN.OUT_BOTTOM_MID, 0, lv.pct(5))
     install_button.set_size(lv.pct(100), 40)
     install_button.add_flag(lv.obj.FLAG.CLICKABLE)
+    print(f"Adding install button for url: {app.download_url}")
     install_button.add_event_cb(lambda e, d=app.download_url, f=app.fullname: toggle_install(d,f), lv.EVENT.CLICKED, None)
     install_label = lv.label(install_button)
-    install_label.set_text("(Re)Install Latest Version") # TODO: check if already installed and if yes, change to "Uninstall" and "Open"
+    if is_installed_by_name(app.fullname):
+        action_label = action_label_uninstall # Maybe show "restore builtin version" for builtin apps...
+    else:
+        action_label = action_label_install
+    install_label.set_text(action_label)
     install_label.center()
     version_label = lv.label(cont)
     version_label.set_width(lv.pct(100))
@@ -201,25 +227,33 @@ def show_app_detail(app):
 
 
 def toggle_install(download_url, fullname):
-    global install_button, progress_bar
+    global install_button, progress_bar, action_label_install, action_label_uninstall
+    print(f"Install button clicked for {download_url} and fullname {fullname}")
     label = install_button.get_child(0)
-    if label.get_text() == "(Re)Install Latest Version":
+    if label.get_text() == action_label_install:
         install_button.remove_flag(lv.obj.FLAG.CLICKABLE) # TODO: change color so it's clear the button is not clickable
         label.set_text("Please wait...") # TODO: Put "Cancel" if cancellation is possible
         progress_bar.remove_flag(lv.obj.FLAG.HIDDEN)
         progress_bar.set_value(40, lv.ANIM.OFF)
         # TODO: do the download and install in a new thread with a few sleeps so it can be cancelled...
+        #try:
+        #    _thread.stack_size(16384)
+        #    _thread.start_new_thread(execute_script, (scriptname, is_file, is_launcher, is_graphical))
+        #except Exception as e:
+        #    print("Could not start download_and_unzip thread: ", e)
         download_and_unzip(download_url, f"/apps/{fullname}")
         progress_bar.set_value(80, lv.ANIM.OFF)
-        time.sleep_ms(500)
+        time.sleep(1)
         progress_bar.set_value(100, lv.ANIM.OFF)
-        time.sleep(500)
-        label.set_text("Installed!") # Opening doesn't work because it races along with the launcher to use the screen...
+        time.sleep(1)
+        label.set_text("Uninstall") # Opening doesn't work because it races along with the launcher to use the screen...
         progress_bar.add_flag(lv.obj.FLAG.HIDDEN)
-        #install_button.add_flag(lv.obj.FLAG.CLICKABLE)
+        install_button.add_flag(lv.obj.FLAG.CLICKABLE)
     elif label.get_text() == "Open":
         print("Open button clicked, starting app...")
         start_app(f"/apps/{fullname}")
+    elif label.get_text() == action_label_uninstall:
+        print("Uninstalling app....")
     else: # if the button text was "Please wait..." or "Uninstall" or "Installed!"
         label.set_text("Install")
 
@@ -229,12 +263,12 @@ def back_to_main(event):
     if app_detail_screen:
         app_detail_screen.delete()
         app_detail_screen = None
-    lv.screen_load(appscreen)
+    lv.screen_load(mainscreen)
 
 
 print("appstore.py starting")
 
-please_wait_label = lv.label(subwindow)
+please_wait_label = lv.label(mainscreen)
 please_wait_label.set_text("Downloading app index...")
 please_wait_label.center()
 
@@ -247,7 +281,7 @@ else:
     download_apps("http://demo.lnpiggy.com:2121/apps.json")
     # Wait until the user stops the app
     import time
-    while appscreen == lv.screen_active() or app_detail_screen == lv.screen_active():
+    while mainscreen == lv.screen_active() or app_detail_screen == lv.screen_active():
         time.sleep_ms(100)
 
 print("appstore.py ending")
