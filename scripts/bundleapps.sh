@@ -1,3 +1,4 @@
+rm -rf appstore_backend/bundled_apps
 mkdir -p appstore_backend/bundled_apps
 ls -1 internal_filesystem/apps | while read appdir; do
     echo "Bundling $appdir"
