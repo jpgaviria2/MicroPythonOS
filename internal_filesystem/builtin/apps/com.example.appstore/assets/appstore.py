@@ -8,6 +8,7 @@ app_detail_screen = None
 install_button = None
 please_wait_label = None
 app_detail_screen = None
+progress_bar = None
 
 class App:
     def __init__(self, name, publisher, short_description, long_description, icon_url, download_url, fullname, version):
@@ -138,7 +139,7 @@ def create_apps_list():
 
 
 def show_app_detail(app):
-    global app_detail_screen, install_button
+    global app_detail_screen, install_button, progress_bar
     app_detail_screen = lv.obj()
     app_detail_screen.set_size(lv.pct(100), lv.pct(100))
     back_button = lv.button(app_detail_screen)
@@ -174,10 +175,10 @@ def show_app_detail(app):
     publisher_label.set_text(app.publisher)
     publisher_label.set_style_text_font(lv.font_montserrat_16, 0)
     #
-    #progress_bar = lv.bar(cont)
-    #progress_bar.set_width(lv.pct(100))
-    #progress_bar.set_range(0, 100)
-    #progress_bar.set_value(50, lv.ANIM.OFF)
+    progress_bar = lv.bar(cont)
+    progress_bar.add_flag(lv.obj.FLAG.HIDDEN)
+    progress_bar.set_width(lv.pct(100))
+    progress_bar.set_range(0, 100)
     install_button = lv.button(cont)
     install_button.align_to(detail_cont, lv.ALIGN.OUT_BOTTOM_MID, 0, lv.pct(5))
     install_button.set_size(lv.pct(100), 40)
@@ -195,14 +196,21 @@ def show_app_detail(app):
 
 
 def toggle_install(download_url, fullname):
-    global install_button
+    global install_button, progress_bar
     label = install_button.get_child(0)
     if label.get_text() == "(Re)Install Latest Version":
         install_button.remove_flag(lv.obj.FLAG.CLICKABLE) # TODO: change color so it's clear the button is not clickable
         label.set_text("Please wait...") # TODO: Put "Cancel" if cancellation is possible
+        progress_bar.remove_flag(lv.obj.FLAG.HIDDEN)
+        progress_bar.set_value(40, lv.ANIM.OFF)
         # TODO: do the download and install in a new thread with a few sleeps so it can be cancelled...
         download_and_unzip(download_url, f"/apps/{fullname}")
+        progress_bar.set_value(80, lv.ANIM.OFF)
+        time.sleep_ms(500)
+        progress_bar.set_value(100, lv.ANIM.OFF)
+        time.sleep(500)
         label.set_text("Installed!") # Opening doesn't work because it races along with the launcher to use the screen...
+        progress_bar.add_flag(lv.obj.FLAG.HIDDEN)
         #install_button.add_flag(lv.obj.FLAG.CLICKABLE)
     elif label.get_text() == "Open":
         print("Open button clicked, starting app...")
