@@ -94,8 +94,8 @@ def download_and_unzip(zip_url, dest_folder, label):
     progress_bar.set_value(20, lv.ANIM.ON)
     time.sleep_ms(500)
     try:
-        # Step 1: Download the .zip file
-        print(f"Downloading .zip file from: {zip_url}")
+        # Step 1: Download the .mpk file
+        print(f"Downloading .mpk file from: {zip_url}")
         response = urequests.get(zip_url, timeout=10)
         if response.status_code != 200:
             print("Download failed: Status code", response.status_code)
@@ -103,7 +103,7 @@ def download_and_unzip(zip_url, dest_folder, label):
             label.set_text(action_label_install)
         progress_bar.set_value(40, lv.ANIM.ON)
         time.sleep_ms(500)
-        # Save the .zip file to a temporary location
+        # Save the .mpk file to a temporary location
         try:
             os.remove(temp_zip_path)
         except Exception:
@@ -112,15 +112,15 @@ def download_and_unzip(zip_url, dest_folder, label):
             os.mkdir("/tmp")
         except Exception:
             pass
-        temp_zip_path = "/tmp/temp.zip"
-        print(f"Writing to temporary zip path: {temp_zip_path}")
+        temp_zip_path = "/tmp/temp.mpk"
+        print(f"Writing to temporary mpk path: {temp_zip_path}")
         # TODO: check free available space first!
         with open(temp_zip_path, "wb") as f:
             f.write(response.content)
         progress_bar.set_value(60, lv.ANIM.ON)
         time.sleep_ms(500)
         response.close()
-        print("Downloaded .zip file, size:", os.stat(temp_zip_path)[6], "bytes")
+        print("Downloaded .mpk file, size:", os.stat(temp_zip_path)[6], "bytes")
         # Step 2: Unzip the file
         if zipfile is None:
             print("WARNING: zipfile module not available in this MicroPython build, unzip will fail!")
@@ -132,7 +132,7 @@ def download_and_unzip(zip_url, dest_folder, label):
         print("Unzipped successfully")
         # Step 3: Clean up
         os.remove(temp_zip_path)
-        print("Removed temporary .zip file")
+        print("Removed temporary .mpk file")
     except Exception as e:
         print("Operation failed:", str(e))
     finally:
