@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Name: HelloWorld
+Start-Script: assets/hello.py
+Version: 0.0.1

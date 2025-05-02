@@ -1,4 +1,0 @@
-Manifest-Version: 1.0
-Name: App2
-Start-Script: assets/app2.py
-Version: 0.0.1
