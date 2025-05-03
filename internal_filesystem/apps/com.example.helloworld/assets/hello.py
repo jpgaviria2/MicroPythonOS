@@ -1,11 +1,23 @@
-import time
-myscreen = lv.screen_active()
+# START OF COPY-PASTE FROM https://sim.lvgl.io/v9.0/micropython/ports/webassembly/
 
-print("Hello World running!")
+# Initialize
 
-label = lv.label(myscreen)
-label.set_text("Hello World!")
+import display_driver
+import lvgl as lv
 
-while lv.screen_active() == myscreen
+# Create a button with a label
+
+scr = lv.obj()
+btn = lv.button(scr)
+btn.align(lv.ALIGN.CENTER, 0, 0)
+label = lv.label(btn)
+label.set_text('Hello World!')
+lv.screen_load(scr)
+
+# END OF COPY-PASTE FROM https://sim.lvgl.io/v9.0/micropython/ports/webassembly/
+
+# Added: wait until the user navigates away instead of stopping immediately.
+while lv.screen_active() == scr:
+    import time
     time.sleep_ms(100)
-
+print("User navigated away from the HelloWorld app. Bye bye!")
