@@ -1,24 +1,26 @@
+appscreen = lv.screen_active()
+
 from machine import Pin, I2C
 from qmi8658 import QMI8658
 import machine
 
 sensor = QMI8658(I2C(0, sda=machine.Pin(48), scl=machine.Pin(47)))
 
-templabel = lv.label(subwindow)
+templabel = lv.label(appscreen)
 templabel.align(lv.ALIGN.TOP_MID, 0, 10)
 
-sliderx = lv.slider(subwindow)
+sliderx = lv.slider(appscreen)
 sliderx.align(lv.ALIGN.CENTER, 0, -60)
-slidery = lv.slider(subwindow)
+slidery = lv.slider(appscreen)
 slidery.align(lv.ALIGN.CENTER, 0, -30)
-sliderz = lv.slider(subwindow)
+sliderz = lv.slider(appscreen)
 sliderz.align(lv.ALIGN.CENTER, 0, 0)
 
-slidergx = lv.slider(subwindow)
+slidergx = lv.slider(appscreen)
 slidergx.align(lv.ALIGN.CENTER, 0, 30)
-slidergy = lv.slider(subwindow)
+slidergy = lv.slider(appscreen)
 slidergy.align(lv.ALIGN.CENTER, 0, 60)
-slidergz = lv.slider(subwindow)
+slidergz = lv.slider(appscreen)
 slidergz.align(lv.ALIGN.CENTER, 0, 90)
 
 def map_nonlinear(value: float) -> int:

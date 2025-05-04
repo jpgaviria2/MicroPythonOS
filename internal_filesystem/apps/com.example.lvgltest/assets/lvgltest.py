@@ -1,3 +1,5 @@
+appscreen == lv.screen_active()
+
 import time
 import random
 
@@ -8,14 +10,16 @@ SPINNER_SIZE = 40   # Size of each spinner in pixels
 spinner_count = 0
 metrics_label = None
 
+
+
 def add_spinner_and_update():
     global spinner_count, metrics_label
     try:
-        spinner = lv.spinner(subwindow)
+        spinner = lv.spinner(appscreen)
         spinner.set_size(SPINNER_SIZE, SPINNER_SIZE)
         spinner.set_pos(
-            random.randint(0, subwindow.get_width() - SPINNER_SIZE),
-            random.randint(0, subwindow.get_height() - SPINNER_SIZE)
+            random.randint(0, appscreen.get_width() - SPINNER_SIZE),
+            random.randint(0, appscreen.get_height() - SPINNER_SIZE)
         )
         spinner_count += 1
     except Exception as e:
@@ -29,7 +33,7 @@ def run_benchmark():
     global spinner_count, metrics_label
     print("Starting LVGL spinner benchmark...")
     
-    scr = subwindow
+    scr = appscreen
     scr.set_style_bg_color(lv.color_black(), 0)
     
     metrics_label = lv.label(scr)

@@ -10,6 +10,8 @@
 # Busy loop with yield: 15923 iterations/second
 # SHA-256 (1KB): 5269 iterations/second
 
+appscreen = lv.screen_active()
+
 import time
 import hashlib
 import os
@@ -60,7 +62,7 @@ def stress_test_sha256():
     return iterations_per_second
 
 
-status = lv.label(subwindow)
+status = lv.label(appscreen)
 status.align(lv.ALIGN.TOP_LEFT, 5, 10)
 status.set_style_text_color(lv.color_hex(0xFFFFFF), 0)
 

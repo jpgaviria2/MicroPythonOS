@@ -1,3 +1,5 @@
+appscreen = lv.screen_active()
+
 #define PWDN_GPIO_NUM 17  //power down is not used
 #define RESET_GPIO_NUM -1 //software reset will be performed
 #define XCLK_GPIO_NUM 8
@@ -40,7 +42,7 @@
 width = 240
 height = 240
 
-cont = lv.obj(subwindow)
+cont = lv.obj(appscreen)
 cont.set_style_pad_all(0, 0)
 cont.set_style_border_width(0, 0)
 cont.set_size(lv.pct(100), lv.pct(100))

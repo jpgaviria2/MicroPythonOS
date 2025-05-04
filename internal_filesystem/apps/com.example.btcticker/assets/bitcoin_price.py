@@ -1,3 +1,5 @@
+appscreen = lv.screen_active()
+
 import usocket
 import ssl
 import ubinascii
@@ -175,7 +177,7 @@ def get_price(json_str):
         print(f"Error: An unexpected error occurred - {str(e)}")
         return None
 
-status = lv.label(subwindow)
+status = lv.label(appscreen)
 status.align(lv.ALIGN.TOP_LEFT, 5, 10)
 status.set_style_text_color(lv.color_hex(0xFFFFFF), 0)
 

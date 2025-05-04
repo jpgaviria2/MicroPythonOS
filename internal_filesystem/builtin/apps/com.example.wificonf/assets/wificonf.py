@@ -1,3 +1,5 @@
+appscreen = lv.screen_active()
+
 import network
 import ujson
 import os
@@ -12,7 +14,6 @@ selected_ssid=None
 list=None
 password_ta=None
 password_page=None
-main_subwindow=None
 keyboard=None
 error_label=None
 scanning_label=None
@@ -197,8 +198,8 @@ def connect_cb(event):
     save_config()
     print("connect_cb: Deleting password page")
     password_page.delete()
-    print("connect_cb: Restoring main subwindow")
-    lv.screen_load(main_subwindow)
+    print("connect_cb: Restoring main appscreen")
+    lv.screen_load(appscreen)
     print(f"connect_cb: Attempting connection to {selected_ssid}")
     success=attempt_connecting(selected_ssid,password)
     print(f"connect_cb: Connection {'succeeded' if success else 'failed'}")
@@ -208,27 +209,27 @@ def cancel_cb(event):
     print("cancel_cb: Cancel button clicked")
     print("Deleting password screen...")
     password_page.delete()
-    print("cancel_cb: Restoring main subwindow")
-    lv.screen_load(main_subwindow)
+    print("cancel_cb: Restoring main appscreen")
+    lv.screen_load(appscreen)
 
-def create_ui(subwindow):
-    global list,main_subwindow,error_label,scanning_label
+def create_ui():
+    global list,appscreen,error_label,scanning_label
     print("create_ui: Creating list widget")
-    list=lv.list(subwindow)
+    list=lv.list(appscreen)
     list.set_size(lv.pct(100),180)
     list.align(lv.ALIGN.TOP_MID,0,0)
     print("create_ui: Creating error label")
-    error_label=lv.label(subwindow)
+    error_label=lv.label(appscreen)
     error_label.set_text("")
     error_label.align(lv.ALIGN.BOTTOM_MID,0,-40)
     error_label.add_flag(lv.obj.FLAG.HIDDEN)
     print("create_ui: Creating scanning label")
-    scanning_label=lv.label(subwindow)
+    scanning_label=lv.label(appscreen)
     scanning_label.set_text("Scanning...")
     scanning_label.align(lv.ALIGN.CENTER,0,0)
     scanning_label.add_flag(lv.obj.FLAG.HIDDEN)
     print("create_ui: Creating Scan button")
-    scan_button=lv.button(subwindow)
+    scan_button=lv.button(appscreen)
     scan_button.set_size(80,30)
     scan_button.align(lv.ALIGN.BOTTOM_MID,0,-5)
     label=lv.label(scan_button)
@@ -242,11 +243,9 @@ def create_ui(subwindow):
     load_config()
 
 
-main_subwindow=appscreen
-#create_ui(subwindow)
-create_ui(appscreen)
+create_ui()
 
 
-import time
-while appscreen == lv.screen_active() or password_page == lv.screen_active():
-    time.sleep_ms(100) # not too long, otherwise touch events get lost
+#import time
+#while appscreen == lv.screen_active() or password_page == lv.screen_active():
+#    time.sleep_ms(100) # not too long, otherwise touch events get lost

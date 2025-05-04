@@ -26,6 +26,8 @@
 #           2097152 |                    0
 #=====================================
 
+appscreen = lv.screen_active()
+
 import gc
 import time
 
@@ -71,7 +73,7 @@ def test_allocation(buffer_size, n):
 # Test buffer sizes of 2^n, starting from n=1 (2 bytes)
 n = 1
 
-status = lv.label(subwindow)
+status = lv.label(appscreen)
 status.align(lv.ALIGN.TOP_LEFT, 5, 10)
 status.set_style_text_color(lv.color_hex(0xFFFFFF), 0)
 status.set_style_text_font(lv.font_unscii_8, 0)

@@ -1,3 +1,5 @@
+appscreen = lv.screen_active()
+
 import lvgl as lv
 import ota.update
 from esp32 import Partition
@@ -10,11 +12,11 @@ current
 next_partition = current.get_next_update()
 next_partition
 
-label = lv.label(subwindow)
+label = lv.label(appwindow)
 label.set_text("OS Update: 0.00%")
 label.align(lv.ALIGN.CENTER, 0, -30)
 
-progress_bar = lv.bar(subwindow)
+progress_bar = lv.bar(appwindow)
 progress_bar.set_size(200, 20)
 progress_bar.align(lv.ALIGN.BOTTOM_MID, 0, -50)
 progress_bar.set_range(0, 100)
