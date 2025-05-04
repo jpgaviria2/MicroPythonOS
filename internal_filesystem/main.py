@@ -295,17 +295,10 @@ def execute_script(script_source, is_file, is_launcher, is_graphical):
                 prevscreen = lv.screen_active()
                 newscreen=lv.obj()
                 newscreen.set_size(lv.pct(100),lv.pct(100))
-            #timer1, timer2, timer3, timer4 = add_notification_bar(newscreen)
-            #subwindow = lv.obj(newscreen)
-            #subwindow.set_size(TFT_HOR_RES, TFT_VER_RES - NOTIFICATION_BAR_HEIGHT)
-            #subwindow.set_pos(0, NOTIFICATION_BAR_HEIGHT)
-            #subwindow.set_style_border_width(0, 0)
-            #subwindow.set_style_pad_all(0, 0)
             lv.screen_load(newscreen)
             script_globals = {
                 'lv': lv,
                 'appscreen': newscreen,
-                #'subwindow': subwindow,
                 'start_app': start_app, # for launcher apps
                 'parse_manifest': parse_manifest, # for launcher apps
                 'restart_launcher': restart_launcher, # for appstore apps
