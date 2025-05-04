@@ -72,86 +72,6 @@ def toggle_drawer(event):
 	else:
 		open_drawer()
 
-def add_notification_bar(screen):
-    # Create notification bar object
-    notification_bar = lv.obj(screen)
-    notification_bar.set_style_bg_color(COLOR_NOTIF_BAR_BG, 0)
-    notification_bar.set_size(TFT_HOR_RES, NOTIFICATION_BAR_HEIGHT)
-    notification_bar.set_pos(0, 0)
-    notification_bar.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
-    notification_bar.set_scroll_dir(lv.DIR.VER)
-    notification_bar.set_style_border_width(0, 0)
-    notification_bar.set_style_radius(0, 0)
-    # Time label
-    time_label = lv.label(notification_bar)
-    time_label.set_text("00:00:00.000")
-    time_label.align(lv.ALIGN.LEFT_MID, 0, 0)
-    time_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
-    temp_label = lv.label(notification_bar)
-    temp_label.set_text("00.00°C")
-    temp_label.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
-    temp_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
-    memfree_label = lv.label(notification_bar)
-    memfree_label.set_text("")
-    memfree_label.align_to(temp_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
-    memfree_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
-    #style = lv.style_t()
-    #style.init()
-    #style.set_text_font(lv.font_montserrat_8)  # tiny font
-    #memfree_label.add_style(style, 0)
-    # Notification icon (bell)
-    #notif_icon = lv.label(notification_bar)
-    #notif_icon.set_text(lv.SYMBOL.BELL)
-    #notif_icon.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
-    #notif_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
-    # Battery icon
-    battery_icon = lv.label(notification_bar)
-    battery_icon.set_text(lv.SYMBOL.BATTERY_FULL)
-    battery_icon.align(lv.ALIGN.RIGHT_MID, -PADDING_TINY, 0)
-    battery_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
-    # WiFi icon
-    wifi_icon = lv.label(notification_bar)
-    wifi_icon.set_text(lv.SYMBOL.WIFI)
-    wifi_icon.align_to(battery_icon, lv.ALIGN.OUT_LEFT_MID, -PADDING_TINY, 0)
-    wifi_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
-    wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
-    # Battery percentage - not shown to conserve space
-    #battery_label = lv.label(notification_bar)
-    #battery_label.set_text("100%")
-    #battery_label.align(lv.ALIGN.RIGHT_MID, 0, 0)
-    #battery_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
-    # Update time
-    import time
-    def update_time(timer):
-        ticks = time.ticks_ms()
-        hours = (ticks // 3600000) % 24
-        minutes = (ticks // 60000) % 60
-        seconds = (ticks // 1000) % 60
-        milliseconds = ticks % 1000
-        time_label.set_text(f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}")
-    import network
-    def update_wifi_icon(timer):
-        try:
-            if network.WLAN(network.STA_IF).isconnected():
-                wifi_icon.remove_flag(lv.obj.FLAG.HIDDEN)
-            else:
-                wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
-        except lv.LvReferenceError:
-            print("update_wifi_icon caught LvReferenceError")
-    import esp32
-    def update_temperature(timer):
-        temp_label.set_text(f"{esp32.mcu_temperature():.2f}°C")
-    import gc
-    def update_memfree(timer):
-        gc.collect()
-        memfree_label.set_text(f"{gc.mem_free()}")
-    timer1 = lv.timer_create(update_time, CLOCK_UPDATE_INTERVAL, None)
-    timer2 = lv.timer_create(update_temperature, TEMPERATURE_UPDATE_INTERVAL, None)
-    timer3 = lv.timer_create(update_memfree, MEMFREE_UPDATE_INTERVAL, None)
-    timer4 = lv.timer_create(update_wifi_icon, WIFI_ICON_UPDATE_INTERVAL, None)
-    #notification_bar.add_event_cb(toggle_drawer, lv.EVENT.CLICKED, None)
-    return timer1, timer2, timer3, timer4
-
 
 drawer=lv.obj(lv.layer_top())
 drawer.set_size(lv.pct(100),lv.pct(100))
@@ -159,7 +79,86 @@ drawer.set_pos(0,-TFT_VER_RES) # off screen initially
 drawer.set_style_bg_color(COLOR_DRAWER_BG,0)
 drawer.set_scroll_dir(lv.DIR.NONE)
 drawer.set_style_pad_all(0, 0)
-add_notification_bar(drawer)
+
+# Create notification bar object
+notification_bar = lv.obj(drawer)
+notification_bar.set_style_bg_color(COLOR_NOTIF_BAR_BG, 0)
+notification_bar.set_size(TFT_HOR_RES, NOTIFICATION_BAR_HEIGHT)
+notification_bar.set_pos(0, 0)
+notification_bar.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
+notification_bar.set_scroll_dir(lv.DIR.VER)
+notification_bar.set_style_border_width(0, 0)
+notification_bar.set_style_radius(0, 0)
+# Time label
+time_label = lv.label(notification_bar)
+time_label.set_text("00:00:00.000")
+time_label.align(lv.ALIGN.LEFT_MID, 0, 0)
+time_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
+temp_label = lv.label(notification_bar)
+temp_label.set_text("00.00°C")
+temp_label.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
+temp_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
+memfree_label = lv.label(notification_bar)
+memfree_label.set_text("")
+memfree_label.align_to(temp_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
+memfree_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
+#style = lv.style_t()
+#style.init()
+#style.set_text_font(lv.font_montserrat_8)  # tiny font
+#memfree_label.add_style(style, 0)
+# Notification icon (bell)
+#notif_icon = lv.label(notification_bar)
+#notif_icon.set_text(lv.SYMBOL.BELL)
+#notif_icon.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
+#notif_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
+# Battery icon
+battery_icon = lv.label(notification_bar)
+battery_icon.set_text(lv.SYMBOL.BATTERY_FULL)
+battery_icon.align(lv.ALIGN.RIGHT_MID, -PADDING_TINY, 0)
+battery_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
+# WiFi icon
+wifi_icon = lv.label(notification_bar)
+wifi_icon.set_text(lv.SYMBOL.WIFI)
+wifi_icon.align_to(battery_icon, lv.ALIGN.OUT_LEFT_MID, -PADDING_TINY, 0)
+wifi_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
+wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
+# Battery percentage - not shown to conserve space
+#battery_label = lv.label(notification_bar)
+#battery_label.set_text("100%")
+#battery_label.align(lv.ALIGN.RIGHT_MID, 0, 0)
+#battery_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
+# Update time
+import time
+def update_time(timer):
+    ticks = time.ticks_ms()
+    hours = (ticks // 3600000) % 24
+    minutes = (ticks // 60000) % 60
+    seconds = (ticks // 1000) % 60
+    milliseconds = ticks % 1000
+    time_label.set_text(f"{hours:02d}:{minutes:02d}:{seconds:02d}")
+import network
+def update_wifi_icon(timer):
+    try:
+        if network.WLAN(network.STA_IF).isconnected():
+            wifi_icon.remove_flag(lv.obj.FLAG.HIDDEN)
+        else:
+            wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
+    except lv.LvReferenceError:
+        print("update_wifi_icon caught LvReferenceError")
+import esp32
+def update_temperature(timer):
+    temp_label.set_text(f"{esp32.mcu_temperature():.2f}°C")
+import gc
+def update_memfree(timer):
+    gc.collect()
+    memfree_label.set_text(f"{gc.mem_free()}")
+timer1 = lv.timer_create(update_time, CLOCK_UPDATE_INTERVAL, None)
+timer2 = lv.timer_create(update_temperature, TEMPERATURE_UPDATE_INTERVAL, None)
+timer3 = lv.timer_create(update_memfree, MEMFREE_UPDATE_INTERVAL, None)
+timer4 = lv.timer_create(update_wifi_icon, WIFI_ICON_UPDATE_INTERVAL, None)
+#notification_bar.add_event_cb(toggle_drawer, lv.EVENT.CLICKED, None)
+
+
 slider_label=lv.label(drawer)
 slider_label.set_text(f"{SLIDER_DEFAULT_VALUE}%")
 slider_label.set_style_text_color(COLOR_TEXT_WHITE,0)
