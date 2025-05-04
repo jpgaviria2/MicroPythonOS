@@ -48,7 +48,6 @@ drawer_open=False
 
 
 rootscreen = lv.screen_active()
-#rootscreen.set_style_bg_color(lv.color_hex(0x444444), 0)
 rootlabel = lv.label(rootscreen)
 rootlabel.set_text("Welcome!")
 rootlabel.align(lv.ALIGN.CENTER, 0, 0)
@@ -57,13 +56,13 @@ def open_drawer():
     global drawer_open
     if not drawer_open:
         drawer_open=True
-        drawer.set_y(0)
+        drawer.remove_flag(lv.obj.FLAG.HIDDEN)
 
 def close_drawer():
     global drawer_open
     if drawer_open:
         drawer_open=False
-        drawer.set_y(-TFT_VER_RES)
+        drawer.add_flag(lv.obj.FLAG.HIDDEN)
 
 def toggle_drawer(event):
 	global drawer_open
@@ -73,15 +72,8 @@ def toggle_drawer(event):
 		open_drawer()
 
 
-drawer=lv.obj(lv.layer_top())
-drawer.set_size(lv.pct(100),lv.pct(100))
-drawer.set_pos(0,-TFT_VER_RES) # off screen initially
-drawer.set_style_bg_color(COLOR_DRAWER_BG,0)
-drawer.set_scroll_dir(lv.DIR.NONE)
-drawer.set_style_pad_all(0, 0)
-
 # Create notification bar object
-notification_bar = lv.obj(drawer)
+notification_bar = lv.obj(lv.layer_top())
 notification_bar.set_style_bg_color(COLOR_NOTIF_BAR_BG, 0)
 notification_bar.set_size(TFT_HOR_RES, NOTIFICATION_BAR_HEIGHT)
 notification_bar.set_pos(0, 0)
@@ -158,6 +150,15 @@ timer3 = lv.timer_create(update_memfree, MEMFREE_UPDATE_INTERVAL, None)
 timer4 = lv.timer_create(update_wifi_icon, WIFI_ICON_UPDATE_INTERVAL, None)
 #notification_bar.add_event_cb(toggle_drawer, lv.EVENT.CLICKED, None)
 
+
+
+drawer=lv.obj(lv.layer_top())
+drawer.set_size(lv.pct(100),TFT_VER_RES-NOTIFICATION_BAR_HEIGHT)
+drawer.set_pos(0,NOTIFICATION_BAR_HEIGHT)
+drawer.set_style_bg_color(COLOR_DRAWER_BG,0)
+drawer.set_scroll_dir(lv.DIR.NONE)
+drawer.set_style_pad_all(0, 0)
+drawer.add_flag(lv.obj.FLAG.HIDDEN)
 
 slider_label=lv.label(drawer)
 slider_label.set_text(f"{SLIDER_DEFAULT_VALUE}%")
