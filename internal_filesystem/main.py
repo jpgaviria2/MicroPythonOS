@@ -76,7 +76,7 @@ def add_notification_bar(screen):
     # Create notification bar object
     notification_bar = lv.obj(screen)
     notification_bar.set_style_bg_color(COLOR_NOTIF_BAR_BG, 0)
-    notification_bar.set_size(320, NOTIFICATION_BAR_HEIGHT)
+    notification_bar.set_size(TFT_HOR_RES, NOTIFICATION_BAR_HEIGHT)
     notification_bar.set_pos(0, 0)
     notification_bar.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
     notification_bar.set_scroll_dir(lv.DIR.VER)
@@ -149,7 +149,7 @@ def add_notification_bar(screen):
     timer2 = lv.timer_create(update_temperature, TEMPERATURE_UPDATE_INTERVAL, None)
     timer3 = lv.timer_create(update_memfree, MEMFREE_UPDATE_INTERVAL, None)
     timer4 = lv.timer_create(update_wifi_icon, WIFI_ICON_UPDATE_INTERVAL, None)
-    notification_bar.add_event_cb(toggle_drawer, lv.EVENT.CLICKED, None)
+    #notification_bar.add_event_cb(toggle_drawer, lv.EVENT.CLICKED, None)
     return timer1, timer2, timer3, timer4
 
 
