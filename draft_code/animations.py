@@ -236,3 +236,56 @@ time = lvgl.anim_timeline_create()
 
 #lvgl.anim_timeline_start( time )
 
+
+
+
+***************** clicking the button starts the animation:
+
+
+
+
+# Initialize
+
+import display_driver
+import lvgl as lv
+
+
+label = lv.label( lv.screen_active() )
+label.set_text( 'hi' )
+
+animation = lv.anim_t()
+animation.init()
+animation.set_var( label )
+animation.set_values( 0, 100 )
+animation.set_time( 1000 )
+
+animation.set_custom_exec_cb( lambda not_used, value : label.set_x( value ))
+
+#wait half a second before starting animation
+#animation.set_delay( 500 )
+
+#play animation backward for 1 second after first play
+#animation.set_playback_time( 1000 )
+#repeat animation infinitely 
+#animation.set_repeat_count( 10 )
+#animation.set_repeat_count( lvgl.ANIM_REPEAT.INFINITE )
+#animation.set_repeat_delay( 500 )
+
+button = lv.button(lv.screen_active())
+button.set_size(60,30)
+button.center()
+#button.set_pos(100,100)
+wifi_label=lv.label(button)
+wifi_label.set_text(lv.SYMBOL.WIFI+" WiFi")
+wifi_label.center()
+#wifi_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
+
+def wifi_event(e):
+    animation.start()
+
+button.add_event_cb(wifi_event,lv.EVENT.CLICKED,None)
+
+
+
+
+
