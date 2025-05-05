@@ -40,7 +40,7 @@ COLOR_SLIDER_BG=LIGHTPINK
 COLOR_SLIDER_KNOB=DARKYELLOW
 COLOR_SLIDER_INDICATOR=LIGHTPINK
 
-
+foreground_app_name=None
 drawer=None
 wifi_screen=None
 drawer_open=False
@@ -212,7 +212,7 @@ wifi_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
 def wifi_event(e):
     global drawer_open
     close_drawer()
-    start_app("/builtin/apps/com.example.wificonf")
+    start_app_by_name("com.example.wificonf")
 
 wifi_btn.add_event_cb(wifi_event,lv.EVENT.CLICKED,None)
 #
@@ -364,6 +364,17 @@ def execute_script_new_thread(scriptname, is_file, is_launcher, is_graphical):
     except Exception as e:
         print("/main.py: execute_script_new_thread(): error starting new thread thread: ", e)
 
+def start_app_by_name(app_name, is_launcher=False):
+    global foreground_app_name
+    foreground_app_name = app_name
+    custom_app_dir=f"/apps/{app_name}"
+    builtin_app_dir=f"/builtin/apps/{app_name}"
+    try:
+        stat = uos.stat(custom_app_dir)
+        start_app(custom_app_dir, is_launcher)
+    except OSError:
+        start_app(builtin_app_dir, is_launcher)
+
 def start_app(app_dir, is_launcher=False):
     print(f"/main.py start_app({app_dir},{is_launcher}")
     manifest_path = f"{app_dir}/META-INF/MANIFEST.MF"
@@ -377,15 +388,8 @@ def start_app(app_dir, is_launcher=False):
         close_bar()
 
 def restart_launcher():
-    # The launcher might have been updated from the builtin one, so check that:
-    custom_launcher = "/apps/com.example.launcher"
-    builtin_launcher = "/builtin/apps/com.example.launcher"
-    try:
-        stat = uos.stat(custom_launcher)
-        start_app(custom_launcher, True)
-    except OSError:
-        start_app(builtin_launcher, True)
-
+    # No need to stop the other launcher first, because it exits after building the screen
+    start_app_by_name("com.example.launcher", True)
 
 # Execute this if it exists
 execute_script_new_thread("/autorun.py", True, False, False)
@@ -400,6 +404,7 @@ except Exception as e:
 import uos
 custom_auto_connect = "/apps/com.example.wificonf/assets/auto_connect.py"
 builtin_auto_connect = "/builtin/apps/com.example.wificonf/assets/auto_connect.py"
+# Maybe start_app_by_name() and start_app_by_name() could be merged so the try-except logic is not duplicated...
 try:
     stat = uos.stat(custom_auto_connect)
     execute_script_new_thread(custom_auto_connect, True, False, False)
@@ -410,6 +415,7 @@ except OSError:
         execute_script_new_thread(builtin_auto_connect, True, False, False)
     except OSError:
         print("Couldn't execute {builtin_auto_connect}, continuing...")
+
 
 restart_launcher()
 
