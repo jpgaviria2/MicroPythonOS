@@ -48,6 +48,15 @@ cont.set_style_border_width(0, 0)
 cont.set_size(lv.pct(100), lv.pct(100))
 cont.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
 
+button = lv.button(cont)
+button.set_size(40, 40)
+button.align(lv.ALIGN.RIGHT_MID, 0, -20)
+def snap_button(e):
+    print("Picture taken!")
+    # TODO: keep it on-screen for a while, or save it to storage, or show it in miniature
+
+button.add_event_cb(snap_button,lv.EVENT.CLICKED,None)
+
 
 from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
 
