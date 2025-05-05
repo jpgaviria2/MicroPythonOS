@@ -65,7 +65,7 @@ def close_drawer(to_launcher=False):
     if drawer_open:
         drawer_open=False
         drawer.add_flag(lv.obj.FLAG.HIDDEN)
-        if not to_launcher:
+        if not to_launcher and not is_launcher(foreground_app_name):
             close_bar()
 
 def open_bar():
@@ -269,6 +269,10 @@ import _thread
 import traceback
 import uio
 import time
+
+def is_launcher(app_name):
+    # Simple check, could be more elaborate by checking the MANIFEST.MF for the app...
+    return "launcher" in app_name
 
 def parse_manifest(manifest_path):
     name = "Unknown"
