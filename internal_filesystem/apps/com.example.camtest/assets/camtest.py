@@ -136,7 +136,7 @@ try_capture()
 import time
 while appscreen == lv.screen_active():
     try_capture()
-    time.sleep_ms(100) # Allow for the MicroPython REPL to still work
+    time.sleep_ms(100) # Allow for the MicroPython REPL to still work. Reducing it doesn't seem to affect the on-display FPS.
 
 print("App backgrounded, deinitializing camera...")
 cam.deinit()
