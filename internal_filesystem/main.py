@@ -47,6 +47,7 @@ wifi_screen=None
 drawer_open=False
 bar_open=True
 
+th = task_handler.TaskHandler(duration=6)
 
 rootscreen = lv.screen_active()
 rootlabel = lv.label(rootscreen)
@@ -190,7 +191,7 @@ slider_label.align(lv.ALIGN.TOP_MID,0,PADDING_SMALL)
 slider=lv.slider(drawer)
 slider.set_range(SLIDER_MIN_VALUE,SLIDER_MAX_VALUE)
 slider.set_value(SLIDER_DEFAULT_VALUE,False)
-slider.set_width(TFT_HOR_RES-PADDING_LARGE)
+slider.set_width(lv.pct(80))
 slider.align_to(slider_label,lv.ALIGN.OUT_BOTTOM_MID,0,PADDING_SMALL)
 slider.set_style_bg_color(COLOR_SLIDER_BG,lv.PART.MAIN)
 slider.set_style_bg_color(COLOR_SLIDER_INDICATOR,lv.PART.INDICATOR)
