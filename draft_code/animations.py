@@ -200,42 +200,55 @@ anim4.start()
 import display_driver
 import lvgl as lv
 
-import lvgl
 
-button = lvgl.button( lvgl.screen_active() )
+
+button = lv.button( lv.screen_active() )
 button.set_size( 50, 20 )
 button.center()
 
-anim1 = lvgl.anim_t()
+anim1 = lv.anim_t()
 anim1.init()
 anim1.set_var( button )
 anim1.set_time( 1000 )
 anim1.set_values( -100, 100 )
 anim1.set_custom_exec_cb( lambda not_used, value : button.set_x( value ))
 
-anim2 = lvgl.anim_t()
+anim2 = lv.anim_t()
 anim2.init()
 anim2.set_var( button )
 anim2.set_time( 150 )
 anim2.set_values( 100, 30 )
 anim2.set_custom_exec_cb( lambda not_used, value : button.set_x( value ))
 
-anim3 = lvgl.anim_t()
+anim3 = lv.anim_t()
 anim3.init()
 anim3.set_var( button )
 anim3.set_time( 2000 )
 anim3.set_values( 30, -100 )
 anim3.set_custom_exec_cb( lambda not_used, value : button.set_x( value ))
 
-time = lvgl.anim_timeline_create()
+timeline = lv.anim_timeline_create()
 
-# somehow this doesn't work:
-#lvgl.anim_timeline_add( time, 0, anim1 )
-#lvgl.anim_timeline_add( time, 1000, anim2 )
-#lvgl.anim_timeline_add( time, 1150, anim3 )
 
-#lvgl.anim_timeline_start( time )
+# this works:
+lv.anim_timeline_t.add(timeline,0,anim1)
+lv.anim_timeline_t.add(timeline,2000,anim2)
+lv.anim_timeline_t.add(timeline,3150,anim3)
 
+lv.anim_timeline_t.start(timeline)
+
+# to restart it:
+#lv.anim_timeline_t.set_progress(timeline, 0)
+#lv.anim_timeline_t.start(timeline)
+
+# or to reverse it:
+#lv.anim_timeline_t.set_reverse(timeline,True)
+#lv.anim_timeline_t.start(timeline)
+#lv.anim_timeline_t.set_reverse(timeline,False)
+#lv.anim_timeline_t.start(timeline)
+# progress max is 65535, not 32k
+#lv.anim_timeline_t.set_progress(timeline,65535)
+#lv.anim_timeline_t.start(timeline)
 
 
 
