@@ -45,6 +45,7 @@ COLOR_SLIDER_INDICATOR=LIGHTPINK
 drawer=None
 wifi_screen=None
 drawer_open=False
+bar_open=True
 
 
 rootscreen = lv.screen_active()
@@ -55,7 +56,7 @@ rootlabel.align(lv.ALIGN.CENTER, 0, 0)
 def open_drawer():
     global drawer_open
     if not drawer_open:
-        show_bar_animation.start()
+        open_bar()
         drawer_open=True
         drawer.remove_flag(lv.obj.FLAG.HIDDEN)
 
@@ -65,7 +66,19 @@ def close_drawer(to_launcher=False):
         drawer_open=False
         drawer.add_flag(lv.obj.FLAG.HIDDEN)
         if not to_launcher:
-            hide_bar_animation.start()
+            close_bar()
+
+def open_bar():
+    global bar_open
+    if not bar_open:
+        bar_open=True
+        show_bar_animation.start()
+
+def close_bar():
+    global bar_open
+    if bar_open:
+        bar_open=False
+        hide_bar_animation.start()
 
 
 # Create notification bar
@@ -144,7 +157,6 @@ timer1 = lv.timer_create(update_time, CLOCK_UPDATE_INTERVAL, None)
 timer2 = lv.timer_create(update_temperature, TEMPERATURE_UPDATE_INTERVAL, None)
 timer3 = lv.timer_create(update_memfree, MEMFREE_UPDATE_INTERVAL, None)
 timer4 = lv.timer_create(update_wifi_icon, WIFI_ICON_UPDATE_INTERVAL, None)
-#notification_bar.add_event_cb(toggle_drawer, lv.EVENT.CLICKED, None)
 
 # hide bar animation
 hide_bar_animation = lv.anim_t()
@@ -174,7 +186,7 @@ drawer.add_flag(lv.obj.FLAG.HIDDEN)
 slider_label=lv.label(drawer)
 slider_label.set_text(f"{SLIDER_DEFAULT_VALUE}%")
 slider_label.set_style_text_color(COLOR_TEXT_WHITE,0)
-slider_label.align(lv.ALIGN.TOP_MID,0,NOTIFICATION_BAR_HEIGHT+PADDING_SMALL)
+slider_label.align(lv.ALIGN.TOP_MID,0,PADDING_SMALL)
 slider=lv.slider(drawer)
 slider.set_range(SLIDER_MIN_VALUE,SLIDER_MAX_VALUE)
 slider.set_value(SLIDER_DEFAULT_VALUE,False)
@@ -359,9 +371,9 @@ def start_app(app_dir, is_launcher=False):
     execute_script_new_thread(start_script_fullpath, True, is_launcher, True)
     # Launchers have the bar, other apps don't have it
     if is_launcher:
-        show_bar_animation.start()
+        open_bar()
     else:
-        hide_bar_animation.start()
+        close_bar()
 
 def restart_launcher():
     # The launcher might have been updated from the builtin one, so check that:
