@@ -55,32 +55,24 @@ rootlabel.align(lv.ALIGN.CENTER, 0, 0)
 def open_drawer():
     global drawer_open
     if not drawer_open:
+        show_bar_animation.start()
         drawer_open=True
-        notification_bar.set_pos(0,0)
-        notification_bar.remove_flag(lv.obj.FLAG.HIDDEN)
         drawer.remove_flag(lv.obj.FLAG.HIDDEN)
 
-def close_drawer():
+def close_drawer(to_launcher=False):
     global drawer_open
     if drawer_open:
         drawer_open=False
         drawer.add_flag(lv.obj.FLAG.HIDDEN)
-        animation.start()
-
-def toggle_drawer(event):
-	global drawer_open
-	if drawer_open:
-		close_drawer()
-	else:
-		open_drawer()
+        if not to_launcher:
+            hide_bar_animation.start()
 
 
-# Create notification bar object
+# Create notification bar
 notification_bar = lv.obj(lv.layer_top())
 notification_bar.set_style_bg_color(COLOR_NOTIF_BAR_BG, 0)
 notification_bar.set_size(TFT_HOR_RES, NOTIFICATION_BAR_HEIGHT)
 notification_bar.set_pos(0, 0)
-notification_bar.add_flag(lv.obj.FLAG.HIDDEN)
 notification_bar.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
 notification_bar.set_scroll_dir(lv.DIR.VER)
 notification_bar.set_style_border_width(0, 0)
@@ -155,12 +147,20 @@ timer4 = lv.timer_create(update_wifi_icon, WIFI_ICON_UPDATE_INTERVAL, None)
 #notification_bar.add_event_cb(toggle_drawer, lv.EVENT.CLICKED, None)
 
 # hide bar animation
-animation = lv.anim_t()
-animation.init()
-animation.set_var(notification_bar)
-animation.set_values(0, -NOTIFICATION_BAR_HEIGHT)
-animation.set_time(2000)
-animation.set_custom_exec_cb(lambda not_used, value : notification_bar.set_y(value))
+hide_bar_animation = lv.anim_t()
+hide_bar_animation.init()
+hide_bar_animation.set_var(notification_bar)
+hide_bar_animation.set_values(0, -NOTIFICATION_BAR_HEIGHT)
+hide_bar_animation.set_time(2000)
+hide_bar_animation.set_custom_exec_cb(lambda not_used, value : notification_bar.set_y(value))
+
+# show bar animation
+show_bar_animation = lv.anim_t()
+show_bar_animation.init()
+show_bar_animation.set_var(notification_bar)
+show_bar_animation.set_values(-NOTIFICATION_BAR_HEIGHT, 0)
+show_bar_animation.set_time(1000)
+show_bar_animation.set_custom_exec_cb(lambda not_used, value : notification_bar.set_y(value))
 
 
 drawer=lv.obj(lv.layer_top())
@@ -229,7 +229,7 @@ launcher_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
 def launcher_event(e):
     print("Launcher button pressed!")
     global drawer_open,rootscreen
-    close_drawer()
+    close_drawer(True)
     lv.screen_load(rootscreen)
 
 launcher_btn.add_event_cb(launcher_event,lv.EVENT.CLICKED,None)
@@ -357,10 +357,11 @@ def start_app(app_dir, is_launcher=False):
     app_name, start_script = parse_manifest(manifest_path)
     start_script_fullpath = f"{app_dir}/{start_script}"
     execute_script_new_thread(start_script_fullpath, True, is_launcher, True)
-    # Show notification bar, then start animation to hide it
-    notification_bar.set_pos(0,0)
-    notification_bar.remove_flag(lv.obj.FLAG.HIDDEN)
-    animation.start()
+    # Launchers have the bar, other apps don't have it
+    if is_launcher:
+        show_bar_animation.start()
+    else:
+        hide_bar_animation.start()
 
 def restart_launcher():
     # The launcher might have been updated from the builtin one, so check that:
