@@ -16,6 +16,7 @@ import lvgl as lv
 
 # Create a container for the grid
 cont = lv.obj(appscreen)
+cont.set_pos(0, NOTIFICATION_BAR_HEIGHT) # leave some margin for the notification bar
 cont.set_size(lv.pct(100), lv.pct(100))
 cont.set_style_pad_all(10, 0)
 cont.set_flex_flow(lv.FLEX_FLOW.ROW_WRAP)

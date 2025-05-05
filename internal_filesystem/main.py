@@ -41,7 +41,6 @@ COLOR_SLIDER_KNOB=DARKYELLOW
 COLOR_SLIDER_INDICATOR=LIGHTPINK
 
 
-
 drawer=None
 wifi_screen=None
 drawer_open=False
@@ -322,6 +321,7 @@ def execute_script(script_source, is_file, is_launcher, is_graphical):
             lv.screen_load(newscreen)
             script_globals = {
                 'lv': lv,
+                'NOTIFICATION_BAR_HEIGHT': NOTIFICATION_BAR_HEIGHT, # for apps that want to leave space for notification bar
                 'appscreen': newscreen,
                 'start_app': start_app, # for launcher apps
                 'parse_manifest': parse_manifest, # for launcher apps
