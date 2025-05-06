@@ -53,7 +53,7 @@ cd ~/sources/
 git clone https://github.com/LightningPiggy/PiggyOS.git
 
 git clone https://github.com/bixb922/freezeFS
-~/sources/PiggyOS/scripts/build_freezefs_mount_builtin.sh
+~/sources/PiggyOS/scripts/freezefs_mount_builtin.sh
 
 git clone https://github.com/cnadler86/micropython-camera-API
 echo 'include("~/sources/lvgl_micropython/build/manifest.py")' >> micropython-camera-API/src/manifest.py

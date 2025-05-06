@@ -397,7 +397,7 @@ def restart_launcher():
 
 # Execute these if they exist:
 execute_script_new_thread("/autorun.py", True, False, False) # Generic run-at-boot script, for development
-execute_script_new_thread("/system/button.py", True, False, False) # Button handling through IRQ
+execute_script_new_thread("/builtin/system/button.py", True, False, False) # Button handling through IRQ
 
 try:
     import freezefs_mount_builtin

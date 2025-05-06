@@ -1,3 +1,5 @@
+print("boot.py: version 0.0.2 running")
+
 from machine import Pin, SPI
 import st7789 
 import lcd_bus
