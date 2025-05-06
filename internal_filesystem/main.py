@@ -381,6 +381,8 @@ def start_app_by_name(app_name, is_launcher=False):
 
 def start_app(app_dir, is_launcher=False):
     print(f"/main.py start_app({app_dir},{is_launcher}")
+    global foreground_app_name
+    foreground_app_name = app_dir # would be better to store only the app name...
     manifest_path = f"{app_dir}/META-INF/MANIFEST.MF"
     app_name, start_script = parse_manifest(manifest_path)
     start_script_fullpath = f"{app_dir}/{start_script}"
