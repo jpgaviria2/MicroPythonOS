@@ -395,8 +395,9 @@ def restart_launcher():
     # No need to stop the other launcher first, because it exits after building the screen
     start_app_by_name("com.example.launcher", True)
 
-# Execute this if it exists
-execute_script_new_thread("/autorun.py", True, False, False)
+# Execute these if they exist:
+execute_script_new_thread("/autorun.py", True, False, False) # Generic run-at-boot script, for development
+execute_script_new_thread("/system/button.py", True, False, False) # Button handling through IRQ
 
 try:
     import freezefs_mount_builtin
