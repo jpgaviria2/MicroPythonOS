@@ -36,7 +36,7 @@ def load_config():
 
 
 def auto_connect():
-    # TODO: scan for wifi networks first, and only try to connect to the ones that are found
+    # TODO: scan for wifi networks first, and only attempt to connect to the ones that are found
     print("auto_connect: Attempting to connect to known networks")
     for ssid,password in access_points.items():
         print(f"auto_connect: Trying SSID: {ssid}")
@@ -48,19 +48,22 @@ def auto_connect():
 
 
 def attempt_connecting(ssid,password):
-    print(f"attempt_connecting: Attempting to connect to SSID: {ssid}")
+    print(f"auto_connect.py attempt_connecting: Attempting to connect to SSID: {ssid}")
     try:
         wlan.connect(ssid,password)
         for i in range(10):
             if wlan.isconnected():
-                print(f"attempt_connecting: Connected to {ssid} after {i+1} seconds")
+                print(f"auto_connect.py attempt_connecting: Connected to {ssid} after {i+1} seconds")
                 return True
+            elif not wlan.active(): # wificonf app or others might stop the wifi, no point in continuing then
+                print("auto_connect.py attempt_connecting: Someone disabled wifi, bailing out...")
+                return False
             print(f"attempt_connecting: Waiting for connection, attempt {i+1}/10")
             time.sleep(1)
-        print(f"attempt_connecting: Failed to connect to {ssid}")
+        print(f"auto_connect.py attempt_connecting: Failed to connect to {ssid}")
         return False
     except Exception as e:
-        print(f"attempt_connecting: Connection error: {e}")
+        print(f"auto_connect.py attempt_connecting: Connection error: {e}")
         return False
 
 print("auto_connect.py running...")
@@ -70,7 +73,7 @@ wlan=network.WLAN(network.STA_IF)
 wlan.active(True)
 
 if auto_connect():
-    print("WiFi auto-connect managed to connect.")
+    print("auto_connect.py managed to connect.")
 else:
-    print("WiFi auto connect did not manage to connect.")
+    print("auto_connect.py did not manage to connect.")
     wlan.active(False) # disable to conserve power
