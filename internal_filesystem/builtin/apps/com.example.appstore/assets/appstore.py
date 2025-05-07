@@ -33,6 +33,33 @@ class App:
         self.image = None
         self.image_dsc = None
 
+def compare_versions(ver1: str, ver2: str) -> bool:
+    """Compare two version numbers (e.g., '1.2.3' vs '4.5.6').
+    Returns True if ver1 is greater than ver2, False otherwise."""
+    print(f"Comparing versions: {ver1} vs {ver2}")
+    v1_parts = [int(x) for x in ver1.split('.')]
+    v2_parts = [int(x) for x in ver2.split('.')]
+    print(f"Version 1 parts: {v1_parts}")
+    print(f"Version 2 parts: {v2_parts}")
+    for i in range(max(len(v1_parts), len(v2_parts))):
+        v1 = v1_parts[i] if i < len(v1_parts) else 0
+        v2 = v2_parts[i] if i < len(v2_parts) else 0
+        print(f"Comparing part {i}: {v1} vs {v2}")
+        if v1 > v2:
+            print(f"{ver1} is greater than {ver2}")
+            return True
+        if v1 < v2:
+            print(f"{ver1} is less than {ver2}")
+            return False
+    print(f"Versions are equal or {ver1} is not greater than {ver2}")
+    return False
+
+
+def update_available(app_fullname, new_version):
+    installed_app = parse_manifest(f"/apps/{app_fullname}/META-INF/MANIFEST.JSON")
+    if installed_app.version == "0.0.0": # special case, if the installed app doesn't have a version number (maybe MANIFEST.JSON doesn't exist?) then there's no update
+        return False
+    return compare_versions(new_version, installed_app.version)
 
 def is_installed_by_path(dir_path):
     try:
@@ -290,10 +317,17 @@ def show_app_detail(app):
         action_label = action_label_install
     install_label.set_text(action_label)
     install_label.center()
-    if is_installed: # and newer_version_available(app.fullname)
-        install_button.set_size(lv.pct(45), 40)
+    if is_installed and update_available(app.fullname, app.version):
+        install_button.set_size(lv.pct(45), 40) # make space for update button
         print("Update available, adding update button.")
-    else
+        update_button = lv.button(cont)
+        update_button.set_size(lv.pct(45), 40)
+        update_button.align_to(install_button, lv.ALIGN.OUT_RIGHT_MID, 0, lv.pct(5))
+        update_button.add_event_cb(lambda e, d=app.download_url, f=app.fullname: update_button_click(d,f), lv.EVENT.CLICKED, None)
+        update_label = lv.label(update_button)
+        update_label.set_text("Update")
+        update_label.center()
+    else:
         install_button.set_size(lv.pct(100), 40)
     version_label = lv.label(cont)
     version_label.set_width(lv.pct(100))
@@ -326,6 +360,8 @@ def toggle_install(download_url, fullname):
         except Exception as e:
             print("Could not start download_and_unzip thread: ", e)
 
+def update_button_click(download_url, fullname):
+    print(f"Update button clicked for {download_url} and fullname {fullname}")
 
 def back_to_main(event):
     global app_detail_screen

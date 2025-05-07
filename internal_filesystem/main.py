@@ -258,18 +258,38 @@ def is_launcher(app_name):
     return "launcher" in app_name
 
 def parse_manifest(manifest_path):
-    name = "Unknown"
-    start_script = "assets/start.py"
+    # Default values for App object
+    default_app = App(
+        name="Unknown",
+        publisher="Unknown",
+        short_description="",
+        long_description="",
+        icon_url="",
+        download_url="",
+        fullname="Unknown",
+        version="0.0.0",
+        entrypoint="assets/start.py",
+        category=""
+    )
     try:
-        with open(manifest_path,'r') as f:
-            app_info=ujson.load(f)
-            name = app_info.get("name")
-            start_script = app_info.get("entrypoint")
-            #print(f"parse_manifest: got app_info: {app_info}")
+        with open(manifest_path, 'r') as f:
+            app_info = ujson.load(f)
+            # Create App object with values from manifest, falling back to defaults
+            return App(
+                name=app_info.get("name", default_app.name),
+                publisher=app_info.get("publisher", default_app.publisher),
+                short_description=app_info.get("short_description", default_app.short_description),
+                long_description=app_info.get("long_description", default_app.long_description),
+                icon_url=app_info.get("icon_url", default_app.icon_url),
+                download_url=app_info.get("download_url", default_app.download_url),
+                fullname=app_info.get("fullname", default_app.fullname),
+                version=app_info.get("version", default_app.version),
+                entrypoint=app_info.get("entrypoint", default_app.entrypoint),
+                category=app_info.get("category", default_app.category)
+            )
     except OSError:
-        access_points={}
         print(f"parse_manifest: error loading manifest_path: {manifest_path}")
-    return name, start_script
+        return default_app
 
 def long_path_to_filename(path):
     try:
@@ -367,8 +387,8 @@ def start_app(app_dir, is_launcher=False):
     global foreground_app_name
     foreground_app_name = app_dir # would be better to store only the app name...
     manifest_path = f"{app_dir}/META-INF/MANIFEST.JSON"
-    app_name, start_script = parse_manifest(manifest_path)
-    start_script_fullpath = f"{app_dir}/{start_script}"
+    app = parse_manifest(manifest_path)
+    start_script_fullpath = f"{app_dir}/{app.entrypoint}"
     execute_script_new_thread(start_script_fullpath, True, is_launcher, True)
     # Launchers have the bar, other apps don't have it
     if is_launcher:
