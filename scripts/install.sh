@@ -2,6 +2,15 @@ pkill -f "python.*mpremote"
 
 appname="$1"
 
+if [ -z "$appname" ]; then
+	echo "Usage: $0 [appname]"
+	echo "Example: $0"
+	echo "Example: $0 launcher"
+	echo "Example: $0 wificonf"
+	echo "Example: $0 appstore"
+	sleep 2
+fi
+
 pushd internal_filesystem/
 
 if [ ! -z "$appname" ]; then
