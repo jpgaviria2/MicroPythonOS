@@ -5,3 +5,14 @@ notes.txt
 trash/
 
 appstore_backend/bundled_apps/
+
+icons/
+
+meeting_minutes/
+
+notes/
+
+apps_disabled/
+
+*.sh
+conf.json*
