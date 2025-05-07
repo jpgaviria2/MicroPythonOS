@@ -3,11 +3,23 @@
 # --partition size: both OTA partitions are 4MB
 # --flash-size: total flash size is 16MB
 # 
+
+devbuild="$1"
+
+echo "Usage: $0 [devbuild]"
+echo "Example: $0"
+echo "Example: $0 devbuild"
+echo
+echo "Adding 'devbuild' will build without any preinstalled files or builtin/ filsystem, so it will just start with a black screen and you'll have to do: ./scripts/install.sh to install the User Interface."
+sleep 2
+
 pushd ~/sources/lvgl_micropython
 
-python3 make.py --ota --partition-size=4194304 --flash-size=16 esp32 BOARD=ESP32_GENERIC_S3 BOARD_VARIANT=SPIRAM_OCT DISPLAY=st7789 INDEV=cst816s USER_C_MODULE="/home/user/sources/micropython-camera-API/src/micropython.cmake" FROZEN_MANIFEST=~/sources/PiggyOS/manifest.py
+manifest="FROZEN_MANIFEST=~/sources/PiggyOS/manifest.py"
+if [ "$devbuild" == "devbuild" ]; then
+	manifest=""
+fi
 
-# dev build:
-#python3 make.py --ota --partition-size=4194304 --flash-size=16 esp32 BOARD=ESP32_GENERIC_S3 BOARD_VARIANT=SPIRAM_OCT DISPLAY=st7789 INDEV=cst816s USER_C_MODULE="/home/user/sources/micropython-camera-API/src/micropython.cmake" 
+python3 make.py --ota --partition-size=4194304 --flash-size=16 esp32 BOARD=ESP32_GENERIC_S3 BOARD_VARIANT=SPIRAM_OCT DISPLAY=st7789 INDEV=cst816s USER_C_MODULE="/home/user/sources/micropython-camera-API/src/micropython.cmake" "$manifest"
 
 popd
