@@ -240,9 +240,9 @@ launcher_label.center()
 launcher_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
 def launcher_event(e):
     print("Launcher button pressed!")
-    global drawer_open,rootscreen
+    global drawer_open
     close_drawer(True)
-    lv.screen_load(rootscreen)
+    show_launcher()
 
 launcher_btn.add_event_cb(launcher_event,lv.EVENT.CLICKED,None)
 #
@@ -330,6 +330,7 @@ def execute_script(script_source, is_file, is_launcher, is_graphical):
                 'start_app': start_app, # for launcher apps
                 'parse_manifest': parse_manifest, # for launcher apps
                 'restart_launcher': restart_launcher, # for appstore apps
+                'show_launcher': show_launcher, # for apps that want to show the launcher
                 '__name__': "__main__"
             }
         print(f"Thread {thread_id}: starting script")
@@ -392,6 +393,11 @@ def start_app(app_dir, is_launcher=False):
         open_bar()
     else:
         close_bar()
+
+def show_launcher():
+    global rootscreen
+    open_bar()
+    lv.screen_load(rootscreen)
 
 def restart_launcher():
     # No need to stop the other launcher first, because it exits after building the screen

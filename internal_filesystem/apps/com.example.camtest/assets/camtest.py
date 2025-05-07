@@ -39,6 +39,7 @@ appscreen = lv.screen_active()
 #width = 120
 #height = 160
 
+keepgoing = True
 width = 240
 height = 240
 
@@ -48,14 +49,31 @@ cont.set_style_border_width(0, 0)
 cont.set_size(lv.pct(100), lv.pct(100))
 cont.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
 
-button = lv.button(cont)
-button.set_size(40, 40)
-button.align(lv.ALIGN.RIGHT_MID, 0, -20)
-def snap_button(e):
+snap_button = lv.button(cont)
+snap_button.set_size(60, 60)
+snap_button.align(lv.ALIGN.RIGHT_MID, 0, -20)
+snap_label = lv.label(snap_button)
+snap_label.set_text(lv.SYMBOL.OK)
+snap_label.center()
+def snap_button_click(e):
     print("Picture taken!")
     # TODO: keep it on-screen for a while, or save it to storage, or show it in miniature
 
-button.add_event_cb(snap_button,lv.EVENT.CLICKED,None)
+snap_button.add_event_cb(snap_button_click,lv.EVENT.CLICKED,None)
+
+
+close_button = lv.button(cont)
+close_button.set_size(40,40)
+close_button.align(lv.ALIGN.TOP_RIGHT, 0, 0)
+close_label = lv.label(close_button)
+close_label.set_text(lv.SYMBOL.CLOSE)
+close_label.center()
+def close_button_click(e):
+    global keepgoing
+    print("Closing camera!")
+    keepgoing = False
+
+close_button.add_event_cb(close_button_click,lv.EVENT.CLICKED,None)
 
 
 from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
@@ -134,9 +152,11 @@ try_capture()
 
 
 import time
-while appscreen == lv.screen_active():
+while appscreen == lv.screen_active() and keepgoing:
     try_capture()
     time.sleep_ms(100) # Allow for the MicroPython REPL to still work. Reducing it doesn't seem to affect the on-display FPS.
 
 print("App backgrounded, deinitializing camera...")
 cam.deinit()
+
+show_launcher()
