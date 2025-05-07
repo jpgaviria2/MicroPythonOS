@@ -3,4 +3,4 @@ Name: WiFiConf
 Start-Script: assets/wificonf.py
 WiFi-Connect-Script: assets/auto_connect.py
 WiFi-Configure-Script: assets/wificonf.py
-Version: 0.0.1
+Version: 0.0.2
