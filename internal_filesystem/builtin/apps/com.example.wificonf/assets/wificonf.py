@@ -16,7 +16,7 @@ busy_connecting=False
 
 access_points={}
 selected_ssid=None
-list=None
+aplist=None
 password_ta=None
 password_page=None
 keyboard=None
@@ -81,8 +81,8 @@ def scan_networks():
         wlan.active(False)
         wlan.active(True)
     try:
-        networks=wlan.scan()
-        ssids=[n[0].decode() for n in networks]
+        networks = wlan.scan()
+        ssids = list(set(n[0].decode() for n in networks))
         print(f"scan_networks: Found networks: {ssids}")
     except Exception as e:
         print(f"scan_networks: Scan failed: {e}")
@@ -123,7 +123,7 @@ def attempt_connecting(ssid,password):
             result="timeout"
     except Exception as e:
         print(f"attempt_connecting: Connection error: {e}")
-        result=e
+        result=f"{e}"
         show_error("Connection failed")
     attempt_connecting_done(ssid, result)
 
@@ -147,14 +147,14 @@ def show_error(message):
 def refresh_list(tried_ssid="", result=""):
     global ssids
     print("refresh_list: Clearing current list")
-    list.clean()
+    aplist.clean()
     print("refresh_list: Populating list with scanned networks")
     for ssid in ssids:
-        if len(ssid) == 0:
-            print(f"Skipping empty SSID: {ssid}")
+        if len(ssid) < 1 or len(ssid) > 32:
+            print(f"Skipping too short or long SSID: {ssid}")
             continue
         print(f"refresh_list: Adding SSID: {ssid}")
-        button=list.add_button(None,ssid)
+        button=aplist.add_button(None,ssid)
         button.add_event_cb(lambda e, s=ssid: select_ssid_cb(e,s),lv.EVENT.CLICKED,None)
         if wlan.isconnected() and wlan.config('essid')==ssid:
             status="connected"
@@ -271,11 +271,11 @@ def cancel_cb(event):
     lv.screen_load(appscreen)
 
 def create_ui():
-    global list,appscreen,error_label,scan_button_label,scan_button
+    global aplist,appscreen,error_label,scan_button_label,scan_button
     print("create_ui: Creating list widget")
-    list=lv.list(appscreen)
-    list.set_size(lv.pct(100),180)
-    list.align(lv.ALIGN.TOP_MID,0,0)
+    aplist=lv.list(appscreen)
+    aplist.set_size(lv.pct(100),180)
+    aplist.align(lv.ALIGN.TOP_MID,0,0)
     print("create_ui: Creating error label")
     error_label=lv.label(appscreen)
     error_label.set_text("")
