@@ -23,23 +23,6 @@ WIFI_ICON_UPDATE_INTERVAL = 1500
 TEMPERATURE_UPDATE_INTERVAL = 2000
 MEMFREE_UPDATE_INTERVAL = 5000 # not too frequent because there's a forced gc.collect() to give it a reliable value
 
-# Color palette
-DARKPINK = lv.color_hex(0xEC048C)
-MEDIUMPINK = lv.color_hex(0xF480C5)
-LIGHTPINK = lv.color_hex(0xF9E9F2)
-DARKYELLOW = lv.color_hex(0xFBDC05)
-LIGHTYELLOW = lv.color_hex(0xFBE499)
-PUREBLACK = lv.color_hex(0x000000)
-
-COLOR_DRAWER_BG=MEDIUMPINK
-COLOR_TEXT_WHITE=LIGHTPINK
-COLOR_NOTIF_BAR_BG = DARKPINK
-COLOR_DRAWER_BUTTON_BG=DARKYELLOW
-COLOR_DRAWER_BUTTONTEXT=PUREBLACK
-COLOR_SLIDER_BG=LIGHTPINK
-COLOR_SLIDER_KNOB=DARKYELLOW
-COLOR_SLIDER_INDICATOR=LIGHTPINK
-
 foreground_app_name=None
 drawer=None
 wifi_screen=None
@@ -83,7 +66,6 @@ def close_bar():
 
 # Create notification bar
 notification_bar = lv.obj(lv.layer_top())
-notification_bar.set_style_bg_color(COLOR_NOTIF_BAR_BG, 0)
 notification_bar.set_size(TFT_HOR_RES, NOTIFICATION_BAR_HEIGHT)
 notification_bar.set_pos(0, 0)
 notification_bar.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
@@ -94,15 +76,12 @@ notification_bar.set_style_radius(0, 0)
 time_label = lv.label(notification_bar)
 time_label.set_text("00:00:00.000")
 time_label.align(lv.ALIGN.LEFT_MID, 0, 0)
-time_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
 temp_label = lv.label(notification_bar)
 temp_label.set_text("00.00°C")
 temp_label.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
-temp_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
 memfree_label = lv.label(notification_bar)
 memfree_label.set_text("")
 memfree_label.align_to(temp_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
-memfree_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
 #style = lv.style_t()
 #style.init()
 #style.set_text_font(lv.font_montserrat_8)  # tiny font
@@ -111,23 +90,19 @@ memfree_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
 #notif_icon = lv.label(notification_bar)
 #notif_icon.set_text(lv.SYMBOL.BELL)
 #notif_icon.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
-#notif_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
 # Battery icon
 battery_icon = lv.label(notification_bar)
 battery_icon.set_text(lv.SYMBOL.BATTERY_FULL)
 battery_icon.align(lv.ALIGN.RIGHT_MID, -PADDING_TINY, 0)
-battery_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
 # WiFi icon
 wifi_icon = lv.label(notification_bar)
 wifi_icon.set_text(lv.SYMBOL.WIFI)
 wifi_icon.align_to(battery_icon, lv.ALIGN.OUT_LEFT_MID, -PADDING_TINY, 0)
-wifi_icon.set_style_text_color(COLOR_TEXT_WHITE, 0)
 wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
 # Battery percentage - not shown to conserve space
 #battery_label = lv.label(notification_bar)
 #battery_label.set_text("100%")
 #battery_label.align(lv.ALIGN.RIGHT_MID, 0, 0)
-#battery_label.set_style_text_color(COLOR_TEXT_WHITE, 0)
 # Update time
 import time
 def update_time(timer):
@@ -182,23 +157,18 @@ show_bar_animation.set_custom_exec_cb(lambda not_used, value : notification_bar.
 drawer=lv.obj(lv.layer_top())
 drawer.set_size(lv.pct(100),TFT_VER_RES-NOTIFICATION_BAR_HEIGHT)
 drawer.set_pos(0,NOTIFICATION_BAR_HEIGHT)
-drawer.set_style_bg_color(COLOR_DRAWER_BG,0)
 drawer.set_scroll_dir(lv.DIR.NONE)
 drawer.set_style_pad_all(0, 0)
 drawer.add_flag(lv.obj.FLAG.HIDDEN)
 
 slider_label=lv.label(drawer)
 slider_label.set_text(f"{SLIDER_DEFAULT_VALUE}%")
-slider_label.set_style_text_color(COLOR_TEXT_WHITE,0)
 slider_label.align(lv.ALIGN.TOP_MID,0,PADDING_SMALL)
 slider=lv.slider(drawer)
 slider.set_range(SLIDER_MIN_VALUE,SLIDER_MAX_VALUE)
 slider.set_value(SLIDER_DEFAULT_VALUE,False)
 slider.set_width(lv.pct(80))
 slider.align_to(slider_label,lv.ALIGN.OUT_BOTTOM_MID,0,PADDING_SMALL)
-slider.set_style_bg_color(COLOR_SLIDER_BG,lv.PART.MAIN)
-slider.set_style_bg_color(COLOR_SLIDER_INDICATOR,lv.PART.INDICATOR)
-slider.set_style_bg_color(COLOR_SLIDER_KNOB,lv.PART.KNOB)
 def slider_event(e):
     value=slider.get_value()
     slider_label.set_text(f"{value}%")
@@ -208,11 +178,9 @@ slider.add_event_cb(slider_event,lv.EVENT.VALUE_CHANGED,None)
 wifi_btn=lv.button(drawer)
 wifi_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
 wifi_btn.align(lv.ALIGN.LEFT_MID,PADDING_MEDIUM,0)
-wifi_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
 wifi_label=lv.label(wifi_btn)
 wifi_label.set_text(lv.SYMBOL.WIFI+" WiFi")
 wifi_label.center()
-wifi_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
 def wifi_event(e):
     global drawer_open
     close_drawer()
@@ -223,11 +191,9 @@ wifi_btn.add_event_cb(wifi_event,lv.EVENT.CLICKED,None)
 #settings_btn=lv.button(drawer)
 #settings_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
 #settings_btn.align(lv.ALIGN.RIGHT_MID,-PADDING_MEDIUM,0)
-#settings_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
 #settings_label=lv.label(settings_btn)
 #settings_label.set_text(lv.SYMBOL.SETTINGS+" Settings")
 #settings_label.center()
-#settings_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
 #def settings_event(e):
 #    global drawer_open
 #    close_drawer()
@@ -237,11 +203,9 @@ wifi_btn.add_event_cb(wifi_event,lv.EVENT.CLICKED,None)
 launcher_btn=lv.button(drawer)
 launcher_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
 launcher_btn.align(lv.ALIGN.BOTTOM_LEFT,PADDING_MEDIUM,-PADDING_MEDIUM)
-launcher_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
 launcher_label=lv.label(launcher_btn)
 launcher_label.set_text(lv.SYMBOL.HOME+" Launcher")
 launcher_label.center()
-launcher_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
 def launcher_event(e):
     print("Launcher button pressed!")
     global drawer_open
@@ -253,11 +217,9 @@ launcher_btn.add_event_cb(launcher_event,lv.EVENT.CLICKED,None)
 restart_btn=lv.button(drawer)
 restart_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
 restart_btn.align(lv.ALIGN.RIGHT_MID,-PADDING_MEDIUM,0)
-restart_btn.set_style_bg_color(COLOR_DRAWER_BUTTON_BG,0)
 restart_label=lv.label(restart_btn)
 restart_label.set_text(lv.SYMBOL.POWER+" Reset")
 restart_label.center()
-restart_label.set_style_text_color(COLOR_DRAWER_BUTTONTEXT,0)
 restart_btn.add_event_cb(lambda event: machine.reset(),lv.EVENT.CLICKED,None)
 
 
