@@ -56,10 +56,18 @@ def compare_versions(ver1: str, ver2: str) -> bool:
 
 
 def update_available(app_fullname, new_version):
-    installed_app = parse_manifest(f"/apps/{app_fullname}/META-INF/MANIFEST.JSON")
-    if installed_app.version == "0.0.0": # special case, if the installed app doesn't have a version number (maybe MANIFEST.JSON doesn't exist?) then there's no update
+    appdir = f"/apps/{app_fullname}"
+    builtinappdir = f"/builtin/apps/{app_fullname}"
+    if is_installed_by_path(appdir):
+        print(f"{appdir} found, getting version...")
+        installed_app = parse_manifest(f"{appdir}/META-INF/MANIFEST.JSON")
+    elif is_installed_by_path(builtinappdir):
+        print(f"{builtinappdir} found, getting version...")
+        installed_app = parse_manifest(f"{builtinappdir}/META-INF/MANIFEST.JSON")
+    if not installed_app or installed_app.version == "0.0.0": # special case, if the installed app doesn't have a version number then there's no update
         return False
     return compare_versions(new_version, installed_app.version)
+
 
 def is_installed_by_path(dir_path):
     try:
