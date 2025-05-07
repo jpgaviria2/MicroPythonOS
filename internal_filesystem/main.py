@@ -137,6 +137,7 @@ def update_time(timer):
     seconds = (ticks // 1000) % 60
     milliseconds = ticks % 1000
     time_label.set_text(f"{hours:02d}:{minutes:02d}:{seconds:02d}")
+
 import network
 def update_wifi_icon(timer):
     try:
@@ -146,13 +147,16 @@ def update_wifi_icon(timer):
             wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
     except lv.LvReferenceError:
         print("update_wifi_icon caught LvReferenceError")
+
 import esp32
 def update_temperature(timer):
     temp_label.set_text(f"{esp32.mcu_temperature():.2f}°C")
+
 import gc
 def update_memfree(timer):
     gc.collect()
     memfree_label.set_text(f"{gc.mem_free()}")
+
 timer1 = lv.timer_create(update_time, CLOCK_UPDATE_INTERVAL, None)
 timer2 = lv.timer_create(update_temperature, TEMPERATURE_UPDATE_INTERVAL, None)
 timer3 = lv.timer_create(update_memfree, MEMFREE_UPDATE_INTERVAL, None)
@@ -269,24 +273,39 @@ import _thread
 import traceback
 import uio
 import time
+import ujson
+
+class App:
+    def __init__(self, name, publisher, short_description, long_description, icon_url, download_url, fullname, version, entrypoint):
+        self.name = name
+        self.publisher = publisher
+        self.short_description = short_description
+        self.long_description = long_description
+        self.icon_url = icon_url
+        self.download_url = download_url
+        self.fullname = fullname
+        self.version = version
+        self.entrypoint = entrypoint
+        self.image = None
+        self.image_dsc = None
+
 
 def is_launcher(app_name):
-    # Simple check, could be more elaborate by checking the MANIFEST.MF for the app...
+    # Simple check, could be more elaborate by checking the MANIFEST.JSON for the app...
     return "launcher" in app_name
 
 def parse_manifest(manifest_path):
     name = "Unknown"
     start_script = "assets/start.py"
     try:
-        with uio.open(manifest_path, 'r') as f:
-            for line in f:
-                line = line.strip()
-                if line.startswith("Name:"):
-                    name = line.split(":", 1)[1].strip()
-                elif line.startswith("Start-Script:"):
-                    start_script = line.split(":", 1)[1].strip()
+        with open(manifest_path,'r') as f:
+            app_info=ujson.load(f)
+            name = app_info.get("name")
+            start_script = app_info.get("entrypoint")
+            print(f"parse_manifest: got app_info: {app_info}")
     except OSError:
-        print(f"Error reading {manifest_path}")
+        access_points={}
+        print(f"parse_manifest: error loading manifest_path: {manifest_path}")
     return name, start_script
 
 def long_path_to_filename(path):
@@ -384,7 +403,7 @@ def start_app(app_dir, is_launcher=False):
     print(f"/main.py start_app({app_dir},{is_launcher}")
     global foreground_app_name
     foreground_app_name = app_dir # would be better to store only the app name...
-    manifest_path = f"{app_dir}/META-INF/MANIFEST.MF"
+    manifest_path = f"{app_dir}/META-INF/MANIFEST.JSON"
     app_name, start_script = parse_manifest(manifest_path)
     start_script_fullpath = f"{app_dir}/{start_script}"
     execute_script_new_thread(start_script_fullpath, True, is_launcher, True)

@@ -1,0 +1,13 @@
+{
+"name": "OSUpdate",
+"publisher": "ACME Inc",
+"short_description": "Operating System Updater",
+"long_description": ""
+"icon_url": "http://demo.lnpiggy.com:2121/apps/com.example.osupdate_0.0.1.mpk_icon_64x64.png",
+"download_url": "http://demo.lnpiggy.com:2121/apps/com.example.osupdate_0.0.1.mpk",
+"fullname": "com.example.osupdate",
+"version": "0.0.1",
+"entrypoint": "assets/osupdate.py",
+"category": "osupdate"
+}
+

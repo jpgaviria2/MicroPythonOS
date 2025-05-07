@@ -1,0 +1,11 @@
+{
+"name": "IMU Tester",
+"publisher": "ACME Inc",
+"short_description": "Test the Inertial Measurement Unit",
+"long_description": "It is always good to make sure the accelerometer is working properly. How else can you measure acceleration and position?",
+"icon_url": "http://demo.lnpiggy.com:2121/apps/com.example.imutest_0.0.1.mpk_icon_64x64.png",
+"download_url": "http://demo.lnpiggy.com:2121/apps/com.example.imutest_0.0.1.mpk",
+"fullname": "com.example.imutest",
+"version": "0.0.1",
+"entrypoint": "assets/imutest.py"
+}

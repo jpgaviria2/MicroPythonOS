@@ -1,4 +1,0 @@
-Manifest-Version: 1.0
-Name: AppStore
-Start-Script: assets/appstore.py
-Version: 0.0.1

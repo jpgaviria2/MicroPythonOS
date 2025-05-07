@@ -17,8 +17,9 @@ progress_bar = None
 action_label_install = "Install Latest Version"
 action_label_uninstall = "Uninstall"
 
+
 class App:
-    def __init__(self, name, publisher, short_description, long_description, icon_url, download_url, fullname, version):
+    def __init__(self, name, publisher, short_description, long_description, icon_url, download_url, fullname, version, entrypoint):
         self.name = name
         self.publisher = publisher
         self.short_description = short_description
@@ -27,8 +28,10 @@ class App:
         self.download_url = download_url
         self.fullname = fullname
         self.version = version
+        self.entrypoint = entrypoint
         self.image = None
         self.image_dsc = None
+
 
 def is_installed_by_path(dir_path):
     try:

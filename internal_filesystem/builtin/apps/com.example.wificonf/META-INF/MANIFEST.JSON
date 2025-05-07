@@ -1,0 +1,13 @@
+{
+"name": "WiFiConf",
+"publisher": "ACME Inc",
+"short_description": "Wireless Network Configuration",
+"long_description": ""
+"icon_url": "http://demo.lnpiggy.com:2121/apps/com.example.wificonf_0.0.2.mpk_icon_64x64.png",
+"download_url": "http://demo.lnpiggy.com:2121/apps/com.example.wificonf_0.0.2.mpk",
+"fullname": "com.example.wificonf",
+"version": "0.0.2",
+"entrypoint": "assets/wificonf.py",
+"category": "wificonf"
+}
+

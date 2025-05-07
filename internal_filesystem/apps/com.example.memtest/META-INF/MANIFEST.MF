@@ -1,4 +1,0 @@
-Manifest-Version: 1.0
-Name: MemTest
-Start-Script: assets/memtest.py
-Version: 0.0.1

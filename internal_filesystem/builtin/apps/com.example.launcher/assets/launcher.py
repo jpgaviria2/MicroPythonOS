@@ -62,7 +62,7 @@ for dir_path in [apps_dir, apps_dir_builtin]:
 
 # Should we skip 'Launcher' apps from the list here?
 for app_dir_fullpath in app_dirs:
-    app_name, main_script = parse_manifest(f"{app_dir_fullpath}/META-INF/MANIFEST.MF")
+    app_name, main_script = parse_manifest(f"{app_dir_fullpath}/META-INF/MANIFEST.JSON")
     # Create a container for each app (icon + label)
     app_cont = lv.obj(cont)
     app_cont.set_size(iconcont_width, iconcont_height)
