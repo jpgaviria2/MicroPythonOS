@@ -16,15 +16,17 @@ pushd internal_filesystem/
 if [ ! -z "$appname" ]; then
 	echo "Installing one app: $appname"
 	appdir="apps/com.example.$appname/"
+        target="apps/"
 	if [ ! -d "$appdir" ]; then
 		echo "$appdir doesn't exist so taking the builtin/"
 		appdir="builtin/apps/com.example.$appname/"
+                target="builtin/apps/"
 		if [ ! -d "$appdir" ]; then
 			echo "$appdir also doesn't exist, exiting..."
 			exit 1
 		fi
 	fi
-	~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py fs cp -r "$appdir" :/apps/
+	~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py fs cp -r "$appdir" :/"$target"
 	echo "start_app(\"/$appdir\")"
 	~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py
 	popd
