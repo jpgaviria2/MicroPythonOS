@@ -65,7 +65,7 @@ def attempt_connecting(ssid,password):
             elif not wlan.active(): # wificonf app or others might stop the wifi, no point in continuing then
                 print("auto_connect.py attempt_connecting: Someone disabled wifi, bailing out...")
                 return False
-            print(f"attempt_connecting: Waiting for connection, attempt {i+1}/10")
+            print(f"auto_connect.py attempt_connecting: Waiting for connection, attempt {i+1}/10")
             time.sleep(1)
         print(f"auto_connect.py attempt_connecting: Failed to connect to {ssid}")
         return False
