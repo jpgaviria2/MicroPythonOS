@@ -36,14 +36,21 @@ def load_config():
 
 
 def auto_connect():
-    # TODO: scan for wifi networks first, and only attempt to connect to the ones that are found
-    print("auto_connect: Attempting to connect to known networks")
-    for ssid,password in access_points.items():
-        print(f"auto_connect: Trying SSID: {ssid}")
-        if attempt_connecting(ssid,password):
-            print(f"auto_connect: Connected to {ssid}")
-            return True
-    print("auto_connect: No known networks connected")
+    networks = wlan.scan()
+    for n in networks:
+        ssid = n[0].decode()
+        print(f"auto_connect: checking ssid '{ssid}'")
+        if ssid in access_points:
+            password = access_points.get(ssid)
+            print(f"auto_connect: attempting to connect to saved network {ssid} with password {password}")
+            if attempt_connecting(ssid,password):
+                print(f"auto_connect: Connected to {ssid}")
+                return True
+            else:
+                print(f"auto_connect: failed to connect to {ssid}")
+        else:
+            print(f"auto_connect: not trying {ssid} because it hasn't been configured")
+    print("auto_connect: no known networks connected")
     return False
 
 
@@ -70,6 +77,7 @@ print("auto_connect.py running...")
 load_config()
 
 wlan=network.WLAN(network.STA_IF)
+wlan.active(False) # restart WiFi hardware in case it's in a bad state
 wlan.active(True)
 
 if auto_connect():
