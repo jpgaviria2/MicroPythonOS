@@ -71,8 +71,22 @@ Start the build:
 ~/sources/PiggyOS/scripts/build_lvgl_micropython.sh
 ```
 
+Or if you want to build for development, so without any preinstalled files, do:
+
+```
+~/sources/PiggyOS/scripts/build_lvgl_micropython.sh devbuild
+```
+
 Now install it with:
 
 ```
 ~/sources/PiggyOS/scripts/flash_over_usb.sh
 ```
+
+If you made a 'devbuild', then you probably want to install all files and apps manually:
+
+```
+~/sources/PiggyOS/scripts/install.sh
+```
+
+
