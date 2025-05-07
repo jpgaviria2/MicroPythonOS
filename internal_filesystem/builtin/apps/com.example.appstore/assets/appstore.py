@@ -37,7 +37,7 @@ class App:
 def is_installed_by_path(dir_path):
     try:
         if os.stat(dir_path)[0] & 0x4000:
-            manifest = f"{dir_path}/META-INF/MANIFEST.MF"
+            manifest = f"{dir_path}/META-INF/MANIFEST.JSON"
             if os.stat(manifest)[0] & 0x8000:
                 return True
     except OSError:
