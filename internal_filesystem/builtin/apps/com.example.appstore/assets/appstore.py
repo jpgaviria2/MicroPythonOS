@@ -49,20 +49,22 @@ def is_installed_by_name(app_fullname):
     return is_installed_by_path(f"/apps/{app_fullname}") or is_installed_by_path(f"/builtin/apps/{app_fullname}")
 
 def download_icon(url):
-    print(f"downloading icon from {url}")
-    response = urequests.get(url, timeout=5)
-    if response.status_code == 200:
-        image_data = response.content
-        print("Downloaded image, size:", len(image_data), "bytes")
-        image_dsc = lv.image_dsc_t({
-            'data_size': len(image_data),
-            'data': image_data
-        })
-        return image_dsc
-    else:
-        print("Failed to download image: Status code", response.status_code)
-        return None
-
+    print(f"Downloading icon from {url}")
+    try:
+        response = urequests.get(url, timeout=5)
+        if response.status_code == 200:
+            image_data = response.content
+            print("Downloaded image, size:", len(image_data), "bytes")
+            image_dsc = lv.image_dsc_t({
+                'data_size': len(image_data),
+                'data': image_data
+            })
+            return image_dsc
+        else:
+            print("Failed to download image: Status code", response.status_code)
+    except Exception as e:
+        print(f"Exception during download of icon: {e}")
+    return None
 
 try:
     import zipfile

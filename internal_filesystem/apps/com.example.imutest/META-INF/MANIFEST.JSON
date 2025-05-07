@@ -7,5 +7,6 @@
 "download_url": "http://demo.lnpiggy.com:2121/apps/com.example.imutest_0.0.1.mpk",
 "fullname": "com.example.imutest",
 "version": "0.0.1",
-"entrypoint": "assets/imutest.py"
+"entrypoint": "assets/imutest.py",
+"category": "benchmarking"
 }

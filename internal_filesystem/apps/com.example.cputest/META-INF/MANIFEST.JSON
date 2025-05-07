@@ -7,6 +7,7 @@
 "download_url": "http://demo.lnpiggy.com:2121/apps/com.example.cputest_0.0.1.mpk",
 "fullname": "com.example.cputest",
 "version": "0.0.1",
-"entrypoint": "assets/cputest.py"
+"entrypoint": "assets/cputest.py",
+"category": "benchmarking"
 }
 

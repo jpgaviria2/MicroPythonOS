@@ -7,6 +7,7 @@
 "download_url": "http://demo.lnpiggy.com:2121/apps/com.example.btcticker_0.0.1.mpk",
 "fullname": "com.example.btcticker",
 "version": "0.0.1",
-"entrypoint": "assets/bitcoin_price.py"
+"entrypoint": "assets/bitcoin_price.py",
+"category": "money"
 }
 

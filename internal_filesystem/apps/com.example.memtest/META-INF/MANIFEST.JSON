@@ -8,4 +8,5 @@
 "fullname": "com.example.memtest",
 "version": "0.0.1",
 "entrypoint": "assets/memtest.py"
+"category": "benchmarking"
 }

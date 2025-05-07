@@ -265,7 +265,7 @@ def parse_manifest(manifest_path):
             app_info=ujson.load(f)
             name = app_info.get("name")
             start_script = app_info.get("entrypoint")
-            print(f"parse_manifest: got app_info: {app_info}")
+            #print(f"parse_manifest: got app_info: {app_info}")
     except OSError:
         access_points={}
         print(f"parse_manifest: error loading manifest_path: {manifest_path}")
