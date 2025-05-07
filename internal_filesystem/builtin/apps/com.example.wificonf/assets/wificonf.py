@@ -12,6 +12,8 @@ import _thread
 ssids=[]
 busy_scanning=False
 
+busy_connecting=False
+
 access_points={}
 selected_ssid=None
 list=None
@@ -24,7 +26,7 @@ cancel_button=None
 
 scan_button=None
 scan_button_label=None
-scan_button_scan_text = "Scan"
+scan_button_scan_text = "Rescan"
 scan_button_scanning_text = "Scanning..."
 
 def load_config():
@@ -75,6 +77,9 @@ def scan_done_callback():
 def scan_networks():
     print("scan_networks: Scanning for Wi-Fi networks")
     global ssids
+    if not wlan.isconnected(): # restart WiFi hardware in case it's in a bad state
+        wlan.active(False)
+        wlan.active(True)
     try:
         networks=wlan.scan()
         ssids=[n[0].decode() for n in networks]
@@ -89,7 +94,7 @@ def start_scan_networks():
     print("scan_networks: Showing scanning label")
     global scan_button_label, busy_scanning, scan_button
     if busy_scanning:
-        print("Not scanning for networks because already busy_scanning...")
+        print("Not scanning for networks because already busy_scanning.")
     else:
         busy_scanning = True
         scan_button.remove_flag(lv.obj.FLAG.CLICKABLE)
@@ -97,23 +102,39 @@ def start_scan_networks():
         _thread.start_new_thread(scan_networks, ())
 
 
+def attempt_connecting_done(ssid, result):
+    print(f"Connecting to {ssid} got result: {result}")
+    global busy_connecting
+    refresh_list(ssid, result)
+    busy_connecting=False
 
 def attempt_connecting(ssid,password):
     print(f"attempt_connecting: Attempting to connect to SSID: {ssid}")
+    result="connected"
     try:
         wlan.connect(ssid,password)
         for i in range(10):
             if wlan.isconnected():
                 print(f"attempt_connecting: Connected to {ssid} after {i+1} seconds")
-                return True
+                break
             print(f"attempt_connecting: Waiting for connection, attempt {i+1}/10")
             time.sleep(1)
-        print(f"attempt_connecting: Failed to connect to {ssid}")
-        return False
+        if not wlan.isconnected():
+            result="timeout"
     except Exception as e:
         print(f"attempt_connecting: Connection error: {e}")
+        result=e
         show_error("Connection failed")
-        return False
+    attempt_connecting_done(ssid, result)
+
+def start_attempt_connecting(ssid,password):
+    print(f"start_attempt_connecting: Attempting to connect to SSID: {ssid}")
+    global busy_connecting
+    if busy_connecting:
+        print("Not attempting connect because busy_connecting.")
+    else:
+        busy_connecting = True
+        _thread.start_new_thread(attempt_connecting, (ssid,password))
 
 def show_error(message):
     print(f"show_error: Displaying error: {message}")
@@ -123,7 +144,7 @@ def show_error(message):
     timer=lv.timer_create(lambda t: error_label.add_flag(lv.obj.FLAG.HIDDEN),3000,None)
     timer.set_repeat_count(1)
 
-def refresh_list():
+def refresh_list(tried_ssid="", result=""):
     global ssids
     print("refresh_list: Clearing current list")
     list.clean()
@@ -135,7 +156,14 @@ def refresh_list():
         print(f"refresh_list: Adding SSID: {ssid}")
         button=list.add_button(None,ssid)
         button.add_event_cb(lambda e, s=ssid: select_ssid_cb(e,s),lv.EVENT.CLICKED,None)
-        status="connected" if wlan.isconnected() and wlan.config('essid')==ssid else "saved" if ssid in access_points else ""
+        if wlan.isconnected() and wlan.config('essid')==ssid:
+            status="connected"
+        elif tried_ssid==ssid: # implies not connected
+            status=result
+        elif ssid in access_points:
+            status="saved"
+        else:
+            status=""
         if status:
             print(f"refresh_list: Setting status '{status}' for SSID: {ssid}")
             label=lv.label(button)
@@ -233,9 +261,7 @@ def connect_cb(event):
     print("connect_cb: Restoring main appscreen")
     lv.screen_load(appscreen)
     print(f"connect_cb: Attempting connection to {selected_ssid}")
-    success=attempt_connecting(selected_ssid,password)
-    print(f"connect_cb: Connection {'succeeded' if success else 'failed'}")
-    refresh_list()
+    start_attempt_connecting(selected_ssid,password)
 
 def cancel_cb(event):
     print("cancel_cb: Cancel button clicked")
