@@ -237,8 +237,9 @@ import uio
 import time
 import ujson
 
+
 class App:
-    def __init__(self, name, publisher, short_description, long_description, icon_url, download_url, fullname, version, entrypoint):
+    def __init__(self, name, publisher, short_description, long_description, icon_url, download_url, fullname, version, entrypoint, category):
         self.name = name
         self.publisher = publisher
         self.short_description = short_description
@@ -248,9 +249,9 @@ class App:
         self.fullname = fullname
         self.version = version
         self.entrypoint = entrypoint
+        self.category = category
         self.image = None
         self.image_dsc = None
-
 
 def is_launcher(app_name):
     # Simple check, could be more elaborate by checking the MANIFEST.JSON for the app...
