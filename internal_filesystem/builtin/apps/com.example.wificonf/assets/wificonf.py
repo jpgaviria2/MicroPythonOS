@@ -5,9 +5,12 @@ import ujson
 import os
 import time
 import lvgl as lv
+import _thread
 
-wlan=network.WLAN(network.STA_IF)
-wlan.active(True)
+
+
+ssids=[]
+busy_scanning=False
 
 access_points={}
 selected_ssid=None
@@ -16,9 +19,13 @@ password_ta=None
 password_page=None
 keyboard=None
 error_label=None
-scanning_label=None
 connect_button=None
 cancel_button=None
+
+scan_button=None
+scan_button_label=None
+scan_button_scan_text = "Scan"
+scan_button_scanning_text = "Scanning..."
 
 def load_config():
     print("load_config: Checking for /data directory")
@@ -55,22 +62,41 @@ def save_config():
         show_error("Failed to save config")
         print("save_config: Failed to save config")
 
+
+def scan_done_callback():
+    print("scan_done_callback called")
+    global busy_scanning, scan_button_label
+    refresh_list()
+    scan_button_label.set_text(scan_button_scan_text)
+    scan_button.add_flag(lv.obj.FLAG.CLICKABLE)
+    busy_scanning = False
+
+
 def scan_networks():
-    print("scan_networks: Showing scanning label")
-    scanning_label.remove_flag(lv.obj.FLAG.HIDDEN)
-    scanning_label.set_text("Scanning...")
     print("scan_networks: Scanning for Wi-Fi networks")
+    global ssids
     try:
         networks=wlan.scan()
         ssids=[n[0].decode() for n in networks]
         print(f"scan_networks: Found networks: {ssids}")
-        scanning_label.add_flag(lv.obj.FLAG.HIDDEN)
-        return ssids
     except Exception as e:
         print(f"scan_networks: Scan failed: {e}")
         show_error("Wi-Fi scan failed")
-        scanning_label.add_flag(lv.obj.FLAG.HIDDEN)
-        return []
+    scan_done_callback()
+
+
+def start_scan_networks():
+    print("scan_networks: Showing scanning label")
+    global scan_button_label, busy_scanning, scan_button
+    if busy_scanning:
+        print("Not scanning for networks because already busy_scanning...")
+    else:
+        busy_scanning = True
+        scan_button.remove_flag(lv.obj.FLAG.CLICKABLE)
+        scan_button_label.set_text(scan_button_scanning_text)
+        _thread.start_new_thread(scan_networks, ())
+
+
 
 def attempt_connecting(ssid,password):
     print(f"attempt_connecting: Attempting to connect to SSID: {ssid}")
@@ -98,14 +124,18 @@ def show_error(message):
     timer.set_repeat_count(1)
 
 def refresh_list():
+    global ssids
     print("refresh_list: Clearing current list")
     list.clean()
     print("refresh_list: Populating list with scanned networks")
-    for ssid in scan_networks():
+    for ssid in ssids:
+        if len(ssid) == 0:
+            print(f"Skipping empty SSID: {ssid}")
+            continue
         print(f"refresh_list: Adding SSID: {ssid}")
         button=list.add_button(None,ssid)
         button.add_event_cb(lambda e, s=ssid: select_ssid_cb(e,s),lv.EVENT.CLICKED,None)
-        status="connected" if wlan.isconnected() and wlan.config('essid')==ssid else "failed" if ssid in access_points else ""
+        status="connected" if wlan.isconnected() and wlan.config('essid')==ssid else "saved" if ssid in access_points else ""
         if status:
             print(f"refresh_list: Setting status '{status}' for SSID: {ssid}")
             label=lv.label(button)
@@ -114,7 +144,7 @@ def refresh_list():
 
 def scan_cb(event):
     print("scan_cb: Scan button clicked, refreshing list")
-    refresh_list()
+    start_scan_networks()
 
 def select_ssid_cb(event,ssid):
     global selected_ssid
@@ -173,17 +203,19 @@ def show_password_page(ssid):
     keyboard.add_event_cb(keyboard_cb,lv.EVENT.READY,None)
     print("show_password_page: Creating Connect button")
     connect_button=lv.button(password_page)
-    connect_button.set_size(80,30)
+    connect_button.set_size(100,40)
     connect_button.align(lv.ALIGN.BOTTOM_LEFT,10,-40)
     label=lv.label(connect_button)
     label.set_text("Connect")
+    label.center()
     connect_button.add_event_cb(connect_cb,lv.EVENT.CLICKED,None)
     print("show_password_page: Creating Cancel button")
     cancel_button=lv.button(password_page)
-    cancel_button.set_size(80,30)
+    cancel_button.set_size(100,40)
     cancel_button.align(lv.ALIGN.BOTTOM_RIGHT,-10,-40)
     label=lv.label(cancel_button)
-    label.set_text("Cancel")
+    label.set_text("Close")
+    label.center()
     cancel_button.add_event_cb(cancel_cb,lv.EVENT.CLICKED,None)
     print("show_password_page: Loading password page")
     lv.screen_load(password_page)
@@ -213,7 +245,7 @@ def cancel_cb(event):
     lv.screen_load(appscreen)
 
 def create_ui():
-    global list,appscreen,error_label,scanning_label
+    global list,appscreen,error_label,scan_button_label,scan_button
     print("create_ui: Creating list widget")
     list=lv.list(appscreen)
     list.set_size(lv.pct(100),180)
@@ -223,28 +255,24 @@ def create_ui():
     error_label.set_text("")
     error_label.align(lv.ALIGN.BOTTOM_MID,0,-40)
     error_label.add_flag(lv.obj.FLAG.HIDDEN)
-    print("create_ui: Creating scanning label")
-    scanning_label=lv.label(appscreen)
-    scanning_label.set_text("Scanning...")
-    scanning_label.align(lv.ALIGN.CENTER,0,0)
-    scanning_label.add_flag(lv.obj.FLAG.HIDDEN)
     print("create_ui: Creating Scan button")
     scan_button=lv.button(appscreen)
-    scan_button.set_size(80,30)
+    scan_button.set_size(100,30)
     scan_button.align(lv.ALIGN.BOTTOM_MID,0,-5)
-    label=lv.label(scan_button)
-    label.set_text("Scan")
+    scan_button_label=lv.label(scan_button)
+    scan_button_label.set_text(scan_button_scan_text)
+    scan_button_label.center()
     scan_button.add_event_cb(scan_cb,lv.EVENT.CLICKED,None)
-    #print("create_ui: Attempting auto-connect")
-    #auto_connect()
     print("create_ui: Refreshing list with initial scan")
     refresh_list()
-    print("create_ui: Loading config")
-    load_config()
 
 
+wlan=network.WLAN(network.STA_IF)
+wlan.active(True)
+
+load_config()
 create_ui()
-
+start_scan_networks()
 
 #import time
 #while appscreen == lv.screen_active() or password_page == lv.screen_active():
