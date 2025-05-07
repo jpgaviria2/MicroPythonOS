@@ -73,3 +73,4 @@ if auto_connect():
     print("WiFi auto-connect managed to connect.")
 else:
     print("WiFi auto connect did not manage to connect.")
+    wlan.active(False) # disable to conserve power
