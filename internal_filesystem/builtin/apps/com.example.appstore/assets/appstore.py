@@ -279,20 +279,25 @@ def show_app_detail(app):
     progress_bar.add_flag(lv.obj.FLAG.HIDDEN)
     install_button = lv.button(cont)
     install_button.align_to(detail_cont, lv.ALIGN.OUT_BOTTOM_MID, 0, lv.pct(5))
-    install_button.set_size(lv.pct(100), 40)
     install_button.add_flag(lv.obj.FLAG.CLICKABLE)
-    print(f"Adding install button for url: {app.download_url}")
+    print(f"Adding (un)install button for url: {app.download_url}")
     install_button.add_event_cb(lambda e, d=app.download_url, f=app.fullname: toggle_install(d,f), lv.EVENT.CLICKED, None)
     install_label = lv.label(install_button)
-    if is_installed_by_name(app.fullname):
+    is_installed = is_installed_by_name(app.fullname)
+    if is_installed:
         action_label = action_label_uninstall # Maybe show "restore builtin version" for builtin apps...
     else:
         action_label = action_label_install
     install_label.set_text(action_label)
     install_label.center()
+    if is_installed: # and newer_version_available(app.fullname)
+        install_button.set_size(lv.pct(45), 40)
+        print("Update available, adding update button.")
+    else
+        install_button.set_size(lv.pct(100), 40)
     version_label = lv.label(cont)
     version_label.set_width(lv.pct(100))
-    version_label.set_text(f"Version: {app.version}")
+    version_label.set_text(f"Version: {app.version}") # make this bold if this is newer than the previous one
     version_label.set_style_text_font(lv.font_montserrat_12, 0)
     version_label.align_to(install_button, lv.ALIGN.OUT_BOTTOM_MID, 0, lv.pct(5))
     long_desc_label = lv.label(cont)
