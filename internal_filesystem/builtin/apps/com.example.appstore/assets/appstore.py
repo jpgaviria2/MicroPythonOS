@@ -16,8 +16,9 @@ please_wait_label = None
 app_detail_screen = None
 progress_bar = None
 
-action_label_install = "Install Latest Version"
+action_label_install = "Install"
 action_label_uninstall = "Uninstall"
+action_label_restore = "Restore Builtin"
 
 
 class App:
@@ -56,8 +57,10 @@ def compare_versions(ver1: str, ver2: str) -> bool:
     print(f"Versions are equal or {ver1} is not greater than {ver2}")
     return False
 
+def is_builtin_app(app_fullname):
+    return is_installed_by_path(f"/builtin/apps/{app_fullname}")
 
-def update_available(app_fullname, new_version):
+def is_update_available(app_fullname, new_version):
     appdir = f"/apps/{app_fullname}"
     builtinappdir = f"/builtin/apps/{app_fullname}"
     if is_installed_by_path(appdir):
@@ -313,32 +316,50 @@ def show_app_detail(app):
     progress_bar.set_width(lv.pct(100))
     progress_bar.set_range(0, 100)
     progress_bar.add_flag(lv.obj.FLAG.HIDDEN)
+    # Figure out whether to show:
+    # - "install" option if not installed
+    # - "uninstall" option if already installed and not builtin
+    # - "update" option if already installed and new version
+    # - "restore builtin" option if already installed and builtin
+    # So:
+    # - install, uninstall and restore builtin can be same button, always shown
+    # - update is separate button, only shown if already installed and new version
+    is_installed = True
+    update_available = False
+    is_builtin = is_builtin_app(app.fullname)
+    if not is_builtin:
+        is_installed = is_installed_by_name(app.fullname)
+    if is_installed:
+        update_available = is_update_available(app.fullname, app.version)
+    # Always have this button:
+    print(f"Adding (un)install button for url: {app.download_url}")
     install_button = lv.button(cont)
     install_button.align_to(detail_cont, lv.ALIGN.OUT_BOTTOM_MID, 0, lv.pct(5))
     install_button.add_flag(lv.obj.FLAG.CLICKABLE)
-    print(f"Adding (un)install button for url: {app.download_url}")
     install_button.add_event_cb(lambda e, d=app.download_url, f=app.fullname: toggle_install(d,f), lv.EVENT.CLICKED, None)
+    install_button.set_size(lv.pct(100), 40)
     install_label = lv.label(install_button)
-    is_installed = is_installed_by_name(app.fullname)
     if is_installed:
-        action_label = action_label_uninstall # Maybe show "restore builtin version" for builtin apps...
+        if is_builtin:
+            action_label = action_label_restore
+        else:
+            action_label = action_label_uninstall
     else:
         action_label = action_label_install
     install_label.set_text(action_label)
     install_label.center()
-    if is_installed and update_available(app.fullname, app.version):
+    if update_available:
         install_button.set_size(lv.pct(45), 40) # make space for update button
         print("Update available, adding update button.")
         global update_button
         update_button = lv.button(cont)
         update_button.set_size(lv.pct(45), 40)
-        update_button.align_to(install_button, lv.ALIGN.OUT_RIGHT_MID, 0, lv.pct(5))
+        update_button.align_to(install_button, lv.ALIGN.OUT_RIGHT_MID, 0, 0)
         update_button.add_event_cb(lambda e, d=app.download_url, f=app.fullname: update_button_click(d,f), lv.EVENT.CLICKED, None)
         update_label = lv.label(update_button)
         update_label.set_text("Update")
         update_label.center()
-    else:
-        install_button.set_size(lv.pct(100), 40)
+    # version label:
     version_label = lv.label(cont)
     version_label.set_width(lv.pct(100))
     version_label.set_text(f"Version: {app.version}") # make this bold if this is newer than the previous one
