@@ -1,3 +1,7 @@
+0.0.4
+=====
+- wificonf: pressing keyboard icon or newline key also closes the keyboard
+
 0.0.3
 =====
 - appstore: add 'update' button if a new version of an app is available
