@@ -7,8 +7,6 @@ import time
 import lvgl as lv
 import _thread
 
-
-
 ssids=[]
 busy_scanning=False
 busy_connecting=False
@@ -189,13 +187,26 @@ def keyboard_cb(event):
     print("keyboard_cb: Keyboard event triggered")
     global keyboard,connect_button,cancel_button
     code=event.get_code()
-    if code==lv.EVENT.READY:
-        print("keyboard_cb: OK/Checkmark clicked, hiding keyboard")
+    if code==lv.EVENT.READY or code==lv.EVENT.CANCEL:
+        print("keyboard_cb: READY or CANCEL clicked, hiding keyboard")
         keyboard.set_height(0)
         keyboard.remove_flag(lv.obj.FLAG.CLICKABLE)
         print("keyboard_cb: Showing Connect and Cancel buttons")
         connect_button.remove_flag(lv.obj.FLAG.HIDDEN)
         cancel_button.remove_flag(lv.obj.FLAG.HIDDEN)
+
+def keyboard_value_changed_cb(event):
+    global keyboard
+    print("keyboard value changed!")
+    print(f"event: code={event.get_code()}, target={event.get_target()}, user_data={event.get_user_data()}, param={event.get_param()}") # event: code=32, target=<Blob>, user_data=<Blob>, param=<Blob>
+    #keyboard = event.get_target().__cast__(lv.keyboard) # SyntaxError: Can't convert  to keyboard!
+    #keyboard = event.get_target().__cast__(lv.keyboard_class) # SyntaxError: Cast argument must be a type!
+    #print("got keyboard!")
+    button = keyboard.get_selected_button()
+    text = keyboard.get_button_text(button)
+    print(f"button {button} and text {text}")
+    if text == lv.SYMBOL.NEW_LINE:
+        print("It's the return key!")
 
 def password_ta_cb(event):
     print("password_ta_cb: Password textarea clicked")
@@ -205,7 +216,7 @@ def password_ta_cb(event):
     cancel_button.add_flag(lv.obj.FLAG.HIDDEN)
     print("password_ta_cb: Showing keyboard")
     keyboard.set_height(160)
-    keyboard.add_flag(lv.obj.FLAG.CLICKABLE)
+    #keyboard.add_flag(lv.obj.FLAG.CLICKABLE)
 
 def show_password_page(ssid):
     global password_page,password_ta,keyboard,connect_button,cancel_button
@@ -234,6 +245,8 @@ def show_password_page(ssid):
     keyboard.align(lv.ALIGN.BOTTOM_LEFT,0,0)
     keyboard.set_textarea(password_ta)
     keyboard.add_event_cb(keyboard_cb,lv.EVENT.READY,None)
+    keyboard.add_event_cb(keyboard_cb,lv.EVENT.CANCEL,None)
+    keyboard.add_event_cb(keyboard_value_changed_cb,lv.EVENT.VALUE_CHANGED,None)
     print("show_password_page: Creating Connect button")
     connect_button=lv.button(password_page)
     connect_button.set_size(100,40)

@@ -125,7 +125,7 @@ def touch_cb(event):
     if event_code not in [23,25,26,27,28,29,30,49]:
         name = get_event_name(event_code)
         #x, y = get_xy()
-        #print(f"lv_event_t: code={event_code}, name={name}, x={x}, y={y}")
+        #print(f"lv_event_t: code={event_code}, name={name}, x={x}, y={y}") # target={event.get_target()}, user_data={event.get_user_data()}, param={event.get_param()}
         if event_code == lv.EVENT.PRESSING: # this is probably enough
         #if event_code in [lv.EVENT.PRESSED, lv.EVENT.PRESSING, lv.EVENT.LONG_PRESSED, lv.EVENT.LONG_PRESSED_REPEAT]:
             x, y = get_xy()
