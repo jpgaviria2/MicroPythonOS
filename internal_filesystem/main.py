@@ -3,7 +3,7 @@ import task_handler
 import machine
 
 # Constants
-CURRENT_OS_VERSION = "0.0.1"
+CURRENT_OS_VERSION = "0.0.3"
 TFT_HOR_RES=320
 TFT_VER_RES=240
 NOTIFICATION_BAR_HEIGHT=24

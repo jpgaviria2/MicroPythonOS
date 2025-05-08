@@ -11,7 +11,6 @@ import _thread
 
 ssids=[]
 busy_scanning=False
-
 busy_connecting=False
 
 access_points={}
@@ -67,7 +66,7 @@ def save_config():
 
 def scan_done_callback():
     print("scan_done_callback called")
-    global busy_scanning, scan_button_label
+    global busy_scanning, scan_button_label, scan_button
     refresh_list()
     scan_button_label.set_text(scan_button_scan_text)
     scan_button.add_flag(lv.obj.FLAG.CLICKABLE)
@@ -104,14 +103,18 @@ def start_scan_networks():
 
 def attempt_connecting_done(ssid, result):
     print(f"Connecting to {ssid} got result: {result}")
-    global busy_connecting
+    global busy_connecting, scan_button_label, scan_button
     refresh_list(ssid, result)
     busy_connecting=False
+    scan_button_label.set_text(scan_button_scan_text)
+    scan_button.add_flag(lv.obj.FLAG.CLICKABLE)
+
 
 def attempt_connecting(ssid,password):
     print(f"attempt_connecting: Attempting to connect to SSID: {ssid}")
     result="connected"
     try:
+        wlan.disconnect()
         wlan.connect(ssid,password)
         for i in range(10):
             if wlan.isconnected():
@@ -124,12 +127,14 @@ def attempt_connecting(ssid,password):
     except Exception as e:
         print(f"attempt_connecting: Connection error: {e}")
         result=f"{e}"
-        show_error("Connection failed")
+        show_error("Connecting to {ssid} failed!")
     attempt_connecting_done(ssid, result)
 
 def start_attempt_connecting(ssid,password):
     print(f"start_attempt_connecting: Attempting to connect to SSID: {ssid}")
-    global busy_connecting
+    global busy_connecting, scan_button_label, scan_button
+    scan_button.remove_flag(lv.obj.FLAG.CLICKABLE)
+    scan_button_label.set_text(f"Connecting to {ssid}...")
     if busy_connecting:
         print("Not attempting connect because busy_connecting.")
     else:
@@ -274,7 +279,7 @@ def create_ui():
     global aplist,appscreen,error_label,scan_button_label,scan_button
     print("create_ui: Creating list widget")
     aplist=lv.list(appscreen)
-    aplist.set_size(lv.pct(100),180)
+    aplist.set_size(lv.pct(100),lv.pct(80))
     aplist.align(lv.ALIGN.TOP_MID,0,0)
     print("create_ui: Creating error label")
     error_label=lv.label(appscreen)
@@ -283,7 +288,7 @@ def create_ui():
     error_label.add_flag(lv.obj.FLAG.HIDDEN)
     print("create_ui: Creating Scan button")
     scan_button=lv.button(appscreen)
-    scan_button.set_size(100,30)
+    scan_button.set_size(lv.SIZE_CONTENT,lv.pct(15))
     scan_button.align(lv.ALIGN.BOTTOM_MID,0,-5)
     scan_button_label=lv.label(scan_button)
     scan_button_label.set_text(scan_button_scan_text)

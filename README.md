@@ -89,4 +89,16 @@ If you made a 'devbuild', then you probably want to install all files and apps m
 ~/sources/PiggyOS/scripts/install.sh
 ```
 
-
+Release checklist
+=================
+- Make sure CURRENT_OS_VERSION in main.py is incremented
+- Make sure version numbers of apps that have been changed are incremented
+- commit and push all code
+- ./scripts/bundle_apps.sh
+- ./scripts/freezefs_mount_builtin.sh
+- ./scripts/build_lvgl_micropython.sh
+- copy_apps_to_server.sh
+- copy_build_to_server.sh
+- copy ~/sources/lvgl_micropython/build/lvgl_micropy_ESP32_GENERIC_S3-SPIRAM_OCT-16.bin to webinstaller
+- update manifest of webinstaller
+- push webinstaller
