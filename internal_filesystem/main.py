@@ -3,7 +3,7 @@ import task_handler
 import machine
 
 # Constants
-CURRENT_VERSION = "0.0.1"
+CURRENT_OS_VERSION = "0.0.1"
 TFT_HOR_RES=320
 TFT_VER_RES=240
 NOTIFICATION_BAR_HEIGHT=24
@@ -333,6 +333,7 @@ def execute_script(script_source, is_file, is_launcher, is_graphical):
                 'parse_manifest': parse_manifest, # for launcher apps
                 'restart_launcher': restart_launcher, # for appstore apps
                 'show_launcher': show_launcher, # for apps that want to show the launcher
+                'CURRENT_OS_VERSION': CURRENT_OS_VERSION, # for osupdate
                 '__name__': "__main__"
             }
         print(f"Thread {thread_id}: starting script")

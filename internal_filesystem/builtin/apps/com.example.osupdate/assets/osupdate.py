@@ -1,29 +1,38 @@
 appscreen = lv.screen_active()
+appscreen.clean()
 
 import lvgl as lv
 import ota.update
 from esp32 import Partition
 import urequests
+import ujson
 import ota.status
+import network
+import time
+import _thread
 
-ota.status.status()
-current = Partition(Partition.RUNNING)
-current
-next_partition = current.get_next_update()
-next_partition
+status_label=None
+install_button=None
 
-label = lv.label(appwindow)
-label.set_text("OS Update: 0.00%")
-label.align(lv.ALIGN.CENTER, 0, -30)
-
-progress_bar = lv.bar(appwindow)
-progress_bar.set_size(200, 20)
-progress_bar.align(lv.ALIGN.BOTTOM_MID, 0, -50)
-progress_bar.set_range(0, 100)
-progress_bar.set_value(0, lv.ANIM.OFF)
 
 # Custom OTA update with LVGL progress
 def update_with_lvgl(url):
+    global install_button, status_label
+    install_button.add_flag(lv.obj.FLAG.HIDDEN) # or change to cancel button?
+    status_label.set_text("Update in progress.\nNavigate away to cancel.")
+    ota.status.status()
+    current_partition = Partition(Partition.RUNNING)
+    print(f"Current partition: {current_partition}")
+    next_partition = current_partition.get_next_update()
+    print(f"Next partition: {next_partition}")
+    label = lv.label(appscreen)
+    label.set_text("OS Update: 0.00%")
+    label.align(lv.ALIGN.CENTER, 0, -30)
+    progress_bar = lv.bar(appscreen)
+    progress_bar.set_size(200, 20)
+    progress_bar.align(lv.ALIGN.BOTTOM_MID, 0, -50)
+    progress_bar.set_range(0, 100)
+    progress_bar.set_value(0, lv.ANIM.OFF)
     def progress_callback(percent):
         print(f"OTA Update: {percent:.1f}%")
         label.set_text(f"OTA Update: {percent:.2f}%")
@@ -36,7 +45,8 @@ def update_with_lvgl(url):
     chunk_size = 4096
     i = 0
     print(f"Starting OTA update of size: {total_size}")
-    while appscreen == lv.screen_active():
+    while appscreen == lv.screen_active(): # stop if the user navigates away
+        time.sleep_ms(100)
         chunk = response.raw.read(chunk_size)
         if not chunk:
             print("No chunk, breaking...")
@@ -51,9 +61,68 @@ def update_with_lvgl(url):
         if total_size:
             progress_callback(bytes_written / total_size * 100)
     response.close()
-    next_partition.set_boot()
-    import machine
-    machine.reset()
+    if bytes_written >= total_size: # if the update was completely installed
+        next_partition.set_boot()
+        import machine
+        machine.reset()
 
-# Start OTA update
-update_with_lvgl("http://demo.lnpiggy.com:2121/latest.bin")
+def install_button_click(download_url):
+    print(f"install_button_click for url {download_url}")
+    try:
+        _thread.stack_size(16384)
+        _thread.start_new_thread(update_with_lvgl, (download_url,))
+    except Exception as e:
+        print("Could not start update_with_lvgl thread: ", e)
+
+def handle_update_info(version, download_url, changelog):
+    global install_button, status_label
+    install_button.remove_flag(lv.obj.FLAG.HIDDEN)
+    install_button.add_event_cb(lambda e, u=download_url: install_button_click(u), lv.EVENT.CLICKED, None)
+    status_label.set_text(f"Installed version: {CURRENT_OS_VERSION}\nLatest version: {version}\n\nDetails:\n\n{changelog}")
+
+def show_update_info():
+    global status_label
+    status_label.set_text("Checking for OS updates...")
+    # URL of the JSON file
+    url = "http://demo.lnpiggy.com:2121/osupdate.json"  # Adjust if the actual JSON URL differs
+    try:
+        # Download the JSON
+        response = urequests.get(url)
+        # Check if request was successful
+        if response.status_code == 200:
+            # Parse JSON
+            osupdate = ujson.loads(response.text)
+            # Access attributes
+            version = osupdate["version"]
+            download_url = osupdate["download_url"]
+            changelog = osupdate["changelog"]
+            # Print the values
+            print("Version:", version)
+            print("Download URL:", download_url)
+            print("Changelog:", changelog)
+            handle_update_info(version, download_url, changelog)
+        else:
+            print("Failed to download JSON. Status code:", response.status_code)
+        # Close response
+        response.close()
+    except Exception as e:
+        print("Error:", str(e))
+    
+
+install_button = lv.button(appscreen)
+install_button.align(lv.ALIGN.TOP_RIGHT, 0, NOTIFICATION_BAR_HEIGHT)
+install_button.add_flag(lv.obj.FLAG.HIDDEN) # button will be shown if there is an update available
+install_button.set_size(lv.SIZE_CONTENT, lv.pct(20))
+install_label = lv.label(install_button)
+install_label.set_text("Update OS")
+install_label.center()
+status_label = lv.label(appscreen)
+status_label.align(lv.ALIGN.TOP_LEFT,0,NOTIFICATION_BAR_HEIGHT)
+
+if not network.WLAN(network.STA_IF).isconnected():
+    status_label.set_text("Error: WiFi is not connected.")
+    time.sleep(10)
+else:
+    show_update_info()
+
+print("osupdate.py finished")

@@ -1,8 +1,10 @@
 0.0.3
 =====
-- Move from MANIFEST.MF to MANIFEST.JSON format for apps
 - wificonf: scan and connect to wifi in background thread so app stays responsive
-- appstore: improve icon download handling
+- appstore: add 'update' button if a new version of an app is available
+- appstore: add 'restore' button to restore updated built-in apps to their original built-in version
+- osupdate: show info about update and 'Start OS Update' before updating
+- Introduce MANIFEST.JSON format for apps
 
 0.0.2
 =====
