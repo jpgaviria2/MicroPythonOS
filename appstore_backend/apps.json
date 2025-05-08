@@ -105,10 +105,10 @@
 "publisher": "ACME Inc",
 "short_description": "Simple launcher to start apps.",
 "long_description": "",
-"icon_url": "http://demo.lnpiggy.com:2121/apps/com.example.launcher_0.0.1.mpk_icon_64x64.png",
-"download_url": "http://demo.lnpiggy.com:2121/apps/com.example.launcher_0.0.1.mpk",
+"icon_url": "http://demo.lnpiggy.com:2121/apps/com.example.launcher_0.0.2.mpk_icon_64x64.png",
+"download_url": "http://demo.lnpiggy.com:2121/apps/com.example.launcher_0.0.2.mpk",
 "fullname": "com.example.launcher",
-"version": "0.0.1",
+"version": "0.0.2",
 "entrypoint": "assets/launcher.py",
 "category": "launcher"
 }

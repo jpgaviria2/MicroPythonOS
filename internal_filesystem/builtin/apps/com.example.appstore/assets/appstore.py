@@ -10,10 +10,12 @@ mainscreen = lv.screen_active()
 
 apps = []
 app_detail_screen = None
+update_button = None
 install_button = None
 please_wait_label = None
 app_detail_screen = None
 progress_bar = None
+
 action_label_install = "Install Latest Version"
 action_label_uninstall = "Uninstall"
 
@@ -262,7 +264,6 @@ def create_apps_list():
         desc_label.set_text(app.short_description)
         desc_label.set_style_text_font(lv.font_montserrat_12, 0)
         desc_label.add_event_cb(lambda e, a=app: show_app_detail(a), lv.EVENT.CLICKED, None)
-        print("create_apps_list app one done")
     print("create_apps_list app done")
     try:
         _thread.stack_size(16384)
@@ -328,6 +329,7 @@ def show_app_detail(app):
     if is_installed and update_available(app.fullname, app.version):
         install_button.set_size(lv.pct(45), 40) # make space for update button
         print("Update available, adding update button.")
+        global update_button
         update_button = lv.button(cont)
         update_button.set_size(lv.pct(45), 40)
         update_button.align_to(install_button, lv.ALIGN.OUT_RIGHT_MID, 0, lv.pct(5))
@@ -370,6 +372,16 @@ def toggle_install(download_url, fullname):
 
 def update_button_click(download_url, fullname):
     print(f"Update button clicked for {download_url} and fullname {fullname}")
+    global update_button, install_button
+    label = install_button.get_child(0)
+    update_button.add_flag(lv.obj.FLAG.HIDDEN)
+    install_button.set_size(lv.pct(100), 40)
+    try:
+        _thread.stack_size(16384)
+        _thread.start_new_thread(download_and_unzip, (download_url, f"/apps/{fullname}", label))
+    except Exception as e:
+        print("Could not start download_and_unzip thread: ", e)
+
 
 def back_to_main(event):
     global app_detail_screen
