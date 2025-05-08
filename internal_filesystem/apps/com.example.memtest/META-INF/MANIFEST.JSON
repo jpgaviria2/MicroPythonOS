@@ -7,6 +7,6 @@
 "download_url": "http://demo.lnpiggy.com:2121/apps/com.example.memtest_0.0.1.mpk",
 "fullname": "com.example.memtest",
 "version": "0.0.1",
-"entrypoint": "assets/memtest.py"
+"entrypoint": "assets/memtest.py",
 "category": "benchmarking"
 }

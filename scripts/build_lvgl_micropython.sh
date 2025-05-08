@@ -15,7 +15,7 @@ sleep 2
 
 pushd ~/sources/lvgl_micropython
 
-manifest="FROZEN_MANIFEST=~/sources/PiggyOS/manifest.py"
+manifest="FROZEN_MANIFEST=/home/user/sources/PiggyOS/manifest.py"
 if [ "$devbuild" == "devbuild" ]; then
 	manifest=""
 fi

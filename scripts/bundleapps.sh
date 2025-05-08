@@ -6,6 +6,7 @@ outputjson=$(readlink -f "$outputjson")
 mkdir -p "$output"
 
 rm "$output"/*.mpk
+rm "$output"/*.png
 rm "$outputjson"
 
 echo "[" | tee -a "$outputjson"

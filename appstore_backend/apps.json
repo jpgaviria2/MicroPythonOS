@@ -63,9 +63,9 @@
 "category": "benchmarking"
 }
 ,{
-"name": "Animation Tester",
+"name": "SpinnerTest",
 "publisher": "ACME Inc",
-"short_description": "Testing on-display animations",
+"short_description": "Testing on-display spinner animations",
 "long_description": "Stress testing multiple concurrent animations on the display by adding more and more spinners",
 "icon_url": "http://demo.lnpiggy.com:2121/apps/com.example.lvgltest_0.0.1.mpk_icon_64x64.png",
 "download_url": "http://demo.lnpiggy.com:2121/apps/com.example.lvgltest_0.0.1.mpk",
@@ -84,7 +84,7 @@
 "download_url": "http://demo.lnpiggy.com:2121/apps/com.example.memtest_0.0.1.mpk",
 "fullname": "com.example.memtest",
 "version": "0.0.1",
-"entrypoint": "assets/memtest.py"
+"entrypoint": "assets/memtest.py",
 "category": "benchmarking"
 }
 ,{
@@ -118,10 +118,10 @@
 "publisher": "ACME Inc",
 "short_description": "Operating System Updater",
 "long_description": "",
-"icon_url": "http://demo.lnpiggy.com:2121/apps/com.example.osupdate_0.0.1.mpk_icon_64x64.png",
-"download_url": "http://demo.lnpiggy.com:2121/apps/com.example.osupdate_0.0.1.mpk",
+"icon_url": "http://demo.lnpiggy.com:2121/apps/com.example.osupdate_0.0.2.mpk_icon_64x64.png",
+"download_url": "http://demo.lnpiggy.com:2121/apps/com.example.osupdate_0.0.2.mpk",
 "fullname": "com.example.osupdate",
-"version": "0.0.1",
+"version": "0.0.2",
 "entrypoint": "assets/osupdate.py",
 "category": "osupdate"
 }
