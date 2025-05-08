@@ -24,7 +24,7 @@ cont.set_flex_flow(lv.FLEX_FLOW.ROW_WRAP)
 # Grid parameters
 icon_size = 64  # Adjust based on your display
 label_height = 24
-iconcont_width = icon_size + 24
+iconcont_width = icon_size + label_height
 iconcont_height = icon_size + label_height
 
 import time
