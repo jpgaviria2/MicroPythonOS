@@ -1,13 +1,13 @@
 {
-"name": "CPU Tester",
+"name": "Draw",
 "publisher": "ACME Inc",
-"short_description": "Testing the CPU speed",
-"long_description": "Experimentally determines how many idle loops and sha256-hashing loops the CPU can perform per second.",
-"icon_url": "http://demo.lnpiggy.com:2121/apps/com.example.cputest_0.0.1.mpk_icon_64x64.png",
-"download_url": "http://demo.lnpiggy.com:2121/apps/com.example.cputest_0.0.1.mpk",
-"fullname": "com.example.cputest",
+"short_description": "Simple drawing app",
+"long_description": "Draw simple shapes on the screen.",
+"icon_url": "http://demo.lnpiggy.com:2121/apps/com.example.draw_0.0.1.mpk_icon_64x64.png",
+"download_url": "http://demo.lnpiggy.com:2121/apps/com.example.draw_0.0.1.mpk",
+"fullname": "com.example.draw",
 "version": "0.0.1",
-"entrypoint": "assets/cputest.py",
-"category": "benchmarking"
+"entrypoint": "assets/draw.py",
+"category": "art"
 }
 
