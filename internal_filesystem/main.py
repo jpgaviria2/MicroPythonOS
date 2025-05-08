@@ -77,7 +77,7 @@ time_label = lv.label(notification_bar)
 time_label.set_text("00:00:00.000")
 time_label.align(lv.ALIGN.LEFT_MID, 0, 0)
 temp_label = lv.label(notification_bar)
-temp_label.set_text("00.00°C")
+temp_label.set_text("00°C")
 temp_label.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
 memfree_label = lv.label(notification_bar)
 memfree_label.set_text("")
@@ -125,7 +125,7 @@ def update_wifi_icon(timer):
 
 import esp32
 def update_temperature(timer):
-    temp_label.set_text(f"{esp32.mcu_temperature():.2f}°C")
+    temp_label.set_text(f"{esp32.mcu_temperature()}°C")
 
 import gc
 def update_memfree(timer):
