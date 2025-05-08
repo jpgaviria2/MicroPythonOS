@@ -2,6 +2,8 @@ appscreen = lv.screen_active()
 
 import lvgl as lv
 
+DARKPINK = lv.color_hex(0xEC048C)
+
 def touch_cb(event):
     global canvas
     event_code=event.get_code()
@@ -15,12 +17,38 @@ def touch_cb(event):
                 point = lv.point_t()
                 indev.get_point(point)
                 x, y = point.x, point.y
-                #import random
-                #x = random.randrange(1,200)
-                #y = random.randrange(1,200)
-                #print(f"got indev {x} {y} {point}")
-                #canvas.draw_arc(x, y, 5, 0, 360, lv.color_black())
-                canvas.set_px(x,y,lv.color_black(),lv.OPA.COVER)
+                #
+                # drawing a point works:
+                #canvas.set_px(x,y,lv.color_black(),lv.OPA.COVER)
+                #
+                # drawing a square like this works:
+                #for dx in range(-5,5):
+                #    for dy in range(-5,5):
+                #        canvas.set_px(x+dx,y+dy,DARKPINK,lv.OPA.COVER)
+                #
+                # drawing a circle works:
+                radius = 7  # Set desired radius
+                for dx in range(-radius, radius):
+                    for dy in range(-radius, radius):
+                        if dx * dx + dy * dy <= radius * radius:
+                            canvas.set_px(x + dx, y + dy, DARKPINK, lv.OPA.COVER)
+                # Line drawing like this doesn't work:
+                layer = lv.layer_t()
+                canvas.init_layer(layer)
+                dsc = lv.draw_line_dsc_t()
+                dsc.color = DARKPINK
+                dsc.width = 4
+                dsc.round_end = 1
+                dsc.round_start = 1
+                dsc.p1 = lv.point_precise_t()
+                dsc.p1.x = x
+                dsc.p1.y = y
+                dsc.p2 = lv.point_precise_t()
+                dsc.p2.x = 100
+                dsc.p2.y = 200
+                #layer.draw_line(dsc) doesnt exist!
+                lv.draw_line(layer,dsc) # doesnt do anything!
+                canvas.finish_layer(layer)
             else:
                 print("no indev!")
 
