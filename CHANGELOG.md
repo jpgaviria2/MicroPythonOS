@@ -1,10 +1,12 @@
 0.0.3
 =====
-- wificonf: scan and connect to wifi in background thread so app stays responsive
 - appstore: add 'update' button if a new version of an app is available
 - appstore: add 'restore' button to restore updated built-in apps to their original built-in version
+- launcher: don't show launcher apps and sort alphabetically
 - osupdate: show info about update and 'Start OS Update' before updating
-- Introduce MANIFEST.JSON format for apps
+- wificonf: scan and connect to wifi in background thread so app stays responsive
+- introduce MANIFEST.JSON format for apps
+- improve notification bar behavior
 
 0.0.2
 =====
