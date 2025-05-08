@@ -14,6 +14,27 @@ import _thread
 status_label=None
 install_button=None
 
+def compare_versions(ver1: str, ver2: str) -> bool:
+    """Compare two version numbers (e.g., '1.2.3' vs '4.5.6').
+    Returns True if ver1 is greater than ver2, False otherwise."""
+    print(f"Comparing versions: {ver1} vs {ver2}")
+    v1_parts = [int(x) for x in ver1.split('.')]
+    v2_parts = [int(x) for x in ver2.split('.')]
+    print(f"Version 1 parts: {v1_parts}")
+    print(f"Version 2 parts: {v2_parts}")
+    for i in range(max(len(v1_parts), len(v2_parts))):
+        v1 = v1_parts[i] if i < len(v1_parts) else 0
+        v2 = v2_parts[i] if i < len(v2_parts) else 0
+        print(f"Comparing part {i}: {v1} vs {v2}")
+        if v1 > v2:
+            print(f"{ver1} is greater than {ver2}")
+            return True
+        if v1 < v2:
+            print(f"{ver1} is less than {ver2}")
+            return False
+    print(f"Versions are equal or {ver1} is not greater than {ver2}")
+    return False
+
 
 # Custom OTA update with LVGL progress
 def update_with_lvgl(url):
@@ -76,9 +97,15 @@ def install_button_click(download_url):
 
 def handle_update_info(version, download_url, changelog):
     global install_button, status_label
-    install_button.remove_flag(lv.obj.FLAG.HIDDEN)
-    install_button.add_event_cb(lambda e, u=download_url: install_button_click(u), lv.EVENT.CLICKED, None)
-    status_label.set_text(f"Installed version: {CURRENT_OS_VERSION}\nLatest version: {version}\n\nDetails:\n\n{changelog}")
+    label = f"Installed OS version: {CURRENT_OS_VERSION}\n"
+    if compare_versions(version, CURRENT_OS_VERSION):
+        label += "Available new"
+        install_button.remove_flag(lv.obj.FLAG.HIDDEN)
+        install_button.add_event_cb(lambda e, u=download_url: install_button_click(u), lv.EVENT.CLICKED, None)
+    else:
+        label += "matches latest"
+    label += f" version: {version}\n\nDetails:\n\n{changelog}"
+    status_label.set_text(label)
 
 def show_update_info():
     global status_label
