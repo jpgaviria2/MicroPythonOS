@@ -42,28 +42,31 @@ def load_icon(icon_path):
 # Check and collect subdirectories from existing directories
 apps_dir = "/apps"
 apps_dir_builtin = "/builtin/apps"
-app_dirs = []
 seen_base_names = set()
+app_list = []
 
-# Check and collect unique subdirectories from existing directories
+# Check and collect unique subdirectories
 for dir_path in [apps_dir, apps_dir_builtin]:
     try:
-        if uos.stat(dir_path)[0] & 0x4000: # Verify directory exists and is a directory
-            for d in uos.listdir(dir_path): # Iterate over subdirectories
+        if uos.stat(dir_path)[0] & 0x4000:  # Verify directory exists
+            for d in uos.listdir(dir_path):
                 full_path = f"{dir_path}/{d}"
-                if uos.stat(full_path)[0] & 0x4000: # Check if it's a directory
-                    base_name = d # Extract base name (e.g., 'example' from '/apps/example')
-                    if base_name not in seen_base_names: # Only add if base name hasn't been seen (no duplicates)
-                        app_dirs.append(full_path)
+                if uos.stat(full_path)[0] & 0x4000:  # Check if it's a directory
+                    base_name = d
+                    if base_name not in seen_base_names:  # Avoid duplicates
                         seen_base_names.add(base_name)
+                        app = parse_manifest(f"{full_path}/META-INF/MANIFEST.JSON")
+                        if app.category != "launcher":  # Skip launchers
+                            app_list.append((app.name, full_path))
     except OSError:
-        # Skip if directory doesn't exist or isn't accessible
         pass
 
-# Should we skip 'Launcher' apps from the list here?
-for app_dir_fullpath in app_dirs:
-    app = parse_manifest(f"{app_dir_fullpath}/META-INF/MANIFEST.JSON")
-    # Create a container for each app (icon + label)
+# Sort apps alphabetically by app.name
+app_list.sort(key=lambda x: x[0].lower())  # Case-insensitive sorting
+
+# Create UI for each app
+for app_name, app_dir_fullpath in app_list:
+    # Create container for each app (icon + label)
     app_cont = lv.obj(cont)
     app_cont.set_size(iconcont_width, iconcont_height)
     app_cont.set_style_border_width(0, 0)
@@ -80,17 +83,16 @@ for app_dir_fullpath in app_dirs:
             image.set_src(load_icon(icon_path))
         except Exception as e:
             print(f"Error loading default icon {icon_path}: {e} - using symbol")
-            image.set_src(lv.SYMBOL.STOP)  # square block
+            image.set_src(lv.SYMBOL.STOP)
     image.align(lv.ALIGN.TOP_MID, 0, 0)
     image.set_size(icon_size, icon_size)
-    # Create label
     label = lv.label(app_cont)
-    label.set_text(app.name)
+    label.set_text(app_name)  # Use app_name directly
     label.set_long_mode(lv.label.LONG.WRAP)
     label.set_width(iconcont_width)
     label.align(lv.ALIGN.BOTTOM_MID, 0, 0)
     label.set_style_text_align(lv.TEXT_ALIGN.CENTER, 0)
-    app_cont.add_event_cb(lambda e, app_dir_fullpath=app_dir_fullpath: start_app(app_dir_fullpath), lv.EVENT.CLICKED, None)
+    app_cont.add_event_cb(lambda e, path=app_dir_fullpath: start_app(path), lv.EVENT.CLICKED, None)
 
 end = time.ticks_ms()
 print(f"Displaying all icons took: {end-start}ms")
