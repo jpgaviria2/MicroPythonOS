@@ -67,6 +67,7 @@ def is_overridden_builtin_app(app_fullname):
 def is_update_available(app_fullname, new_version):
     appdir = f"/apps/{app_fullname}"
     builtinappdir = f"/builtin/apps/{app_fullname}"
+    installed_app=None
     if is_installed_by_path(appdir):
         print(f"{appdir} found, getting version...")
         installed_app = parse_manifest(f"{appdir}/META-INF/MANIFEST.JSON")
