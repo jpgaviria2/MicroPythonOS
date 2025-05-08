@@ -183,30 +183,31 @@ def select_ssid_cb(event,ssid):
     selected_ssid=ssid
     show_password_page(ssid)
 
-def keyboard_cb(event):
-    print("keyboard_cb: Keyboard event triggered")
+def hide_keyboard():
     global keyboard,connect_button,cancel_button
+    print("keyboard_cb: READY or CANCEL or RETURN clicked, hiding keyboard")
+    keyboard.set_height(0)
+    #keyboard.remove_flag(lv.obj.FLAG.CLICKABLE)
+    print("keyboard_cb: Showing Connect and Cancel buttons")
+    connect_button.remove_flag(lv.obj.FLAG.HIDDEN)
+    cancel_button.remove_flag(lv.obj.FLAG.HIDDEN)
+
+def keyboard_cb(event):
+    #print("keyboard_cb: Keyboard event triggered")
     code=event.get_code()
     if code==lv.EVENT.READY or code==lv.EVENT.CANCEL:
-        print("keyboard_cb: READY or CANCEL clicked, hiding keyboard")
-        keyboard.set_height(0)
-        keyboard.remove_flag(lv.obj.FLAG.CLICKABLE)
-        print("keyboard_cb: Showing Connect and Cancel buttons")
-        connect_button.remove_flag(lv.obj.FLAG.HIDDEN)
-        cancel_button.remove_flag(lv.obj.FLAG.HIDDEN)
+        hide_keyboard()
 
 def keyboard_value_changed_cb(event):
     global keyboard
-    print("keyboard value changed!")
-    print(f"event: code={event.get_code()}, target={event.get_target()}, user_data={event.get_user_data()}, param={event.get_param()}") # event: code=32, target=<Blob>, user_data=<Blob>, param=<Blob>
-    #keyboard = event.get_target().__cast__(lv.keyboard) # SyntaxError: Can't convert  to keyboard!
-    #keyboard = event.get_target().__cast__(lv.keyboard_class) # SyntaxError: Cast argument must be a type!
-    #print("got keyboard!")
+    #print("keyboard value changed!")
+    #print(f"event: code={event.get_code()}, target={event.get_target()}, user_data={event.get_user_data()}, param={event.get_param()}") # event: code=32, target=<Blob>, user_data=<Blob>, param=<Blob>
     button = keyboard.get_selected_button()
     text = keyboard.get_button_text(button)
-    print(f"button {button} and text {text}")
+    #print(f"button {button} and text {text}")
     if text == lv.SYMBOL.NEW_LINE:
-        print("It's the return key!")
+        print("Newline key pressed, hiding keyboard...")
+        hide_keyboard()
 
 def password_ta_cb(event):
     print("password_ta_cb: Password textarea clicked")
