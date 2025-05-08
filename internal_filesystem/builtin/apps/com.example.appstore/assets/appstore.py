@@ -12,14 +12,15 @@ apps = []
 app_detail_screen = None
 update_button = None
 install_button = None
+install_label = None
 please_wait_label = None
 app_detail_screen = None
 progress_bar = None
 
 action_label_install = "Install"
 action_label_uninstall = "Uninstall"
-action_label_restore = "Restore Builtin"
-
+action_label_restore = "Restore Built-in"
+action_label_nothing = "Disable" # This doesn't do anything at the moment, but it could mark builtin apps as "Disabled" somehow and also allow for "Enable" then
 
 class App:
     def __init__(self, name, publisher, short_description, long_description, icon_url, download_url, fullname, version, entrypoint, category):
@@ -60,6 +61,9 @@ def compare_versions(ver1: str, ver2: str) -> bool:
 def is_builtin_app(app_fullname):
     return is_installed_by_path(f"/builtin/apps/{app_fullname}")
 
+def is_overridden_builtin_app(app_fullname):
+    return is_installed_by_path(f"/apps/{app_fullname}") and is_installed_by_path(f"/builtin/apps/{app_fullname}")
+
 def is_update_available(app_fullname, new_version):
     appdir = f"/apps/{app_fullname}"
     builtinappdir = f"/builtin/apps/{app_fullname}"
@@ -88,6 +92,35 @@ def is_installed_by_name(app_fullname):
     print(f"Checking if app {app_fullname} is installed...")
     return is_installed_by_path(f"/apps/{app_fullname}") or is_installed_by_path(f"/builtin/apps/{app_fullname}")
 
+def set_install_label(app_fullname):
+    global install_label
+    # Figure out whether to show:
+    # - "install" option if not installed
+    # - "update" option if already installed and new version
+    # - "uninstall" option if already installed and not builtin
+    # - "restore builtin" option if it's an overridden builtin app
+    # So:
+    # - install, uninstall and restore builtin can be same button, always shown
+    # - update is separate button, only shown if already installed and new version
+    is_installed = True
+    update_available = False
+    builtin_app = is_builtin_app(app_fullname)
+    overridden_builtin_app = is_overridden_builtin_app(app_fullname)
+    if not overridden_builtin_app:
+        is_installed = is_installed_by_name(app_fullname)
+    if is_installed:
+        if builtin_app:
+            if overridden_builtin_app:
+                action_label = action_label_restore
+            else:
+                action_label = action_label_nothing
+        else:
+            action_label = action_label_uninstall
+    else:
+        action_label = action_label_install
+    install_label.set_text(action_label)
+
+
 def download_icon(url):
     print(f"Downloading icon from {url}")
     try:
@@ -112,10 +145,10 @@ except ImportError:
     zipfile = None
 
 
-def uninstall_app(app_folder, label):
-    global install_button, progress_bar
+def uninstall_app(app_folder, app_fullname):
+    global install_button, progress_bar, update_button
     install_button.remove_flag(lv.obj.FLAG.CLICKABLE) # TODO: change color so it's clear the button is not clickable
-    label.set_text("Please wait...") # TODO: Put "Cancel" if cancellation is possible
+    install_label.set_text("Please wait...") # TODO: Put "Cancel" if cancellation is possible
     progress_bar.remove_flag(lv.obj.FLAG.HIDDEN)
     progress_bar.set_value(33, lv.ANIM.ON)
     time.sleep_ms(500)
@@ -130,13 +163,17 @@ def uninstall_app(app_folder, label):
     time.sleep(1)
     progress_bar.add_flag(lv.obj.FLAG.HIDDEN)
     progress_bar.set_value(0, lv.ANIM.OFF)
-    label.set_text(action_label_install)
+    set_install_label(app_fullname)
     install_button.add_flag(lv.obj.FLAG.CLICKABLE)
+    if is_builtin_app(app_fullname):
+        update_button.remove_flag(lv.obj.FLAG.HIDDEN)
+        install_button.set_size(lv.pct(47), 40) # if a builtin app was removed, then it was overridden, and a new version is available, so make space for update button
 
-def download_and_unzip(zip_url, dest_folder, label):
+
+def download_and_unzip(zip_url, dest_folder, app_fullname):
     global install_button, progress_bar
     install_button.remove_flag(lv.obj.FLAG.CLICKABLE) # TODO: change color so it's clear the button is not clickable
-    label.set_text("Please wait...") # TODO: Put "Cancel" if cancellation is possible
+    install_label.set_text("Please wait...") # TODO: Put "Cancel" if cancellation is possible
     progress_bar.remove_flag(lv.obj.FLAG.HIDDEN)
     progress_bar.set_value(20, lv.ANIM.ON)
     time.sleep_ms(500)
@@ -147,7 +184,7 @@ def download_and_unzip(zip_url, dest_folder, label):
         if response.status_code != 200:
             print("Download failed: Status code", response.status_code)
             response.close()
-            label.set_text(action_label_install)
+            set_install_label(app_fullname)
         progress_bar.set_value(40, lv.ANIM.ON)
         time.sleep_ms(500)
         # Save the .mpk file to a temporary location
@@ -190,7 +227,7 @@ def download_and_unzip(zip_url, dest_folder, label):
     time.sleep(1)
     progress_bar.add_flag(lv.obj.FLAG.HIDDEN)
     progress_bar.set_value(0, lv.ANIM.OFF)
-    label.set_text(action_label_uninstall)
+    set_install_label(app_fullname)
     install_button.add_flag(lv.obj.FLAG.CLICKABLE)
 
 
@@ -276,7 +313,7 @@ def create_apps_list():
 
 
 def show_app_detail(app):
-    global app_detail_screen, install_button, progress_bar, action_label_install, action_label_uninstall
+    global app_detail_screen, install_button, progress_bar, install_label
     app_detail_screen = lv.obj()
     app_detail_screen.set_size(lv.pct(100), lv.pct(100))
     back_button = lv.button(app_detail_screen)
@@ -316,45 +353,26 @@ def show_app_detail(app):
     progress_bar.set_width(lv.pct(100))
     progress_bar.set_range(0, 100)
     progress_bar.add_flag(lv.obj.FLAG.HIDDEN)
-    # Figure out whether to show:
-    # - "install" option if not installed
-    # - "uninstall" option if already installed and not builtin
-    # - "update" option if already installed and new version
-    # - "restore builtin" option if already installed and builtin
-    # So:
-    # - install, uninstall and restore builtin can be same button, always shown
-    # - update is separate button, only shown if already installed and new version
-    is_installed = True
-    update_available = False
-    is_builtin = is_builtin_app(app.fullname)
-    if not is_builtin:
-        is_installed = is_installed_by_name(app.fullname)
-    if is_installed:
-        update_available = is_update_available(app.fullname, app.version)
     # Always have this button:
+    buttoncont = lv.obj(cont)
+    buttoncont.set_style_pad_all(0, 0)
+    buttoncont.set_flex_flow(lv.FLEX_FLOW.ROW)
+    buttoncont.set_size(lv.pct(100), lv.SIZE_CONTENT)
+    buttoncont.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
     print(f"Adding (un)install button for url: {app.download_url}")
-    install_button = lv.button(cont)
-    install_button.align_to(detail_cont, lv.ALIGN.OUT_BOTTOM_MID, 0, lv.pct(5))
+    install_button = lv.button(buttoncont)
     install_button.add_flag(lv.obj.FLAG.CLICKABLE)
     install_button.add_event_cb(lambda e, d=app.download_url, f=app.fullname: toggle_install(d,f), lv.EVENT.CLICKED, None)
     install_button.set_size(lv.pct(100), 40)
     install_label = lv.label(install_button)
-    if is_installed:
-        if is_builtin:
-            action_label = action_label_restore
-        else:
-            action_label = action_label_uninstall
-    else:
-        action_label = action_label_install
-    install_label.set_text(action_label)
     install_label.center()
-    if update_available:
-        install_button.set_size(lv.pct(45), 40) # make space for update button
+    set_install_label(app.fullname)
+    if is_update_available(app.fullname, app.version):
+        install_button.set_size(lv.pct(47), 40) # make space for update button
         print("Update available, adding update button.")
         global update_button
-        update_button = lv.button(cont)
-        update_button.set_size(lv.pct(45), 40)
-        update_button.align_to(install_button, lv.ALIGN.OUT_RIGHT_MID, 0, 0)
+        update_button = lv.button(buttoncont)
+        update_button.set_size(lv.pct(47), 40)
         update_button.add_event_cb(lambda e, d=app.download_url, f=app.fullname: update_button_click(d,f), lv.EVENT.CLICKED, None)
         update_label = lv.label(update_button)
         update_label.set_text("Update")
@@ -362,7 +380,7 @@ def show_app_detail(app):
     # version label:
     version_label = lv.label(cont)
     version_label.set_width(lv.pct(100))
-    version_label.set_text(f"Version: {app.version}") # make this bold if this is newer than the previous one
+    version_label.set_text(f"Latest version: {app.version}") # make this bold if this is newer than the currently installed one
     version_label.set_style_text_font(lv.font_montserrat_12, 0)
     version_label.align_to(install_button, lv.ALIGN.OUT_BOTTOM_MID, 0, lv.pct(5))
     long_desc_label = lv.label(cont)
@@ -374,32 +392,31 @@ def show_app_detail(app):
 
 
 def toggle_install(download_url, fullname):
-    global install_button, action_label_install, action_label_uninstall
+    global install_label
     print(f"Install button clicked for {download_url} and fullname {fullname}")
-    label = install_button.get_child(0)
-    if label.get_text() == action_label_install:
+    label_text = install_label.get_text()
+    if label_text == action_label_install:
         try:
             _thread.stack_size(16384)
-            _thread.start_new_thread(download_and_unzip, (download_url, f"/apps/{fullname}", label))
+            _thread.start_new_thread(download_and_unzip, (download_url, f"/apps/{fullname}", fullname))
         except Exception as e:
             print("Could not start download_and_unzip thread: ", e)
-    elif label.get_text() == action_label_uninstall:
+    elif label_text == action_label_uninstall or label_text == action_label_restore:
         print("Uninstalling app....")
         try:
             _thread.stack_size(16384)
-            _thread.start_new_thread(uninstall_app, (f"/apps/{fullname}", label))
+            _thread.start_new_thread(uninstall_app, (f"/apps/{fullname}", fullname))
         except Exception as e:
             print("Could not start download_and_unzip thread: ", e)
 
 def update_button_click(download_url, fullname):
     print(f"Update button clicked for {download_url} and fullname {fullname}")
-    global update_button, install_button
-    label = install_button.get_child(0)
+    global update_button
     update_button.add_flag(lv.obj.FLAG.HIDDEN)
     install_button.set_size(lv.pct(100), 40)
     try:
         _thread.stack_size(16384)
-        _thread.start_new_thread(download_and_unzip, (download_url, f"/apps/{fullname}", label))
+        _thread.start_new_thread(download_and_unzip, (download_url, f"/apps/{fullname}", fullname))
     except Exception as e:
         print("Could not start download_and_unzip thread: ", e)
 
