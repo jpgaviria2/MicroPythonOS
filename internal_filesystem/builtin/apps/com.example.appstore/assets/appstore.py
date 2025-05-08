@@ -239,6 +239,11 @@ def download_apps(json_url):
         if response.status_code == 200:
             print(f"Got response text: {response.text}")
             apps = [App(**app) for app in json.loads(response.text)]
+            # Remove duplicates based on app.name
+            seen = set()
+            apps = [app for app in apps if not (app.name in seen or seen.add(app.name))]
+            # Sort apps by app.name
+            apps.sort(key=lambda x: x.name.lower())  # Use .lower() for case-insensitive sorting
             response.close()
             please_wait_label.add_flag(lv.obj.FLAG.HIDDEN)
             create_apps_list()
