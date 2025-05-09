@@ -42,8 +42,22 @@ display_bus = lcd_bus.SPIBus(
     dc=LCD_DC,
     cs=LCD_CS,
 )
+
+ # lv.color_format_get_size(lv.COLOR_FORMAT.RGB565) = 2 bytes per pixel * 320 * 240 px = 153600 bytes
+ # The default was /10 so 15360 bytes.
+ # /2 = 76800 shows something on display and then hangs the board
+ # /2 = 38400 works and pretty high framerate but camera gets ESP_FAIL
+ # /2 = 19200 works, including camera at 9FPS
+ # 28800 is between the two and still works with camera!
+ # 30720 is /5 and is already too much
+ BUFFER_SIZE = const(28800)
+fb1 = display_bus.allocate_framebuffer(_BUFFER_SIZE, lcd_bus.MEMORY_INTERNAL | lcd_bus.MEMORY_DMA)
+fb2 = display_bus.allocate_framebuffer(_BUFFER_SIZE, lcd_bus.MEMORY_INTERNAL | lcd_bus.MEMORY_DMA)
+
 display = st7789.ST7789(
     data_bus=display_bus,
+    frame_buffer1=fb1,
+    frame_buffer2=fb2,
     display_width=TFT_VER_RES,
     display_height=TFT_HOR_RES,
     backlight_pin=LCD_BL,
@@ -62,7 +76,7 @@ touch_dev = i2c.I2C.Device(bus=i2c_bus, dev_id=TP_ADDR, reg_bits=TP_REGBITS)
 indev=cst816s.CST816S(touch_dev,startup_rotation=lv.DISPLAY_ROTATION._180) # button in top left, good
 
 lv.init()
-display.set_rotation(lv.DISPLAY_ROTATION._90)
+display.set_rotation(lv.DISPLAY_ROTATION._90) # must be done after initializing display and creating the touch drivers, to ensure proper handling
 
 # Gesture IDs:
 # 0: press

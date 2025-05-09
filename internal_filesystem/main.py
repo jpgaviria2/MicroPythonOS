@@ -3,7 +3,7 @@ import task_handler
 import machine
 
 # Constants
-CURRENT_OS_VERSION = "0.0.3"
+CURRENT_OS_VERSION = "0.0.4"
 TFT_HOR_RES=320
 TFT_VER_RES=240
 NOTIFICATION_BAR_HEIGHT=24
@@ -18,7 +18,7 @@ SLIDER_MIN_VALUE=1
 SLIDER_MAX_VALUE=100
 SLIDER_DEFAULT_VALUE=100
 
-CLOCK_UPDATE_INTERVAL = 100 # 10 or even 1 ms doesn't seem to change the framerate but 100ms is enough
+CLOCK_UPDATE_INTERVAL = 1000 # 10 or even 1 ms doesn't seem to change the framerate but 100ms is enough
 WIFI_ICON_UPDATE_INTERVAL = 1500
 TEMPERATURE_UPDATE_INTERVAL = 2000
 MEMFREE_UPDATE_INTERVAL = 5000 # not too frequent because there's a forced gc.collect() to give it a reliable value
@@ -29,7 +29,10 @@ wifi_screen=None
 drawer_open=False
 bar_open=True
 
-th = task_handler.TaskHandler(duration=6)
+# lowering the duration from default 33 to 6 seems to increase the camera framerate from 5.5 to 9 and the UI framerate from 15 to 20fps
+# lowering to 1 doesn't seem to help out the camera framerate (so it's maxed out) but the UI goes to 26 FPS with it!
+#th = task_handler.TaskHandler() 
+th = task_handler.TaskHandler(duration=1)
 
 rootscreen = lv.screen_active()
 rootlabel = lv.label(rootscreen)
