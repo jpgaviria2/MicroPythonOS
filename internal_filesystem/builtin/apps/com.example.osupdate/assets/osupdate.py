@@ -67,7 +67,7 @@ def update_with_lvgl(url):
     i = 0
     print(f"Starting OTA update of size: {total_size}")
     while appscreen == lv.screen_active(): # stop if the user navigates away
-        time.sleep_ms(100)
+        time.sleep_ms(100) # don't hog the CPU
         chunk = response.raw.read(chunk_size)
         if not chunk:
             print("No chunk, breaking...")
