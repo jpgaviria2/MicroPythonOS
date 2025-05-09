@@ -23,7 +23,7 @@
     #define MICROPY_TINY_TTF  0
 #endif
 #ifndef MICROPY_CACHE_SIZE
-    #define MICROPY_CACHE_SIZE  200 * 1024 // 24 images of 64x64 pixels (8KB)
+    #define MICROPY_CACHE_SIZE  50 * 64 * 64 * 2 // 50 images of 64x64 pixels at 2 bytes per pixel
 #endif
 #ifndef MICROPY_COLOR_DEPTH
     #define MICROPY_COLOR_DEPTH  16
