@@ -303,11 +303,12 @@ extern void *mp_lv_roots;
     *LV_LOG_LEVEL_ERROR       Only critical issue, when the system may fail
     *LV_LOG_LEVEL_USER        Only logs added by the user
     *LV_LOG_LEVEL_NONE        Do not log anything*/
+    // // 0 is trace, 1 is info, 2 is warn, 3 is error, 4 is user (FPS is here as 'sysmon' user)
     #define LV_LOG_LEVEL LV_LOG_LEVEL_WARN
 
     /*1: Print the log with 'printf';
     *0: User need to register a callback with `lv_log_register_print_cb()`*/
-    #define LV_LOG_PRINTF 1
+    #define LV_LOG_PRINTF 0 // this doesn't seem to print anything to the serial port, so don't use it
 
     /*Set callback to print the logs.
      *E.g `my_print`. The prototype should be `void my_print(lv_log_level_t level, const char * buf)`
@@ -883,7 +884,7 @@ extern void *mp_lv_roots;
         #define LV_USE_PERF_MONITOR_POS LV_ALIGN_BOTTOM_RIGHT
 
         /*0: Displays performance data on the screen, 1: Prints performance data using log.*/
-        #define LV_USE_PERF_MONITOR_LOG_MODE 0
+        #define LV_USE_PERF_MONITOR_LOG_MODE 1
     #endif
 
     /*1: Show the used memory and the memory fragmentation
