@@ -50,7 +50,7 @@ display_bus = lcd_bus.SPIBus(
  # /2 = 19200 works, including camera at 9FPS
  # 28800 is between the two and still works with camera!
  # 30720 is /5 and is already too much
- BUFFER_SIZE = const(28800)
+_BUFFER_SIZE = const(28800)
 fb1 = display_bus.allocate_framebuffer(_BUFFER_SIZE, lcd_bus.MEMORY_INTERNAL | lcd_bus.MEMORY_DMA)
 fb2 = display_bus.allocate_framebuffer(_BUFFER_SIZE, lcd_bus.MEMORY_INTERNAL | lcd_bus.MEMORY_DMA)
 
