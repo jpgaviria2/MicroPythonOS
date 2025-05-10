@@ -2,12 +2,8 @@ appscreen = lv.screen_active()
 appscreen.clean()
 
 import lvgl as lv
-import ota.update
-from esp32 import Partition
 import urequests
 import ujson
-import ota.status
-import network
 import time
 import _thread
 
@@ -41,7 +37,10 @@ def update_with_lvgl(url):
     global install_button, status_label
     install_button.add_flag(lv.obj.FLAG.HIDDEN) # or change to cancel button?
     status_label.set_text("Update in progress.\nNavigate away to cancel.")
+    import ota.update
+    import ota.status
     ota.status.status()
+    from esp32 import Partition
     current_partition = Partition(Partition.RUNNING)
     print(f"Current partition: {current_partition}")
     next_partition = current_partition.get_next_update()
@@ -112,7 +111,9 @@ def show_update_info():
     status_label.set_text("Checking for OS updates...")
     # URL of the JSON file
     url = "http://demo.lnpiggy.com:2121/osupdate.json"  # Adjust if the actual JSON URL differs
+    print(f"osudpate.py: fetching {url}")
     try:
+        print("doing urequests.get()")
         # Download the JSON
         response = urequests.get(url)
         # Check if request was successful
@@ -146,10 +147,18 @@ install_label.center()
 status_label = lv.label(appscreen)
 status_label.align(lv.ALIGN.TOP_LEFT,0,NOTIFICATION_BAR_HEIGHT)
 
-if not network.WLAN(network.STA_IF).isconnected():
+network_connected = True
+try:
+    import network
+    network_connected = network.WLAN(network.STA_IF).isconnected()
+except Exception as e:
+    print("Warning: could not check WLAN status:", str(e))
+
+if not network_connected:
     status_label.set_text("Error: WiFi is not connected.")
     time.sleep(10)
 else:
+    print("Showing update info...")
     show_update_info()
 
 print("osupdate.py finished")
