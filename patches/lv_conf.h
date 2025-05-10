@@ -804,7 +804,7 @@ extern void *mp_lv_roots;
 #define LV_USE_GIF 1
 #if LV_USE_GIF
 /*GIF decoder accelerate*/
-#define LV_GIF_CACHE_DECODE_DATA 0
+#define LV_GIF_CACHE_DECODE_DATA 1
 #endif
 
 
