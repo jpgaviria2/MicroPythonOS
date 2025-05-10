@@ -102,3 +102,31 @@ Release checklist
 - copy ~/sources/lvgl_micropython/build/lvgl_micropy_ESP32_GENERIC_S3-SPIRAM_OCT-16.bin to webinstaller
 - update manifest of webinstaller
 - push webinstaller
+
+Building for desktop
+====================
+Building to run as an app on the Linux desktop or MacOS (untested) is supported.
+
+To do so, make sure you have the necessary dependencies (see https://github.com/lvgl-micropython/) and then run:
+
+```
+~/sources/PiggyOS/scripts/build_lvgl_micropython.sh unix
+```
+
+or
+
+```
+~/sources/PiggyOS/scripts/build_lvgl_micropython.sh macOS
+```
+
+To run it, it's recommended to symlink your ~/.micropython/lib folder into this project's lib:
+
+```
+ln -sf $(readlink -f internal_filesystem/lib) ~/.micropython/lib
+```
+
+Then to run it, do:
+
+```
+./scripts/run_desktop.sh
+```

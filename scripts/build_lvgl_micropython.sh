@@ -4,9 +4,9 @@
 # --flash-size: total flash size is 16MB
 # 
 
-devbuild="$1"
+buildtype="$1"
 
-echo "Usage: $0 [devbuild]"
+echo "Usage: $0 [devbuild/unix]"
 echo "Example: $0"
 echo "Example: $0 devbuild"
 echo
@@ -16,13 +16,15 @@ sleep 2
 pushd ~/sources/lvgl_micropython
 
 manifest="FROZEN_MANIFEST=/home/user/sources/PiggyOS/manifest.py"
-if [ "$devbuild" == "devbuild" ]; then
+if [ "$buildtype" == "devbuild" ]; then
 	manifest=""
 fi
 
-python3 make.py --ota --partition-size=4194304 --flash-size=16 esp32 BOARD=ESP32_GENERIC_S3 BOARD_VARIANT=SPIRAM_OCT DISPLAY=st7789 INDEV=cst816s USER_C_MODULE="/home/user/sources/micropython-camera-API/src/micropython.cmake" "$manifest"
-
-# build for unix:
-#python3 make.py unix DISPLAY=sdl_display INDEV=sdl_pointer
+if [ "$buildtype" != "unix" -o "$buildtype" != "macOS" ]; then
+	python3 make.py --ota --partition-size=4194304 --flash-size=16 esp32 BOARD=ESP32_GENERIC_S3 BOARD_VARIANT=SPIRAM_OCT DISPLAY=st7789 INDEV=cst816s USER_C_MODULE="/home/user/sources/micropython-camera-API/src/micropython.cmake" "$manifest"
+else
+	# build for desktop
+	python3 make.py "$buildtype" DISPLAY=sdl_display INDEV=sdl_pointer
+fi
 
 popd
