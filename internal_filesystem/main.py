@@ -31,8 +31,9 @@ bar_open=True
 
 # lowering the duration from default 33 to 6 seems to increase the camera framerate from 5.5 to 9 and the UI framerate from 15 to 20fps
 # lowering to 1 doesn't seem to help out the camera framerate (so it's maxed out) but the UI goes to 26 FPS with it!
-#th = task_handler.TaskHandler() 
-th = task_handler.TaskHandler(duration=1)
+# but that seems to cause a sporadic hang in the launcher on the desktop builds, so take at least 2 for now:
+#th = task_handler.TaskHandler()
+th = task_handler.TaskHandler(duration=2)
 
 rootscreen = lv.screen_active()
 rootlabel = lv.label(rootscreen)
@@ -77,7 +78,7 @@ notification_bar.set_style_border_width(0, 0)
 notification_bar.set_style_radius(0, 0)
 # Time label
 time_label = lv.label(notification_bar)
-time_label.set_text("00:00:00.000")
+time_label.set_text("00:00:00")
 time_label.align(lv.ALIGN.LEFT_MID, 0, 0)
 temp_label = lv.label(notification_bar)
 temp_label.set_text("00°C")
@@ -113,22 +114,34 @@ def update_time(timer):
     hours = (ticks // 3600000) % 24
     minutes = (ticks // 60000) % 60
     seconds = (ticks // 1000) % 60
-    milliseconds = ticks % 1000
+    #milliseconds = ticks % 1000
     time_label.set_text(f"{hours:02d}:{minutes:02d}:{seconds:02d}")
 
-import network
-def update_wifi_icon(timer):
-    try:
-        if network.WLAN(network.STA_IF).isconnected():
-            wifi_icon.remove_flag(lv.obj.FLAG.HIDDEN)
-        else:
-            wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
-    except lv.LvReferenceError:
-        print("update_wifi_icon caught LvReferenceError")
+can_check_network = False
+try:
+    import network
+    can_check_network = True
+except Exception as e:
+    print("Warning: could not check WLAN status:", str(e))
 
-import esp32
+def update_wifi_icon(timer):
+    if not can_check_network or network.WLAN(network.STA_IF).isconnected():
+        wifi_icon.remove_flag(lv.obj.FLAG.HIDDEN)
+    else:
+        wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
+
+can_check_temperature = False
+try:
+    import esp32
+except Exception as e:
+    print("Warning: can't check temperature sensor:", str(e))
+
 def update_temperature(timer):
-    temp_label.set_text(f"{esp32.mcu_temperature()}°C")
+    if can_check_temperature:
+        temp_label.set_text(f"{esp32.mcu_temperature()}°C")
+    else:
+        temp_label.set_text("42°C")
+
 
 import gc
 def update_memfree(timer):
@@ -351,7 +364,7 @@ def execute_script(script_source, is_file, is_launcher, is_graphical):
             traceback.print_exception(type(e), e, tb)
         print(f"Thread {thread_id}: script {compile_name} finished")
         if False and is_graphical and prevscreen and not is_launcher: # disabled this for now
-            print("/main.py: execute_script(): deleting timers...")
+            print("main.py: execute_script(): deleting timers...")
             timer1.delete()
             timer2.delete()
             timer3.delete()
@@ -366,20 +379,21 @@ def execute_script(script_source, is_file, is_launcher, is_graphical):
 
 # Run the script in a new thread:
 def execute_script_new_thread(scriptname, is_file, is_launcher, is_graphical):
-    print(f"/main.py: execute_script_new_thread({scriptname},{is_file},{is_launcher})")
+    print(f"main.py: execute_script_new_thread({scriptname},{is_file},{is_launcher})")
     try:
         # 168KB maximum at startup but 136KB after loading display, drivers, LVGL gui etc so let's go for 128KB for now, still a lot...
         # But then no additional threads can be created. A stacksize of 32KB allows for 4 threads, so 3 in the app itself, which might be tight.
-        _thread.stack_size(16384) # A stack size of 16KB allows for around 10 threads in the app, which should be plenty.
+        # 16KB allows for 10 threads in the apps, but seems too tight for urequests on unix (desktop) targets 
+        _thread.stack_size(24576)
         _thread.start_new_thread(execute_script, (scriptname, is_file, is_launcher, is_graphical))
     except Exception as e:
-        print("/main.py: execute_script_new_thread(): error starting new thread thread: ", e)
+        print("main.py: execute_script_new_thread(): error starting new thread thread: ", e)
 
 def start_app_by_name(app_name, is_launcher=False):
     global foreground_app_name
     foreground_app_name = app_name
-    custom_app_dir=f"/apps/{app_name}"
-    builtin_app_dir=f"/builtin/apps/{app_name}"
+    custom_app_dir=f"apps/{app_name}"
+    builtin_app_dir=f"builtin/apps/{app_name}"
     try:
         stat = uos.stat(custom_app_dir)
         start_app(custom_app_dir, is_launcher)
@@ -387,7 +401,7 @@ def start_app_by_name(app_name, is_launcher=False):
         start_app(builtin_app_dir, is_launcher)
 
 def start_app(app_dir, is_launcher=False):
-    print(f"/main.py start_app({app_dir},{is_launcher}")
+    print(f"main.py start_app({app_dir},{is_launcher}")
     global foreground_app_name
     foreground_app_name = app_dir # would be better to store only the app name...
     manifest_path = f"{app_dir}/META-INF/MANIFEST.JSON"
@@ -409,19 +423,19 @@ def restart_launcher():
     # No need to stop the other launcher first, because it exits after building the screen
     start_app_by_name("com.example.launcher", True)
 
-execute_script_new_thread("/autorun.py", True, False, False) # Generic run-at-boot script, for development
+execute_script_new_thread("autorun.py", True, False, False) # Generic run-at-boot script, for development
 
 try:
     import freezefs_mount_builtin
 except Exception as e:
-    print("/main.py: WARNING: could not import/run freezefs_mount_builtin: ", e)
+    print("main.py: WARNING: could not import/run freezefs_mount_builtin: ", e)
 
-execute_script_new_thread("/builtin/system/button.py", True, False, False) # Button handling through IRQ
+execute_script_new_thread("builtin/system/button.py", True, False, False) # Button handling through IRQ
 
 # A generic "start at boot" mechanism hasn't been implemented yet, so do it like this:
 import uos
-custom_auto_connect = "/apps/com.example.wificonf/assets/auto_connect.py"
-builtin_auto_connect = "/builtin/apps/com.example.wificonf/assets/auto_connect.py"
+custom_auto_connect = "apps/com.example.wificonf/assets/auto_connect.py"
+builtin_auto_connect = "builtin/apps/com.example.wificonf/assets/auto_connect.py"
 # Maybe start_app_by_name() and start_app_by_name() could be merged so the try-except logic is not duplicated...
 try:
     stat = uos.stat(custom_auto_connect)
@@ -438,5 +452,8 @@ except OSError:
 restart_launcher()
 
 # If we got this far without crashing, then no need to rollback the update
-import ota.rollback
-ota.rollback.cancel()
+try:
+    import ota.rollback
+    ota.rollback.cancel()
+except Exception as e:
+    print("main.py: warning: could not mark this update as valid:", e)
