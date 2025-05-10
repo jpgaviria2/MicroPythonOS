@@ -544,3 +544,63 @@ script_globals = {
     'parse_manifest': parse_manifest, # for launcher apps
     '__name__': "__main__"
 }
+
+
+
+import lvgl as lv
+
+# Buffer to store FPS
+fps_buffer = [0]
+
+# Custom log callback to capture FPS
+def log_callback(level, log_str):
+    global fps_buffer
+    # Convert log_str to string if it's a bytes object
+    log_str = log_str.decode() if isinstance(log_str, bytes) else log_str
+    # Log message format: "sysmon: 25 FPS (refr_cnt: 8 | redraw_cnt: 1), ..."
+    if "sysmon:" in log_str and "FPS" in log_str:
+        try:
+            # Extract FPS value (e.g., "25" from "sysmon: 25 FPS ...")
+            fps_part = log_str.split("FPS")[0].split("sysmon:")[1].strip()
+            fps = int(fps_part)
+            fps_buffer[0] = fps
+        except (IndexError, ValueError):
+            pass
+    # Optional: Print for debugging
+    #print(f"Level: {level}, Log: {log_str}")
+
+# Register log callback
+lv.log_register_print_cb(log_callback)
+
+# Function to get FPS
+def get_fps():
+    return fps_buffer[0]
+
+fps = get_fps()
+if fps > 0:  # Only print when FPS is updated
+    print("Current FPS:", fps)
+
+# Main loop
+for _ in range(10):
+    fps = get_fps()
+    if fps > 0:  # Only print when FPS is updated
+        print("Current FPS:", fps)
+    time.sleep(1)
+
+
+
+# crash:
+
+label = lv.label(lv.screen_active())
+label.delete()
+gc.collect()
+label.set_text("Crash!")  # This will crash
+label.set_text(None)
+label.set_size(100000, 1000000)
+
+buf = lv.draw_buf_create(10, 10, lv.COLOR_FORMAT.RGB565, 1)
+buf.data[1000000] = 0xFF  # Write way beyond buffer size
+
+# this works to crash it:
+from machine import mem32
+mem32[0] = 0xDEADBEEF 
