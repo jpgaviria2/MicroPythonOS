@@ -40,8 +40,8 @@ def load_icon(icon_path):
     return image_dsc
 
 # Check and collect subdirectories from existing directories
-apps_dir = "/apps"
-apps_dir_builtin = "/builtin/apps"
+apps_dir = "apps"
+apps_dir_builtin = "builtin/apps"
 seen_base_names = set()
 app_list = []
 
@@ -51,6 +51,7 @@ for dir_path in [apps_dir, apps_dir_builtin]:
         if uos.stat(dir_path)[0] & 0x4000:  # Verify directory exists
             for d in uos.listdir(dir_path):
                 full_path = f"{dir_path}/{d}"
+                #print(f"full_path: {full_path}")
                 if uos.stat(full_path)[0] & 0x4000:  # Check if it's a directory
                     base_name = d
                     if base_name not in seen_base_names:  # Avoid duplicates
@@ -66,6 +67,7 @@ app_list.sort(key=lambda x: x[0].lower())  # Case-insensitive sorting
 
 # Create UI for each app
 for app_name, app_dir_fullpath in app_list:
+    #print(f"Adding app {app_name} from {app_dir_fullpath}")
     # Create container for each app (icon + label)
     app_cont = lv.obj(cont)
     app_cont.set_size(iconcont_width, iconcont_height)
@@ -78,7 +80,7 @@ for app_name, app_dir_fullpath in app_list:
         image.set_src(load_icon(icon_path))
     except Exception as e:
         print(f"Error loading icon {icon_path}: {e} - loading default icon")
-        icon_path = "/builtin/res/mipmap-mdpi/default_icon_64x64.png"
+        icon_path = "builtin/res/mipmap-mdpi/default_icon_64x64.png"
         try:
             image.set_src(load_icon(icon_path))
         except Exception as e:
