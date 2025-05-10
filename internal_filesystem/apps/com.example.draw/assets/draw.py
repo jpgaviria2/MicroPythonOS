@@ -88,6 +88,7 @@ def get_xy():
     else:
         return indev_error_x,indev_error_y # make it visible that this occurred
 
+# doesnt work:
 def draw_line(x, y):
     global canvas
     # Line drawing like this doesn't work:
@@ -145,7 +146,11 @@ def touch_cb(event):
             for dx in range(-radius, radius):
                 for dy in range(-radius, radius):
                     if dx * dx + dy * dy <= square:
-                        canvas.set_px(x + dx, y + dy, DARKPINK, lv.OPA.COVER)
+                        newx, newy = x + dx, y + dy
+                        if 0 <= newx <= hor_res and 0 <= newy <= ver_res:
+                            canvas.set_px(x + dx, y + dy, DARKPINK, lv.OPA.COVER)
+                        else:
+                            print(f"Not drawing outside of canvas at {newx},{newy} because that crashes.")
 
 
 canvas = lv.canvas(appscreen)
