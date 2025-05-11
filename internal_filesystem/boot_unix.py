@@ -1,3 +1,5 @@
+# Hardware initialization for Unix and MacOS systems
+
 import lcd_bus
 import lvgl as lv
 import sdl_display

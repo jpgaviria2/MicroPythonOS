@@ -1,4 +1,5 @@
-print("boot.py: version 0.0.3 running")
+# Hardware initialization for ESP32-S3-Touch-LCD-2
+# Manufacturer's website at https://www.waveshare.com/wiki/ESP32-S3-Touch-LCD-2
 
 from machine import Pin, SPI
 import st7789 

@@ -1,6 +1,9 @@
 0.0.4
 =====
 - wificonf: pressing keyboard icon or newline key also closes the keyboard
+- Don't show Frames Per Second on screen
+- Tweak settings to increase display refresh rate
+- Add support for running on Linux and MacOS desktop
 
 0.0.3
 =====
