@@ -147,10 +147,8 @@ def touch_cb(event):
                 for dy in range(-radius, radius):
                     if dx * dx + dy * dy <= square:
                         newx, newy = x + dx, y + dy
-                        if 0 <= newx <= hor_res and 0 <= newy <= ver_res:
+                        if 0 <= newx <= hor_res and 0 <= newy <= ver_res: # don't draw outside of canvas because that may crash
                             canvas.set_px(x + dx, y + dy, DARKPINK, lv.OPA.COVER)
-                        else:
-                            print(f"Not drawing outside of canvas at {newx},{newy} because that crashes.")
 
 
 canvas = lv.canvas(appscreen)
