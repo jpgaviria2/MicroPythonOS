@@ -2,250 +2,24 @@ import lvgl as lv
 import task_handler
 import machine
 
-# Constants
 CURRENT_OS_VERSION = "0.0.4"
-TFT_HOR_RES=320
-TFT_VER_RES=240
-NOTIFICATION_BAR_HEIGHT=24
-BUTTON_WIDTH=100
-BUTTON_HEIGHT=40
-PADDING_TINY=5
-PADDING_SMALL=10
-PADDING_MEDIUM=20
-PADDING_LARGE=40
-DRAWER_ANIM_DURATION=300
-SLIDER_MIN_VALUE=1
-SLIDER_MAX_VALUE=100
-SLIDER_DEFAULT_VALUE=100
 
-CLOCK_UPDATE_INTERVAL = 1000 # 10 or even 1 ms doesn't seem to change the framerate but 100ms is enough
-WIFI_ICON_UPDATE_INTERVAL = 1500
-TEMPERATURE_UPDATE_INTERVAL = 2000
-MEMFREE_UPDATE_INTERVAL = 5000 # not too frequent because there's a forced gc.collect() to give it a reliable value
-
-foreground_app_name=None
-drawer=None
-wifi_screen=None
-drawer_open=False
-bar_open=True
 
 # lowering the duration from default 33 to 6 seems to increase the camera framerate from 5.5 to 9 and the UI framerate from 15 to 20fps
 # lowering to 1 doesn't seem to help out the camera framerate (so it's maxed out) but the UI goes to 26 FPS with it!
-# but that seems to cause a sporadic hang in the launcher on the desktop builds, so take at least 2 for now:
+# but that seems to cause a sporadic hang in the launcher on the desktop builds, as does 2, as does 3, so let's take 3...
+# 3 results in 26 FPS on desktop in the GIF player
+# 4 results in 29.5 FPS on desktop in the GIF player
 #th = task_handler.TaskHandler()
-th = task_handler.TaskHandler(duration=2)
+th = task_handler.TaskHandler(duration=5)
 
-rootscreen = lv.screen_active()
-rootlabel = lv.label(rootscreen)
-rootlabel.set_text("Welcome!")
-rootlabel.align(lv.ALIGN.CENTER, 0, 0)
+from mpos import ui
 
-def open_drawer():
-    global drawer_open
-    if not drawer_open:
-        open_bar()
-        drawer_open=True
-        drawer.remove_flag(lv.obj.FLAG.HIDDEN)
+ui.create_rootscreen()
+ui.create_notification_bar()
+ui.create_drawer(display)
 
-def close_drawer(to_launcher=False):
-    global drawer_open
-    if drawer_open:
-        drawer_open=False
-        drawer.add_flag(lv.obj.FLAG.HIDDEN)
-        if not to_launcher and not is_launcher(foreground_app_name):
-            close_bar()
-
-def open_bar():
-    global bar_open
-    if not bar_open:
-        bar_open=True
-        show_bar_animation.start()
-
-def close_bar():
-    global bar_open
-    if bar_open:
-        bar_open=False
-        hide_bar_animation.start()
-
-
-# Create notification bar
-notification_bar = lv.obj(lv.layer_top())
-notification_bar.set_size(TFT_HOR_RES, NOTIFICATION_BAR_HEIGHT)
-notification_bar.set_pos(0, 0)
-notification_bar.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
-notification_bar.set_scroll_dir(lv.DIR.VER)
-notification_bar.set_style_border_width(0, 0)
-notification_bar.set_style_radius(0, 0)
-# Time label
-time_label = lv.label(notification_bar)
-time_label.set_text("00:00:00")
-time_label.align(lv.ALIGN.LEFT_MID, 0, 0)
-temp_label = lv.label(notification_bar)
-temp_label.set_text("00°C")
-temp_label.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
-memfree_label = lv.label(notification_bar)
-memfree_label.set_text("")
-memfree_label.align_to(temp_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
-#style = lv.style_t()
-#style.init()
-#style.set_text_font(lv.font_montserrat_8)  # tiny font
-#memfree_label.add_style(style, 0)
-# Notification icon (bell)
-#notif_icon = lv.label(notification_bar)
-#notif_icon.set_text(lv.SYMBOL.BELL)
-#notif_icon.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
-# Battery icon
-battery_icon = lv.label(notification_bar)
-battery_icon.set_text(lv.SYMBOL.BATTERY_FULL)
-battery_icon.align(lv.ALIGN.RIGHT_MID, -PADDING_TINY, 0)
-# WiFi icon
-wifi_icon = lv.label(notification_bar)
-wifi_icon.set_text(lv.SYMBOL.WIFI)
-wifi_icon.align_to(battery_icon, lv.ALIGN.OUT_LEFT_MID, -PADDING_TINY, 0)
-wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
-# Battery percentage - not shown to conserve space
-#battery_label = lv.label(notification_bar)
-#battery_label.set_text("100%")
-#battery_label.align(lv.ALIGN.RIGHT_MID, 0, 0)
-# Update time
-import time
-def update_time(timer):
-    ticks = time.ticks_ms()
-    hours = (ticks // 3600000) % 24
-    minutes = (ticks // 60000) % 60
-    seconds = (ticks // 1000) % 60
-    #milliseconds = ticks % 1000
-    time_label.set_text(f"{hours:02d}:{minutes:02d}:{seconds:02d}")
-
-can_check_network = False
-try:
-    import network
-    can_check_network = True
-except Exception as e:
-    print("Warning: could not check WLAN status:", str(e))
-
-def update_wifi_icon(timer):
-    if not can_check_network or network.WLAN(network.STA_IF).isconnected():
-        wifi_icon.remove_flag(lv.obj.FLAG.HIDDEN)
-    else:
-        wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
-
-can_check_temperature = False
-try:
-    import esp32
-except Exception as e:
-    print("Warning: can't check temperature sensor:", str(e))
-
-def update_temperature(timer):
-    if can_check_temperature:
-        temp_label.set_text(f"{esp32.mcu_temperature()}°C")
-    else:
-        temp_label.set_text("42°C")
-
-
-import gc
-def update_memfree(timer):
-    gc.collect()
-    memfree_label.set_text(f"{gc.mem_free()}")
-
-timer1 = lv.timer_create(update_time, CLOCK_UPDATE_INTERVAL, None)
-timer2 = lv.timer_create(update_temperature, TEMPERATURE_UPDATE_INTERVAL, None)
-timer3 = lv.timer_create(update_memfree, MEMFREE_UPDATE_INTERVAL, None)
-timer4 = lv.timer_create(update_wifi_icon, WIFI_ICON_UPDATE_INTERVAL, None)
-
-# hide bar animation
-hide_bar_animation = lv.anim_t()
-hide_bar_animation.init()
-hide_bar_animation.set_var(notification_bar)
-hide_bar_animation.set_values(0, -NOTIFICATION_BAR_HEIGHT)
-hide_bar_animation.set_time(2000)
-hide_bar_animation.set_custom_exec_cb(lambda not_used, value : notification_bar.set_y(value))
-
-# show bar animation
-show_bar_animation = lv.anim_t()
-show_bar_animation.init()
-show_bar_animation.set_var(notification_bar)
-show_bar_animation.set_values(-NOTIFICATION_BAR_HEIGHT, 0)
-show_bar_animation.set_time(1000)
-show_bar_animation.set_custom_exec_cb(lambda not_used, value : notification_bar.set_y(value))
-
-
-drawer=lv.obj(lv.layer_top())
-drawer.set_size(lv.pct(100),TFT_VER_RES-NOTIFICATION_BAR_HEIGHT)
-drawer.set_pos(0,NOTIFICATION_BAR_HEIGHT)
-drawer.set_scroll_dir(lv.DIR.NONE)
-drawer.set_style_pad_all(0, 0)
-drawer.add_flag(lv.obj.FLAG.HIDDEN)
-
-slider_label=lv.label(drawer)
-slider_label.set_text(f"{SLIDER_DEFAULT_VALUE}%")
-slider_label.align(lv.ALIGN.TOP_MID,0,PADDING_SMALL)
-slider=lv.slider(drawer)
-slider.set_range(SLIDER_MIN_VALUE,SLIDER_MAX_VALUE)
-slider.set_value(SLIDER_DEFAULT_VALUE,False)
-slider.set_width(lv.pct(80))
-slider.align_to(slider_label,lv.ALIGN.OUT_BOTTOM_MID,0,PADDING_SMALL)
-def slider_event(e):
-    value=slider.get_value()
-    slider_label.set_text(f"{value}%")
-    display.set_backlight(value)
-
-slider.add_event_cb(slider_event,lv.EVENT.VALUE_CHANGED,None)
-wifi_btn=lv.button(drawer)
-wifi_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
-wifi_btn.align(lv.ALIGN.LEFT_MID,PADDING_MEDIUM,0)
-wifi_label=lv.label(wifi_btn)
-wifi_label.set_text(lv.SYMBOL.WIFI+" WiFi")
-wifi_label.center()
-def wifi_event(e):
-    global drawer_open
-    close_drawer()
-    start_app_by_name("com.example.wificonf")
-
-wifi_btn.add_event_cb(wifi_event,lv.EVENT.CLICKED,None)
-#
-#settings_btn=lv.button(drawer)
-#settings_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
-#settings_btn.align(lv.ALIGN.RIGHT_MID,-PADDING_MEDIUM,0)
-#settings_label=lv.label(settings_btn)
-#settings_label.set_text(lv.SYMBOL.SETTINGS+" Settings")
-#settings_label.center()
-#def settings_event(e):
-#    global drawer_open
-#    close_drawer()
-
-#settings_btn.add_event_cb(settings_event,lv.EVENT.CLICKED,None)
-#
-launcher_btn=lv.button(drawer)
-launcher_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
-launcher_btn.align(lv.ALIGN.BOTTOM_LEFT,PADDING_MEDIUM,-PADDING_MEDIUM)
-launcher_label=lv.label(launcher_btn)
-launcher_label.set_text(lv.SYMBOL.HOME+" Launcher")
-launcher_label.center()
-def launcher_event(e):
-    print("Launcher button pressed!")
-    global drawer_open
-    close_drawer(True)
-    show_launcher()
-
-launcher_btn.add_event_cb(launcher_event,lv.EVENT.CLICKED,None)
-#
-restart_btn=lv.button(drawer)
-restart_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
-restart_btn.align(lv.ALIGN.RIGHT_MID,-PADDING_MEDIUM,0)
-restart_label=lv.label(restart_btn)
-restart_label.set_text(lv.SYMBOL.POWER+" Reset")
-restart_label.center()
-restart_btn.add_event_cb(lambda event: machine.reset(),lv.EVENT.CLICKED,None)
-
-
-
-
-
-
-
-
-
+from mpos import apps
 
 import _thread
 import traceback
@@ -268,10 +42,6 @@ class App:
         self.category = category
         self.image = None
         self.image_dsc = None
-
-def is_launcher(app_name):
-    # Simple check, could be more elaborate by checking the MANIFEST.JSON for the app...
-    return "launcher" in app_name
 
 def parse_manifest(manifest_path):
     # Default values for App object
@@ -335,7 +105,7 @@ def execute_script(script_source, is_file, is_launcher, is_graphical):
         else: # is_graphical
             if is_launcher:
                 prevscreen = None
-                newscreen = rootscreen
+                newscreen = ui.rootscreen
             else:
                 prevscreen = lv.screen_active()
                 newscreen=lv.obj()
@@ -343,12 +113,12 @@ def execute_script(script_source, is_file, is_launcher, is_graphical):
             lv.screen_load(newscreen)
             script_globals = {
                 'lv': lv,
-                'NOTIFICATION_BAR_HEIGHT': NOTIFICATION_BAR_HEIGHT, # for apps that want to leave space for notification bar
+                'NOTIFICATION_BAR_HEIGHT': ui.NOTIFICATION_BAR_HEIGHT, # for apps that want to leave space for notification bar
                 'appscreen': newscreen,
                 'start_app': start_app, # for launcher apps
                 'parse_manifest': parse_manifest, # for launcher apps
                 'restart_launcher': restart_launcher, # for appstore apps
-                'show_launcher': show_launcher, # for apps that want to show the launcher
+                'show_launcher': ui.show_launcher, # for apps that want to show the launcher
                 'CURRENT_OS_VERSION': CURRENT_OS_VERSION, # for osupdate
                 '__name__': "__main__"
             }
@@ -390,8 +160,7 @@ def execute_script_new_thread(scriptname, is_file, is_launcher, is_graphical):
         print("main.py: execute_script_new_thread(): error starting new thread thread: ", e)
 
 def start_app_by_name(app_name, is_launcher=False):
-    global foreground_app_name
-    foreground_app_name = app_name
+    ui.set_foreground_app(app_name)
     custom_app_dir=f"apps/{app_name}"
     builtin_app_dir=f"builtin/apps/{app_name}"
     try:
@@ -402,22 +171,17 @@ def start_app_by_name(app_name, is_launcher=False):
 
 def start_app(app_dir, is_launcher=False):
     print(f"main.py start_app({app_dir},{is_launcher}")
-    global foreground_app_name
-    foreground_app_name = app_dir # would be better to store only the app name...
+    ui.set_foreground_app(app_dir) # would be better to store only the app name...
     manifest_path = f"{app_dir}/META-INF/MANIFEST.JSON"
     app = parse_manifest(manifest_path)
     start_script_fullpath = f"{app_dir}/{app.entrypoint}"
     execute_script_new_thread(start_script_fullpath, True, is_launcher, True)
     # Launchers have the bar, other apps don't have it
     if is_launcher:
-        open_bar()
+        ui.open_bar()
     else:
-        close_bar()
+        ui.close_bar()
 
-def show_launcher():
-    global rootscreen
-    open_bar()
-    lv.screen_load(rootscreen)
 
 def restart_launcher():
     # No need to stop the other launcher first, because it exits after building the screen
