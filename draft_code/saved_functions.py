@@ -219,16 +219,60 @@ print(f"Image widget: {image}")
 # PNG:
 with open("/icon_64x64.png", 'rb') as f:
   image_data = f.read()
-
 image_dsc = lv.image_dsc_t({
     'data_size': len(image_data),
     'data': image_data 
 })
-
 image1 = lv.image(lv.screen_active())
 image1.set_src(image_dsc)
 image1.set_pos(150,100)
 
+
+
+
+# GIF:
+#with open("../icons/spongebob_happy_love_it.gif", 'rb') as f:
+with open("../icons/corel-draw-icon-5662.png", 'rb') as f:
+with open("../icons/cpu_3dbd2b17ab4c68a4eb7e4034ab7c1c0e.jpg", 'rb') as f:
+with open("../icons/pngtree-update-icon-glossy-blue-round-button-symbol-rotate-button-photo-image_18021430.jpg", 'rb') as f:
+with open("../icons/hello_world_8844577_64x64.png", 'rb') as f: # one of the only images that works!
+with open("../icons/Spinning-Wheel-Vector-PNG-Cutout_64x64.png", 'rb') as f: # this also works...
+with open("../icons/pngtree-update-icon-glossy-blue-round-button-symbol-rotate-button-photo-image_18021430_square.png", 'rb') as f: # dontwork
+    print("loading image...")
+    image_data = f.read()
+    image_dsc = lv.image_dsc_t({
+        'data_size': len(image_data),
+        'data': image_data 
+    })
+    print(f"loaded {len(image_data)} bytes")
+    screen = lv.screen_active()
+    screen.clean()
+    image = lv.image(screen)
+    image.set_src(image_dsc)
+    #image1.set_pos(10,10)
+    #image.set_size(323,404)
+    image.align(lv.ALIGN.TOP_MID, 0, 0)
+    print("done")
+
+
+# lv.gd_open_gif_file())
+
+#with open("../icons/graphics-snakes-834669.gif", 'rb') as f: # works
+with open("../icons/spongebob_happy_love_it.gif", 'rb') as f: # works
+with open("../icons/big-buck-bunny_320x180.gif", 'rb') as f: # works
+    print("loading image...")
+    image_data = f.read()
+    image_dsc = lv.image_dsc_t({
+        'data_size': len(image_data),
+        'data': image_data 
+    })
+    print(f"loaded {len(image_data)} bytes")
+    screen = lv.screen_active()
+    screen.clean()
+    gif = lv.gif(screen)
+    gif.set_src(image_dsc)
+    gif.align(lv.ALIGN.TOP_MID, 0, 0)
+    print("done")
 
 
 
