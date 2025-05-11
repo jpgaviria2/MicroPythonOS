@@ -1,0 +1,1 @@
+CURRENT_OS_VERSION = "0.0.4"
