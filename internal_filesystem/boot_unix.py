@@ -2,7 +2,7 @@ import lcd_bus
 import lvgl as lv
 import sdl_display
 import sdl_pointer
-from mpos import ui
+import mpos.ui
 
 TFT_HOR_RES=320
 TFT_VER_RES=240
@@ -31,7 +31,7 @@ def swipe_read_cb(indev_drv, data):
     if pressed and start_y is None:
         start_y = y
         # Mouse button pressed (start of potential swipe)
-        if y <= ui.NOTIFICATION_BAR_HEIGHT:
+        if y <= mpos.ui.NOTIFICATION_BAR_HEIGHT:
             # Store starting Y if press is in the notification bar area
             print(f"Mouse press at Y={start_y}")
     elif pressed and start_y is not None:
@@ -39,15 +39,15 @@ def swipe_read_cb(indev_drv, data):
         # Check for downward swipe (y increased significantly)
         if y > start_y + 50:  # Threshold for swipe detection (adjust as needed)
             print("long swipe down")
-            if start_y <= ui.NOTIFICATION_BAR_HEIGHT:
+            if start_y <= mpos.ui.NOTIFICATION_BAR_HEIGHT:
                 print("Swipe Down Detected from Notification Bar")
-                ui.open_drawer()
+                mpos.ui.open_drawer()
             start_y = None  # Reset after swipe
     else:
         # Mouse button released
         if start_y is not None and y < start_y - 50:  # Threshold for swipe-up
             print("Swipe Up Detected")
-            ui.close_drawer()
+            mpos.ui.close_drawer()
         start_y = None  # Reset on release
 
 # Register the custom read callback with the input device

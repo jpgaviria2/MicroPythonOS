@@ -1,5 +1,5 @@
 import lvgl as lv
-from mpos import apps
+import mpos.apps
 
 NOTIFICATION_BAR_HEIGHT=24
 
@@ -38,7 +38,7 @@ def close_drawer(to_launcher=False):
     if drawer_open:
         drawer_open=False
         drawer.add_flag(lv.obj.FLAG.HIDDEN)
-        if not to_launcher and not apps.is_launcher(foreground_app_name):
+        if not to_launcher and not mpos.apps.is_launcher(foreground_app_name):
             close_bar()
 
 def open_bar():
@@ -55,6 +55,7 @@ def close_bar():
 
 def show_launcher():
     global rootscreen
+    set_foreground_app("com.example.launcher")
     open_bar()
     lv.screen_load(rootscreen)
 

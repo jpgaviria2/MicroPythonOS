@@ -7,8 +7,8 @@ import uos
 import _thread
 import traceback
 
-from mpos import ui
 import mpos.info
+import mpos.ui
 
 # Run the script in the current thread:
 def execute_script(script_source, is_file, is_launcher, is_graphical):
@@ -26,7 +26,7 @@ def execute_script(script_source, is_file, is_launcher, is_graphical):
         else: # is_graphical
             if is_launcher:
                 prevscreen = None
-                newscreen = ui.rootscreen
+                newscreen = mpos.ui.rootscreen
             else:
                 prevscreen = lv.screen_active()
                 newscreen=lv.obj()
@@ -34,12 +34,12 @@ def execute_script(script_source, is_file, is_launcher, is_graphical):
             lv.screen_load(newscreen)
             script_globals = {
                 'lv': lv,
-                'NOTIFICATION_BAR_HEIGHT': ui.NOTIFICATION_BAR_HEIGHT, # for apps that want to leave space for notification bar
+                'NOTIFICATION_BAR_HEIGHT': mpos.ui.NOTIFICATION_BAR_HEIGHT, # for apps that want to leave space for notification bar
                 'appscreen': newscreen,
                 'start_app': start_app, # for launcher apps
                 'parse_manifest': parse_manifest, # for launcher apps
                 'restart_launcher': restart_launcher, # for appstore apps
-                'show_launcher': ui.show_launcher, # for apps that want to show the launcher
+                'show_launcher': mpos.ui.show_launcher, # for apps that want to show the launcher
                 'CURRENT_OS_VERSION': mpos.info.CURRENT_OS_VERSION, # for osupdate
                 '__name__': "__main__"
             }
@@ -54,7 +54,7 @@ def execute_script(script_source, is_file, is_launcher, is_graphical):
             tb = getattr(e, '__traceback__', None)
             traceback.print_exception(type(e), e, tb)
         print(f"Thread {thread_id}: script {compile_name} finished")
-        # Note that newscreen isn't deleted, as it might still be foreground, or it might be ui.rootscreen
+        # Note that newscreen isn't deleted, as it might still be foreground, or it might be mpos.ui.rootscreen
     except Exception as e:
         print(f"Thread {thread_id}: error:")
         tb = getattr(e, '__traceback__', None)
@@ -73,7 +73,7 @@ def execute_script_new_thread(scriptname, is_file, is_launcher, is_graphical):
         print("main.py: execute_script_new_thread(): error starting new thread thread: ", e)
 
 def start_app_by_name(app_name, is_launcher=False):
-    ui.set_foreground_app(app_name)
+    mpos.ui.set_foreground_app(app_name)
     custom_app_dir=f"apps/{app_name}"
     builtin_app_dir=f"builtin/apps/{app_name}"
     try:
@@ -84,16 +84,16 @@ def start_app_by_name(app_name, is_launcher=False):
 
 def start_app(app_dir, is_launcher=False):
     print(f"main.py start_app({app_dir},{is_launcher}")
-    ui.set_foreground_app(app_dir) # would be better to store only the app name...
+    mpos.ui.set_foreground_app(app_dir) # would be better to store only the app name...
     manifest_path = f"{app_dir}/META-INF/MANIFEST.JSON"
     app = parse_manifest(manifest_path)
     start_script_fullpath = f"{app_dir}/{app.entrypoint}"
     execute_script_new_thread(start_script_fullpath, True, is_launcher, True)
     # Launchers have the bar, other apps don't have it
     if is_launcher:
-        ui.open_bar()
+        mpos.ui.open_bar()
     else:
-        ui.close_bar()
+        mpos.ui.close_bar()
 
 
 def restart_launcher():
