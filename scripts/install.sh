@@ -45,7 +45,7 @@ fi
 ~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py fs cp -r builtin :/
 ~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py fs cp -r lib :/
 ~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py fs cp -r resources :/
-~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py fs cp -r data :/
+#~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py fs cp -r data :/
 
 popd
 

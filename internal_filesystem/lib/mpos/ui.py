@@ -133,6 +133,7 @@ def create_notification_bar():
     can_check_temperature = False
     try:
         import esp32
+        can_check_temperature = True
     except Exception as e:
         print("Warning: can't check temperature sensor:", str(e))
     

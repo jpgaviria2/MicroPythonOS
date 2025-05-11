@@ -11,6 +11,8 @@ import i2c
 import lvgl as lv
 import task_handler
 
+import mpos.ui
+
 # Pin configuration
 SPI_BUS = 2
 SPI_FREQ = 40000000
@@ -115,14 +117,14 @@ def handle_gesture(pin):
         # Store the starting Y-coordinate
         start_y = y
         #print(f"Touch started at Y={start_y}")
-    elif gesture_id == 0x04 and drawer_open:  # Swipe up
+    elif gesture_id == 0x04:  # Swipe up
         # print("Swipe Up Detected")
-        close_drawer()
+        mpos.ui.close_drawer()
         start_y = None  # Clear start_y after gesture
     elif gesture_id == 0x03:  # Swipe down
-        if start_y is not None and start_y <= NOTIFICATION_BAR_HEIGHT:
+        if start_y is not None and start_y <= mpos.ui.NOTIFICATION_BAR_HEIGHT:
             # print("Swipe Down Detected from Notification Bar")
-            open_drawer()
+            mpos.ui.open_drawer()
         start_y = None  # Clear start_y after gesture
     elif gesture_id == 0x05:  # Release
         start_y = None  # Clear start_y on release
