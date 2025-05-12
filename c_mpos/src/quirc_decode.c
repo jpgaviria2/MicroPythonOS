@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <esp_log.h> // For ESP-IDF logging
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/mperrno.h"
@@ -135,7 +134,7 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
     fflush(stdout);
     */
 
-    printf("qrdecode: Returning result\n");
+    QRDECODE_DEBUG_PRINT("qrdecode: Returning result\n");
     //return result;
     return mp_const_none; // MicroPython functions typically return None
 }
