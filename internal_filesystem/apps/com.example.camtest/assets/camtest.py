@@ -55,12 +55,13 @@ def qr_button_click(e):
     height = 240
     buffer_size = width * height  # 240 * 240 = 57600 bytes
     try:
+        import qrdecode
         result = qrdecode.qrdecode(current_cam_buffer, width, height)
         if result.startswith('\ufeff'): # Remove BOM (\ufeff) from the start of the decoded string, if present
             result = result[1:]
         print(f"QR decoding found: {result}")
-    except ValueError as e:
-        print("Error:", e)
+    except Exception as e:
+        print("QR decode error: ", e)
         raise
 
 

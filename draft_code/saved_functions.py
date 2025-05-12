@@ -602,7 +602,7 @@ def log_callback(level, log_str):
     # Convert log_str to string if it's a bytes object
     log_str = log_str.decode() if isinstance(log_str, bytes) else log_str
     # Optional: Print for debugging
-    #print(f"Level: {level}, Log: {log_str}")
+    print(f"Level: {level}, Log: {log_str}")
     # Log message format: "sysmon: 25 FPS (refr_cnt: 8 | redraw_cnt: 1), ..."
     if "sysmon:" in log_str and "FPS" in log_str:
         try:
