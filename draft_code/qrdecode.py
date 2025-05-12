@@ -15,6 +15,9 @@ try:
             raise ValueError("File size does not match expected 240x240 grayscale image")
     # Decode QR code using qrdecode module
     print("decoding...")
+    print(f"buffer length: {len(buffer)}")
+    for i in range(15):
+        print(buffer[i])
     result = qrdecode.qrdecode(buffer, width, height)
     print(f"result: {result}")
     # Remove BOM (\ufeff) from the start of the decoded string, if present

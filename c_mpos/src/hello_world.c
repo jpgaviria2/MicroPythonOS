@@ -6,7 +6,7 @@
 
 // C function to print "Hello World"
 static mp_obj_t hello_world(void) {
-    printf("Hello World from C!\n");
+    printf("Hello World from C compiled!\n");
     return mp_const_none; // MicroPython functions typically return None
 }
 
