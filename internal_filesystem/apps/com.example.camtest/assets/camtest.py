@@ -4,6 +4,10 @@ keepgoing = True
 width = 240
 height = 240
 
+# Variable to hold the current memoryview to prevent garbage collection
+current_cam_buffer = None
+
+
 cont = lv.obj(appscreen)
 cont.set_style_pad_all(0, 0)
 cont.set_style_border_width(0, 0)
@@ -12,19 +16,59 @@ cont.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
 
 snap_button = lv.button(cont)
 snap_button.set_size(60, 60)
-snap_button.align(lv.ALIGN.RIGHT_MID, 0, -20)
+snap_button.align(lv.ALIGN.RIGHT_MID, 0, 0)
 snap_label = lv.label(snap_button)
 snap_label.set_text(lv.SYMBOL.OK)
 snap_label.center()
+
 def snap_button_click(e):
     print("Picture taken!")
-    # TODO: keep it on-screen for a while, or save it to storage, or show it in miniature
+    try:
+        import os
+        os.mkdir("data")
+        os.mkdir("data/com.example.camtest")
+    except OSError:
+        pass
+    if current_cam_buffer is not None:
+        filename="data/com.example.camtest/capture.raw"
+        try:
+            with open(filename, 'wb') as f:
+                f.write(current_cam_buffer)
+            print(f"Successfully wrote current_cam_buffer to {filename}")
+        except OSError as e:
+            print(f"Error writing to file: {e}")
 
 snap_button.add_event_cb(snap_button_click,lv.EVENT.CLICKED,None)
 
 
+qr_button = lv.button(cont)
+qr_button.set_size(60, 60)
+qr_button.align(lv.ALIGN.BOTTOM_RIGHT, 0, 0)
+qr_label = lv.label(qr_button)
+qr_label.set_text(lv.SYMBOL.EYE_OPEN)
+qr_label.center()
+
+def qr_button_click(e):
+    print("Decoding QR")
+    # Image dimensions
+    width = 240
+    height = 240
+    buffer_size = width * height  # 240 * 240 = 57600 bytes
+    try:
+        result = qrdecode.qrdecode(current_cam_buffer, width, height)
+        if result.startswith('\ufeff'): # Remove BOM (\ufeff) from the start of the decoded string, if present
+            result = result[1:]
+        print(f"QR decoding found: {result}")
+    except ValueError as e:
+        print("Error:", e)
+        raise
+
+
+qr_button.add_event_cb(qr_button_click,lv.EVENT.CLICKED,None)
+
+
 close_button = lv.button(cont)
-close_button.set_size(40,40)
+close_button.set_size(60,60)
 close_button.align(lv.ALIGN.TOP_RIGHT, 0, 0)
 close_label = lv.label(close_button)
 close_label.set_text(lv.SYMBOL.CLOSE)
@@ -50,7 +94,8 @@ cam = Camera(
     xclk_freq=20000000,
     powerdown_pin=-1,
     reset_pin=-1,
-    pixel_format=PixelFormat.RGB565,
+    #pixel_format=PixelFormat.RGB565,
+    pixel_format=PixelFormat.GRAYSCALE,
     frame_size=FrameSize.R240X240,
     grab_mode=GrabMode.LATEST 
 )
@@ -75,18 +120,17 @@ image_dsc = lv.image_dsc_t({
         "magic": lv.IMAGE_HEADER_MAGIC,
         "w": width,
         "h": height,
-        "stride": width * 2,
-        "cf": lv.COLOR_FORMAT.RGB565
+        "stride": width ,
+        #"cf": lv.COLOR_FORMAT.RGB565
+        "cf": lv.COLOR_FORMAT.L8
     },
-    'data_size': width * height * 2,
+    'data_size': width * height,
     'data': None  # Will be updated per frame
 })
 
 # Set initial image source (optional, can be set in try_capture)
 image.set_src(image_dsc)
 
-# Variable to hold the current memoryview to prevent garbage collection
-current_cam_buffer = None
 
 def try_capture():
     global current_cam_buffer

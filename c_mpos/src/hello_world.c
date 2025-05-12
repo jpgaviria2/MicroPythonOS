@@ -1,18 +1,12 @@
 #include "py/obj.h"
 #include "py/runtime.h"
 
-#include "../esp32-quirc/lib/quirc.h"
 
 //#error "building hello world from lcd_utils"
 
 // C function to print "Hello World"
 static mp_obj_t hello_world(void) {
-    printf("Hello World from C with quirc!\n");
-
-    struct quirc *qr;
-    qr = quirc_new();
-    quirc_destroy(qr);
-
+    printf("Hello World from C!\n");
     return mp_const_none; // MicroPython functions typically return None
 }
 

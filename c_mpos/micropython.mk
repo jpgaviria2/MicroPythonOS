@@ -10,10 +10,11 @@ ifneq (,$(findstring -Wno-missing-field-initializers, $(CFLAGS_USERMOD)))
 endif
 
 SRC_USERMOD_C += $(MOD_DIR)/src/hello_world.c
+SRC_USERMOD_C += $(MOD_DIR)/src/quirc_decode.c
 
-SRC_USERMOD_C += $(MOD_DIR)/esp32-quirc/lib/identify.c
-SRC_USERMOD_C += $(MOD_DIR)/esp32-quirc/lib/version_db.c
-SRC_USERMOD_C += $(MOD_DIR)/esp32-quirc/lib/decode.c
-SRC_USERMOD_C += $(MOD_DIR)/esp32-quirc/lib/quirc.c
-SRC_USERMOD_C += $(MOD_DIR)/esp32-quirc/openmv/collections.c
+SRC_USERMOD_C += $(MOD_DIR)/quirc/lib/identify.c
+SRC_USERMOD_C += $(MOD_DIR)/quirc/lib/version_db.c
+SRC_USERMOD_C += $(MOD_DIR)/quirc/lib/decode.c
+SRC_USERMOD_C += $(MOD_DIR)/quirc/lib/quirc.c
+#SRC_USERMOD_C += $(MOD_DIR)/quirc/openmv/collections.c
 
