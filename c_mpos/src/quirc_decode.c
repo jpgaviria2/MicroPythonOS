@@ -12,10 +12,7 @@ static const char *TAG = "qrdecode";
 
 // Function to decode a QR code from a grayscale image buffer
 static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
-    printf("qrdecode: Starting\n");
-    ESP_LOGI(TAG, "qrdecode starting");
-    QRDECODE_DEBUG_PRINT("mp_printf works in qrdecode!");
-    fflush(stdout);
+    QRDECODE_DEBUG_PRINT("qrdecode: Starting\n");
 
     // Check argument count (expecting buffer, width, height)
     QRDECODE_DEBUG_PRINT("qrdecode: Checking argument count\n");
@@ -62,7 +59,6 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
         mp_raise_OSError(MP_ENOMEM);
     }
     QRDECODE_DEBUG_PRINT("qrdecode: quirc initialized\n");
-    QRDECODE_DEBUG_PRINT("mp_printf works in qrdecode!");
     fflush(stdout);
 
     // Resize quirc for the image dimensions
@@ -83,10 +79,10 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
     image = quirc_begin(qr, NULL, NULL); // Get pointer to quirc's image buffer
     QRDECODE_DEBUG_PRINT("qrdecode: quirc image buffer obtained\n");
     fflush(stdout);
-    QRDECODE_DEBUG_PRINT("qrdecode: Copying buffer, size=%zu\n", (size_t)(width * height));
+    QRDECODE_DEBUG_PRINT("qrdecode: Copying buffer, size=%ul\n", (size_t)(width * height));
     fflush(stdout);
     memcpy(image, bufinfo.buf, width * height);
-    QRDECODE_DEBUG_PRINT
+    QRDECODE_DEBUG_PRINT("qrdecode: Buffer copied\n");
     fflush(stdout);
     quirc_end(qr);
     QRDECODE_DEBUG_PRINT("qrdecode: quirc processing ended\n");
@@ -102,6 +98,7 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
         quirc_destroy(qr);
         mp_raise_ValueError(MP_ERROR_TEXT("no QR code found"));
     }
+    // it works until here, it finds 1 QR code!
 
     // Extract and decode the first QR code
     QRDECODE_DEBUG_PRINT("qrdecode: Extracting first QR code\n");
@@ -110,6 +107,7 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
     quirc_extract(qr, 0, &code);
     QRDECODE_DEBUG_PRINT("qrdecode: QR code extracted\n");
     fflush(stdout);
+    // it works until here!
 
     // Decode the QR code
     QRDECODE_DEBUG_PRINT("qrdecode: Decoding QR code\n");
@@ -122,7 +120,10 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
     }
     QRDECODE_DEBUG_PRINT("qrdecode: QR code decoded, payload_len=%d\n", data.payload_len);
     fflush(stdout);
-
+    QRDECODE_DEBUG_PRINT("qrdecode: got result: %s\n", data.payload);
+    fflush(stdout);
+    QRDECODE_DEBUG_PRINT("ok so now what?!");
+/*
     // Convert decoded data to Python string
     QRDECODE_DEBUG_PRINT("qrdecode: Creating Python string\n");
     fflush(stdout);
@@ -136,10 +137,11 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
     quirc_destroy(qr);
     QRDECODE_DEBUG_PRINT("qrdecode: quirc destroyed\n");
     fflush(stdout);
+    */
 
     printf("qrdecode: Returning result\n");
-    return result;
-    //return mp_const_none; // MicroPython functions typically return None
+    //return result;
+    return mp_const_none; // MicroPython functions typically return None
 }
 
 // Wrapper function to fix incompatible pointer type warning
