@@ -25,8 +25,7 @@ const char *quirc_version(void)
 
 struct quirc *quirc_new(void)
 {
-     printf("quirc_new\n");
-	struct quirc *q = d_malloc(sizeof(*q));
+	struct quirc *q = ps_malloc(sizeof(*q));
 
 	if (!q)
 		return NULL;

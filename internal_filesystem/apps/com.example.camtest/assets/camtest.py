@@ -62,7 +62,6 @@ def qr_button_click(e):
         print(f"QR decoding found: {result}")
     except Exception as e:
         print("QR decode error: ", e)
-        raise
 
 
 qr_button.add_event_cb(qr_button_click,lv.EVENT.CLICKED,None)
@@ -95,8 +94,8 @@ cam = Camera(
     xclk_freq=20000000,
     powerdown_pin=-1,
     reset_pin=-1,
-    pixel_format=PixelFormat.RGB565,
-    #pixel_format=PixelFormat.GRAYSCALE,
+    #pixel_format=PixelFormat.RGB565,
+    pixel_format=PixelFormat.GRAYSCALE,
     frame_size=FrameSize.R240X240,
     grab_mode=GrabMode.LATEST 
 )
@@ -121,11 +120,11 @@ image_dsc = lv.image_dsc_t({
         "magic": lv.IMAGE_HEADER_MAGIC,
         "w": width,
         "h": height,
-        "stride": width *2,
-        "cf": lv.COLOR_FORMAT.RGB565
-        #"cf": lv.COLOR_FORMAT.L8
+        "stride": width ,
+        #"cf": lv.COLOR_FORMAT.RGB565
+        "cf": lv.COLOR_FORMAT.L8
     },
-    'data_size': width * height*2,
+    'data_size': width * height,
     'data': None  # Will be updated per frame
 })
 

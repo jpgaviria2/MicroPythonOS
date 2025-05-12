@@ -26,6 +26,7 @@ if [ ! -z "$appname" ]; then
 			exit 1
 		fi
 	fi
+        ~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py mkdir "/apps"
         ~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py mkdir "/builtin"
         ~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py mkdir "/builtin/apps"
 	~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py fs cp -r "$appdir" :/"$target"
