@@ -6,7 +6,7 @@
 #include <string.h>
 #include "../quirc/lib/quirc.h"
 
-
+#define QRDECODE_DEBUG_PRINT(...) mp_printf(&mp_plat_print, __VA_ARGS__);
 
 static const char *TAG = "qrdecode";
 
@@ -14,10 +14,11 @@ static const char *TAG = "qrdecode";
 static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
     printf("qrdecode: Starting\n");
     ESP_LOGI(TAG, "qrdecode starting");
+    QRDECODE_DEBUG_PRINT("mp_printf works in qrdecode!");
     fflush(stdout);
 
     // Check argument count (expecting buffer, width, height)
-    printf("qrdecode: Checking argument count\n");
+    QRDECODE_DEBUG_PRINT("qrdecode: Checking argument count\n");
     ESP_LOGI(TAG, "Checking argument count");
     fflush(stdout);
     if (n_args != 3) {
@@ -25,7 +26,7 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
     }
 
     // Extract buffer
-    printf("qrdecode: Extracting buffer\n");
+    QRDECODE_DEBUG_PRINT("qrdecode: Extracting buffer\n");
     ESP_LOGI(TAG, "Extracting buffer");
     fflush(stdout);
     mp_buffer_info_t bufinfo;
@@ -34,15 +35,15 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
     ESP_LOGI(TAG, "Buffer extracted, len=%zu", bufinfo.len);
 
     // Extract width and height
-    printf("qrdecode: Extracting width and height\n");
+    QRDECODE_DEBUG_PRINT("qrdecode: Extracting width and height\n");
     fflush(stdout);
     mp_int_t width = mp_obj_get_int(args[1]);
     mp_int_t height = mp_obj_get_int(args[2]);
-    printf("qrdecode: Width=%ld, Height=%ld\n", width, height);
+    QRDECODE_DEBUG_PRINT("qrdecode: Width=%ld, Height=%ld\n", width, height);
     fflush(stdout);
 
     // Validate dimensions
-    printf("qrdecode: Validating dimensions\n");
+    QRDECODE_DEBUG_PRINT("qrdecode: Validating dimensions\n");
     fflush(stdout);
     if (width <= 0 || height <= 0) {
         mp_raise_ValueError(MP_ERROR_TEXT("width and height must be positive"));
@@ -50,51 +51,52 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
     if (bufinfo.len != (size_t)(width * height)) {
         mp_raise_ValueError(MP_ERROR_TEXT("buffer size must match width * height"));
     }
-    printf("qrdecode: Dimensions validated\n");
+    QRDECODE_DEBUG_PRINT("qrdecode: Dimensions validated\n");
     fflush(stdout);
 
     // Initialize quirc
-    printf("qrdecode: Initializing quirc\n");
+    QRDECODE_DEBUG_PRINT("qrdecode: Initializing quirc\n");
     fflush(stdout);
     struct quirc *qr = quirc_new();
     if (!qr) {
         mp_raise_OSError(MP_ENOMEM);
     }
-    printf("qrdecode: quirc initialized\n");
+    QRDECODE_DEBUG_PRINT("qrdecode: quirc initialized\n");
+    QRDECODE_DEBUG_PRINT("mp_printf works in qrdecode!");
     fflush(stdout);
-/*
+
     // Resize quirc for the image dimensions
-    printf("qrdecode: Resizing quirc\n");
+    QRDECODE_DEBUG_PRINT("qrdecode: Resizing quirc\n");
     fflush(stdout);
     if (quirc_resize(qr, width, height) < 0) {
         quirc_destroy(qr);
         mp_raise_OSError(MP_ENOMEM);
     }
-    printf("qrdecode: quirc resized\n");
+    QRDECODE_DEBUG_PRINT("qrdecode: quirc resized\n");
     fflush(stdout);
 
     // Get quirc image buffer and copy grayscale data
-    printf("qrdecode: Beginning quirc processing\n");
+    QRDECODE_DEBUG_PRINT
     fflush(stdout);
     uint8_t *image;
     quirc_begin(qr, NULL, NULL);
     image = quirc_begin(qr, NULL, NULL); // Get pointer to quirc's image buffer
-    printf("qrdecode: quirc image buffer obtained\n");
+    QRDECODE_DEBUG_PRINT("qrdecode: quirc image buffer obtained\n");
     fflush(stdout);
-    printf("qrdecode: Copying buffer, size=%zu\n", (size_t)(width * height));
+    QRDECODE_DEBUG_PRINT("qrdecode: Copying buffer, size=%zu\n", (size_t)(width * height));
     fflush(stdout);
     memcpy(image, bufinfo.buf, width * height);
-    printf("qrdecode: Buffer copied\n");
+    QRDECODE_DEBUG_PRINT
     fflush(stdout);
     quirc_end(qr);
-    printf("qrdecode: quirc processing ended\n");
+    QRDECODE_DEBUG_PRINT("qrdecode: quirc processing ended\n");
     fflush(stdout);
 
     // Check for QR codes
-    printf("qrdecode: Counting QR codes\n");
+    QRDECODE_DEBUG_PRINT("qrdecode: Counting QR codes\n");
     fflush(stdout);
     int count = quirc_count(qr);
-    printf("qrdecode: Found %d QR codes\n", count);
+    QRDECODE_DEBUG_PRINT("qrdecode: Found %d QR codes\n", count);
     fflush(stdout);
     if (count == 0) {
         quirc_destroy(qr);
@@ -102,15 +104,15 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
     }
 
     // Extract and decode the first QR code
-    printf("qrdecode: Extracting first QR code\n");
+    QRDECODE_DEBUG_PRINT("qrdecode: Extracting first QR code\n");
     fflush(stdout);
     struct quirc_code code;
     quirc_extract(qr, 0, &code);
-    printf("qrdecode: QR code extracted\n");
+    QRDECODE_DEBUG_PRINT("qrdecode: QR code extracted\n");
     fflush(stdout);
 
     // Decode the QR code
-    printf("qrdecode: Decoding QR code\n");
+    QRDECODE_DEBUG_PRINT("qrdecode: Decoding QR code\n");
     fflush(stdout);
     struct quirc_data data;
     int err = quirc_decode(&code, &data);
@@ -118,26 +120,26 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
         quirc_destroy(qr);
         mp_raise_ValueError(MP_ERROR_TEXT("failed to decode QR code"));
     }
-    printf("qrdecode: QR code decoded, payload_len=%d\n", data.payload_len);
+    QRDECODE_DEBUG_PRINT("qrdecode: QR code decoded, payload_len=%d\n", data.payload_len);
     fflush(stdout);
 
     // Convert decoded data to Python string
-    printf("qrdecode: Creating Python string\n");
+    QRDECODE_DEBUG_PRINT("qrdecode: Creating Python string\n");
     fflush(stdout);
     mp_obj_t result = mp_obj_new_str((const char *)data.payload, data.payload_len);
     printf("qrdecode: Python string created\n");
     fflush(stdout);
 
     // Clean up
-    printf("qrdecode: Cleaning up\n");
+    QRDECODE_DEBUG_PRINT("qrdecode: Cleaning up\n");
     fflush(stdout);
     quirc_destroy(qr);
-    printf("qrdecode: quirc destroyed\n");
+    QRDECODE_DEBUG_PRINT("qrdecode: quirc destroyed\n");
     fflush(stdout);
-*/
+
     printf("qrdecode: Returning result\n");
-    //return result;
-    return mp_const_none; // MicroPython functions typically return None
+    return result;
+    //return mp_const_none; // MicroPython functions typically return None
 }
 
 // Wrapper function to fix incompatible pointer type warning
