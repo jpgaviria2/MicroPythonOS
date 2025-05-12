@@ -1,28 +1,37 @@
 #include <stdio.h>
+#include <esp_log.h> // For ESP-IDF logging
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/mperrno.h"
 #include <string.h>
 #include "../quirc/lib/quirc.h"
 
+
+
+static const char *TAG = "qrdecode";
+
 // Function to decode a QR code from a grayscale image buffer
 static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
     printf("qrdecode: Starting\n");
+    ESP_LOGI(TAG, "qrdecode starting");
     fflush(stdout);
 
     // Check argument count (expecting buffer, width, height)
     printf("qrdecode: Checking argument count\n");
+    ESP_LOGI(TAG, "Checking argument count");
     fflush(stdout);
     if (n_args != 3) {
         mp_raise_ValueError(MP_ERROR_TEXT("quirc_decode expects 3 arguments: buffer, width, height"));
     }
-/*
+
     // Extract buffer
     printf("qrdecode: Extracting buffer\n");
+    ESP_LOGI(TAG, "Extracting buffer");
     fflush(stdout);
     mp_buffer_info_t bufinfo;
     mp_get_buffer_raise(args[0], &bufinfo, MP_BUFFER_READ);
     printf("qrdecode: Buffer extracted, len=%zu\n", bufinfo.len);
+    ESP_LOGI(TAG, "Buffer extracted, len=%zu", bufinfo.len);
 
     // Extract width and height
     printf("qrdecode: Extracting width and height\n");
@@ -53,7 +62,7 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
     }
     printf("qrdecode: quirc initialized\n");
     fflush(stdout);
-
+/*
     // Resize quirc for the image dimensions
     printf("qrdecode: Resizing quirc\n");
     fflush(stdout);
