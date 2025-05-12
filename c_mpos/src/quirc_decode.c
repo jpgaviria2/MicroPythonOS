@@ -1,10 +1,11 @@
 #include <stdio.h>
+#include <stdlib.h> // Added for malloc and free
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/mperrno.h"
 #include <string.h>
 #include "../quirc/lib/quirc.h"
-#include "py/mpstate.h" // Added for micropython_stack_use()
+#include "py/mpstate.h" // For micropython_stack_use()
 
 #define QRDECODE_DEBUG_PRINT(...) mp_printf(&mp_plat_print, __VA_ARGS__);
 
@@ -117,28 +118,45 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
     QRDECODE_DEBUG_PRINT("qrdecode: Extracting first QR code\n");
     mp_printf(&mp_plat_print, "qrdecode: Stack usage: %u bytes\n", micropython_stack_use());
     fflush(stdout);
-    struct quirc_code code;
-    quirc_extract(qr, 0, &code);
+    struct quirc_code *code = (struct quirc_code *)malloc(sizeof(struct quirc_code));
+    if (!code) {
+        quirc_destroy(qr);
+        mp_raise_OSError(MP_ENOMEM);
+    }
+    QRDECODE_DEBUG_PRINT("qrdecode: Allocated quirc_code on heap\n");
+    mp_printf(&mp_plat_print, "qrdecode: Stack usage: %u bytes\n", micropython_stack_use());
+    fflush(stdout);
+    quirc_extract(qr, 0, code);
     QRDECODE_DEBUG_PRINT("qrdecode: QR code extracted\n");
     mp_printf(&mp_plat_print, "qrdecode: Stack usage: %u bytes\n", micropython_stack_use());
     fflush(stdout);
     // it works until here!
-/*
-    // Decode the QR code - this is the part that fails:
+
+    // Decode the QR code - this is the part that fails (uncomment to test):
     QRDECODE_DEBUG_PRINT("qrdecode: Decoding QR code\n");
     mp_printf(&mp_plat_print, "qrdecode: Stack usage: %u bytes\n", micropython_stack_use());
     fflush(stdout);
-    struct quirc_data data;
-    int err = quirc_decode(&code, &data);
+    struct quirc_data *data = (struct quirc_data *)malloc(sizeof(struct quirc_data));
+    if (!data) {
+        free(code);
+        quirc_destroy(qr);
+        mp_raise_OSError(MP_ENOMEM);
+    }
+    QRDECODE_DEBUG_PRINT("qrdecode: Allocated quirc_data on heap\n");
+    mp_printf(&mp_plat_print, "qrdecode: Stack usage: %u bytes\n", micropython_stack_use());
+    fflush(stdout);
+    int err = quirc_decode(code, data);
     if (err != QUIRC_SUCCESS) {
+        free(data);
+        free(code);
         quirc_destroy(qr);
         mp_raise_ValueError(MP_ERROR_TEXT("failed to decode QR code"));
     }
-    QRDECODE_DEBUG_PRINT("qrdecode: QR code decoded, payload_len=%d\n", data.payload_len);
+    QRDECODE_DEBUG_PRINT("qrdecode: QR code decoded, payload_len=%d\n", data->payload_len);
     mp_printf(&mp_plat_print, "qrdecode: Stack usage: %u bytes\n", micropython_stack_use());
     fflush(stdout);
 
-    QRDECODE_DEBUG_PRINT("qrdecode: got result: %s\n", data.payload);
+    QRDECODE_DEBUG_PRINT("qrdecode: got result: %s\n", data->payload);
     mp_printf(&mp_plat_print, "qrdecode: Stack usage: %u bytes\n", micropython_stack_use());
     fflush(stdout);
     QRDECODE_DEBUG_PRINT("ok so now what?!");
@@ -148,7 +166,7 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
     QRDECODE_DEBUG_PRINT("qrdecode: Creating Python string\n");
     mp_printf(&mp_plat_print, "qrdecode: Stack usage: %u bytes\n", micropython_stack_use());
     fflush(stdout);
-    mp_obj_t result = mp_obj_new_str((const char *)data.payload, data.payload_len);
+    mp_obj_t result = mp_obj_new_str((const char *)data->payload, data->payload_len);
     QRDECODE_DEBUG_PRINT("qrdecode: Python string created\n");
     mp_printf(&mp_plat_print, "qrdecode: Stack usage: %u bytes\n", micropython_stack_use());
     fflush(stdout);
@@ -157,16 +175,17 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
     QRDECODE_DEBUG_PRINT("qrdecode: Cleaning up\n");
     mp_printf(&mp_plat_print, "qrdecode: Stack usage: %u bytes\n", micropython_stack_use());
     fflush(stdout);
+    free(data);
+    free(code);
     quirc_destroy(qr);
     QRDECODE_DEBUG_PRINT("qrdecode: quirc destroyed\n");
     mp_printf(&mp_plat_print, "qrdecode: Stack usage: %u bytes\n", micropython_stack_use());
     fflush(stdout);
-    */
 
     QRDECODE_DEBUG_PRINT("qrdecode: Returning result\n");
     mp_printf(&mp_plat_print, "qrdecode: Stack usage: %u bytes\n", micropython_stack_use());
-    //return result;
-    return mp_const_none; // MicroPython functions typically return None
+    return result;
+    //return mp_const_none; // MicroPython functions typically return None
 }
 
 // Wrapper function to fix incompatible pointer type warning
