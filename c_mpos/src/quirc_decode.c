@@ -8,15 +8,12 @@
 
 #define QRDECODE_DEBUG_PRINT(...) mp_printf(&mp_plat_print, __VA_ARGS__);
 
-static const char *TAG = "qrdecode";
-
 // Function to decode a QR code from a grayscale image buffer
 static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
     QRDECODE_DEBUG_PRINT("qrdecode: Starting\n");
 
     // Check argument count (expecting buffer, width, height)
     QRDECODE_DEBUG_PRINT("qrdecode: Checking argument count\n");
-    ESP_LOGI(TAG, "Checking argument count");
     fflush(stdout);
     if (n_args != 3) {
         mp_raise_ValueError(MP_ERROR_TEXT("quirc_decode expects 3 arguments: buffer, width, height"));
@@ -24,12 +21,10 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
 
     // Extract buffer
     QRDECODE_DEBUG_PRINT("qrdecode: Extracting buffer\n");
-    ESP_LOGI(TAG, "Extracting buffer");
     fflush(stdout);
     mp_buffer_info_t bufinfo;
     mp_get_buffer_raise(args[0], &bufinfo, MP_BUFFER_READ);
     printf("qrdecode: Buffer extracted, len=%zu\n", bufinfo.len);
-    ESP_LOGI(TAG, "Buffer extracted, len=%zu", bufinfo.len);
 
     // Extract width and height
     QRDECODE_DEBUG_PRINT("qrdecode: Extracting width and height\n");
@@ -108,8 +103,8 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
     QRDECODE_DEBUG_PRINT("qrdecode: QR code extracted\n");
     fflush(stdout);
     // it works until here!
-
-    // Decode the QR code
+/*
+    // Decode the QR code - this is the part that fails:
     QRDECODE_DEBUG_PRINT("qrdecode: Decoding QR code\n");
     fflush(stdout);
     struct quirc_data data;
@@ -120,15 +115,16 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
     }
     QRDECODE_DEBUG_PRINT("qrdecode: QR code decoded, payload_len=%d\n", data.payload_len);
     fflush(stdout);
+
     QRDECODE_DEBUG_PRINT("qrdecode: got result: %s\n", data.payload);
     fflush(stdout);
     QRDECODE_DEBUG_PRINT("ok so now what?!");
-/*
+
     // Convert decoded data to Python string
     QRDECODE_DEBUG_PRINT("qrdecode: Creating Python string\n");
     fflush(stdout);
     mp_obj_t result = mp_obj_new_str((const char *)data.payload, data.payload_len);
-    printf("qrdecode: Python string created\n");
+    QRDECODE_DEBUG_PRINT("qrdecode: Python string created\n");
     fflush(stdout);
 
     // Clean up
