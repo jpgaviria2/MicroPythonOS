@@ -76,7 +76,7 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
     fflush(stdout);
 
     // Get quirc image buffer and copy grayscale data
-    QRDECODE_DEBUG_PRINT
+    QRDECODE_DEBUG_PRINT("qrdecode: Beginning quirc processing\n");
     fflush(stdout);
     uint8_t *image;
     quirc_begin(qr, NULL, NULL);
