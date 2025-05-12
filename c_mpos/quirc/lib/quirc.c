@@ -66,7 +66,7 @@ int quirc_resize(struct quirc *q, int w, int h)
 	 * alloc a new buffer for q->image. We avoid realloc(3) because we want
 	 * on failure to be leave `q` in a consistant, unmodified state.
 	 */
-	image = ps_malloc(w, h);
+	image = ps_malloc(w * h);
 	if (!image)
 		goto fail;
 
