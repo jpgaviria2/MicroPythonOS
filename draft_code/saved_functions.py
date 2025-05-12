@@ -616,16 +616,20 @@ def log_callback(level, log_str):
 # Register log callback
 lv.log_register_print_cb(log_callback)
 
+
 # Function to get FPS
 def get_fps():
     return fps_buffer[0]
 
-fps = get_fps()
-if fps > 0:  # Only print when FPS is updated
-    print("Current FPS:", fps)
+
+#fps = get_fps()
+#if fps > 0:  # Only print when FPS is updated
+#    print("Current FPS:", fps)
+
 
 # Main loop
 for _ in range(10):
+    import time
     fps = get_fps()
     if fps > 0:  # Only print when FPS is updated
         print("Current FPS:", fps)

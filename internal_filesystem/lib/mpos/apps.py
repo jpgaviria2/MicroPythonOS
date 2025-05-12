@@ -67,7 +67,8 @@ def execute_script_new_thread(scriptname, is_file, is_launcher, is_graphical):
         # 168KB maximum at startup but 136KB after loading display, drivers, LVGL gui etc so let's go for 128KB for now, still a lot...
         # But then no additional threads can be created. A stacksize of 32KB allows for 4 threads, so 3 in the app itself, which might be tight.
         # 16KB allows for 10 threads in the apps, but seems too tight for urequests on unix (desktop) targets 
-        _thread.stack_size(24576)
+        #_thread.stack_size(24576) # causes camera issue...
+        _thread.stack_size(16384)
         _thread.start_new_thread(execute_script, (scriptname, is_file, is_launcher, is_graphical))
     except Exception as e:
         print("main.py: execute_script_new_thread(): error starting new thread thread: ", e)
