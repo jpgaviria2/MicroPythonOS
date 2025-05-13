@@ -56,7 +56,7 @@ def process_qr_buffer(buffer):
         # Check if the string is printable (ASCII printable characters)
         if all(32 <= ord(c) <= 126 for c in result):
             return result
-    except UnicodeDecodeError:
+    except Exception as e:
         pass
     # If not a valid string or not printable, convert to hex
     hex_str = ' '.join([f'{b:02x}' for b in buffer])
