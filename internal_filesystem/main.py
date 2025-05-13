@@ -12,7 +12,7 @@ except Exception as e:
     print("main.py: WARNING: could not import/run freezefs_mount_builtin: ", e)
 
 from mpos import apps
-apps.execute_script_new_thread("builtin/system/button.py", True, False, False) # Button handling through IRQ
+apps.execute_script("builtin/system/button.py", True, False, False) # Install button handler through IRQ
 apps.auto_connect()
 apps.restart_launcher()
 
