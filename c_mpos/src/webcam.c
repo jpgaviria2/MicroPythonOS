@@ -23,9 +23,9 @@
 #define CAPTURE_HEIGHT 480
 #define OUTPUT_WIDTH 240   // Resize to 240x240
 #define OUTPUT_HEIGHT 240
-#define NUM_BUFFERS 3      // Use 5 buffers, as it achieved 5 captures
-#define QUEUE_RETRIES 3    // Number of retry attempts for queueing
-#define QUEUE_RETRY_DELAY_US 100000  // 100ms delay between retries
+#define NUM_BUFFERS 2      // Revert to 2 buffers, as it achieved 2 captures
+#define QUEUE_RETRIES 10   // Increase retries for robustness
+#define QUEUE_RETRY_DELAY_US 200000  // 200ms delay between retries
 
 // Webcam object type
 typedef struct _webcam_obj_t {
@@ -81,26 +81,8 @@ static void webcam_reset_streaming(webcam_obj_t *self) {
         self->streaming = false;
     }
 
-    // Re-queue all buffers
-    for (size_t i = 0; i < self->num_buffers; i++) {
-        struct v4l2_buffer buf = {0};
-        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        buf.memory = V4L2_MEMORY_MMAP;
-        buf.index = i;
-
-        // Query buffer state
-        WEBCAM_DEBUG_PRINT("webcam: Querying buffer state during reset (index=%zu)\n", i);
-        if (ioctl(self->fd, VIDIOC_QUERYBUF, &buf) < 0) {
-            WEBCAM_DEBUG_PRINT("webcam: Failed to query buffer state (index=%zu, errno=%d)\n", i, errno);
-            continue;
-        }
-
-        // Queue buffer
-        WEBCAM_DEBUG_PRINT("webcam: Re-queuing buffer during reset (index=%zu)\n", i);
-        if (ioctl(self->fd, VIDIOC_QBUF, &buf) < 0) {
-            WEBCAM_DEBUG_PRINT("webcam: Failed to re-queue buffer during reset (index=%zu, errno=%d)\n", i, errno);
-        }
-    }
+    // Delay to allow device to settle
+    usleep(100000); // 100ms delay
 
     // Restart streaming
     enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -126,13 +108,6 @@ static mp_obj_t webcam_capture_grayscale(mp_obj_t self_in) {
             buf.memory = V4L2_MEMORY_MMAP;
             buf.index = i;
 
-            // Query buffer state
-            WEBCAM_DEBUG_PRINT("webcam: Querying buffer state (index=%zu, attempt=%d)\n", i, attempt + 1);
-            if (ioctl(self->fd, VIDIOC_QUERYBUF, &buf) < 0) {
-                WEBCAM_DEBUG_PRINT("webcam: Failed to query buffer state (index=%zu, errno=%d)\n", i, errno);
-                continue;
-            }
-
             WEBCAM_DEBUG_PRINT("webcam: Attempting to queue buffer (index=%zu, attempt=%d)\n", i, attempt + 1);
             if (ioctl(self->fd, VIDIOC_QBUF, &buf) == 0) {
                 WEBCAM_DEBUG_PRINT("webcam: Successfully queued buffer (index=%zu)\n", i);
@@ -143,7 +118,7 @@ static mp_obj_t webcam_capture_grayscale(mp_obj_t self_in) {
         }
         if (!queued && attempt < QUEUE_RETRIES - 1) {
             WEBCAM_DEBUG_PRINT("webcam: No buffers available, retrying after delay\n");
-            usleep(QUEUE_RETRY_DELAY_US); // Wait 100ms
+            usleep(QUEUE_RETRY_DELAY_US); // Wait 200ms
         }
     }
 
@@ -156,12 +131,6 @@ static mp_obj_t webcam_capture_grayscale(mp_obj_t self_in) {
             buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
             buf.memory = V4L2_MEMORY_MMAP;
             buf.index = i;
-
-            WEBCAM_DEBUG_PRINT("webcam: Querying buffer state after reset (index=%zu)\n", i);
-            if (ioctl(self->fd, VIDIOC_QUERYBUF, &buf) < 0) {
-                WEBCAM_DEBUG_PRINT("webcam: Failed to query buffer state after reset (index=%zu, errno=%d)\n", i, errno);
-                continue;
-            }
 
             WEBCAM_DEBUG_PRINT("webcam: Attempting to queue buffer after reset (index=%zu)\n", i);
             if (ioctl(self->fd, VIDIOC_QBUF, &buf) == 0) {
@@ -231,10 +200,6 @@ static mp_obj_t webcam_capture_grayscale(mp_obj_t self_in) {
     buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     buf.memory = V4L2_MEMORY_MMAP;
     buf.index = buf_index;
-    WEBCAM_DEBUG_PRINT("webcam: Querying buffer state before re-queue (index=%zu)\n", buf_index);
-    if (ioctl(self->fd, VIDIOC_QUERYBUF, &buf) < 0) {
-        WEBCAM_DEBUG_PRINT("webcam: Failed to query buffer state before re-queue (index=%zu, errno=%d)\n", buf_index, errno);
-    }
     WEBCAM_DEBUG_PRINT("webcam: Re-queuing buffer (index=%zu)\n", buf_index);
     if (ioctl(self->fd, VIDIOC_QBUF, &buf) < 0) {
         WEBCAM_DEBUG_PRINT("webcam: Failed to re-queue buffer (index=%zu, errno=%d)\n", buf_index, errno);
@@ -365,23 +330,6 @@ static mp_obj_t webcam_init(void) {
             close(self->fd);
             mp_raise_OSError(errno);
         }
-
-        // Queue buffer upfront
-        memset(&buf, 0, sizeof(buf));
-        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        buf.memory = V4L2_MEMORY_MMAP;
-        buf.index = i;
-        WEBCAM_DEBUG_PRINT("webcam: Initial queuing of buffer %zu\n", i);
-        if (ioctl(self->fd, VIDIOC_QBUF, &buf) < 0) {
-            WEBCAM_DEBUG_PRINT("webcam: Failed to queue buffer %zu initially (errno=%d)\n", i, errno);
-            for (size_t j = 0; j <= i; j++) {
-                if (self->buffers[j].start != NULL) {
-                    munmap(self->buffers[j].start, self->buffers[j].length);
-                }
-            }
-            close(self->fd);
-            mp_raise_OSError(errno);
-        }
     }
 
     return mp_obj_new_tuple(3, (mp_obj_t[]){MP_OBJ_FROM_PTR(self), MP_OBJ_FROM_PTR(&webcam_capture_grayscale_obj), MP_OBJ_FROM_PTR(&webcam_deinit_obj)});
@@ -395,9 +343,6 @@ static const mp_rom_map_elem_t webcam_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_capture_grayscale), MP_ROM_PTR(&webcam_capture_grayscale_obj) },
     { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&webcam_deinit_obj) },
 };
-
-
-
 static MP_DEFINE_CONST_DICT(webcam_module_globals, webcam_module_globals_table);
 
 // Webcam type definition
