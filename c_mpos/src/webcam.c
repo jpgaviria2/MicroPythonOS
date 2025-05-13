@@ -6,6 +6,7 @@
 #include <linux/videodev2.h>
 #include <sys/mman.h>
 #include <string.h>
+#include <poll.h>
 
 #include "py/obj.h"
 #include "py/runtime.h"
@@ -23,7 +24,7 @@
 #define CAPTURE_HEIGHT 480
 #define OUTPUT_WIDTH 240   // Resize to 240x240
 #define OUTPUT_HEIGHT 240
-#define NUM_BUFFERS 2      // Use 2 buffers for robust streaming
+#define NUM_BUFFERS 4      // Use 4 buffers for continuous streaming
 
 // Webcam object type
 typedef struct _webcam_obj_t {
@@ -72,46 +73,16 @@ static void resize_640x480_to_240x240(uint8_t *src, uint8_t *dst) {
 static mp_obj_t webcam_capture_grayscale(mp_obj_t self_in) {
     webcam_obj_t *self = MP_OBJ_TO_PTR(self_in);
 
-    // Initialize buffer structure
-    struct v4l2_buffer buf = {0};
-    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    buf.memory = V4L2_MEMORY_MMAP;
-
-    // Find an available buffer
-    for (size_t i = 0; i < self->num_buffers; i++) {
-        buf.index = i;
-
-        // Query buffer state to ensure it’s not already queued
-        WEBCAM_DEBUG_PRINT("webcam: Querying buffer state (index=%zu)\n", i);
-        if (ioctl(self->fd, VIDIOC_QUERYBUF, &buf) < 0) {
-            WEBCAM_DEBUG_PRINT("webcam: Failed to query buffer state (index=%zu, errno=%d)\n", i, errno);
-            mp_raise_OSError(errno);
-        }
-
-        // Queue the buffer
-        WEBCAM_DEBUG_PRINT("webcam: Queuing buffer (index=%zu)\n", i);
-        if (ioctl(self->fd, VIDIOC_QBUF, &buf) == 0) {
-            break; // Successfully queued
-        }
-        WEBCAM_DEBUG_PRINT("webcam: Failed to queue buffer (index=%zu, errno=%d)\n", i, errno);
-        if (i == self->num_buffers - 1) {
-            mp_raise_OSError(errno); // No buffers available
-        }
-    }
-
-    // Start streaming if not already started
-    if (!self->streaming) {
-        enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        WEBCAM_DEBUG_PRINT("webcam: Starting video streaming\n");
-        if (ioctl(self->fd, VIDIOC_STREAMON, &type) < 0) {
-            WEBCAM_DEBUG_PRINT("webcam: Failed to start video streaming (errno=%d)\n", errno);
-            mp_raise_OSError(errno);
-        }
-        self->streaming = true;
+    // Poll for available buffer
+    struct pollfd pfd = { .fd = self->fd, .events = POLLIN };
+    WEBCAM_DEBUG_PRINT("webcam: Polling for available buffer\n");
+    if (poll(&pfd, 1, 1000) <= 0) { // 1-second timeout
+        WEBCAM_DEBUG_PRINT("webcam: Poll timeout or error (errno=%d)\n", errno);
+        mp_raise_OSError(ETIMEDOUT);
     }
 
     // Dequeue a buffer (capture frame)
-    memset(&buf, 0, sizeof(buf));
+    struct v4l2_buffer buf = {0};
     buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     buf.memory = V4L2_MEMORY_MMAP;
     WEBCAM_DEBUG_PRINT("webcam: Dequeuing buffer\n");
@@ -154,7 +125,7 @@ static mp_obj_t webcam_capture_grayscale(mp_obj_t self_in) {
     buf.index = buf_index;
     WEBCAM_DEBUG_PRINT("webcam: Re-queuing buffer (index=%zu)\n", buf_index);
     if (ioctl(self->fd, VIDIOC_QBUF, &buf) < 0) {
-        WEBCAM_DEBUG_PRINT("webcam: Failed to re-queue buffer after capture (index=%zu, errno=%d)\n", buf_index, errno);
+        WEBCAM_DEBUG_PRINT("webcam: Failed to re-queue buffer (index=%zu, errno=%d)\n", buf_index, errno);
         mp_raise_OSError(errno);
     }
 
@@ -213,7 +184,7 @@ static mp_obj_t webcam_init(void) {
 
     // Open the webcam device
     WEBCAM_DEBUG_PRINT("webcam: Opening device %s\n", VIDEO_DEVICE);
-    self->fd = open(VIDEO_DEVICE, O_RDWR);
+    self->fd = open(VIDEO_DEVICE, O_RDWR | O_NONBLOCK); // Non-blocking for polling
     if (self->fd < 0) {
         WEBCAM_DEBUG_PRINT("webcam: Failed to open device %s (errno=%d)\n", VIDEO_DEVICE, errno);
         mp_raise_OSError(errno);
@@ -245,6 +216,11 @@ static mp_obj_t webcam_init(void) {
         mp_raise_OSError(errno);
     }
     self->num_buffers = req.count;
+    if (self->num_buffers < 2) {
+        WEBCAM_DEBUG_PRINT("webcam: Insufficient buffers allocated (%zu)\n", self->num_buffers);
+        close(self->fd);
+        mp_raise_OSError(ENOMEM);
+    }
 
     // Query and map buffers
     for (size_t i = 0; i < self->num_buffers; i++) {
@@ -270,6 +246,23 @@ static mp_obj_t webcam_init(void) {
         if (self->buffers[i].start == MAP_FAILED) {
             WEBCAM_DEBUG_PRINT("webcam: Failed to map buffer %zu memory (errno=%d)\n", i, errno);
             for (size_t j = 0; j < i; j++) {
+                if (self->buffers[j].start != NULL) {
+                    munmap(self->buffers[j].start, self->buffers[j].length);
+                }
+            }
+            close(self->fd);
+            mp_raise_OSError(errno);
+        }
+
+        // Queue the buffer upfront
+        memset(&buf, 0, sizeof(buf));
+        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        buf.memory = V4L2_MEMORY_MMAP;
+        buf.index = i;
+        WEBCAM_DEBUG_PRINT("webcam: Initial queuing of buffer %zu\n", i);
+        if (ioctl(self->fd, VIDIOC_QBUF, &buf) < 0) {
+            WEBCAM_DEBUG_PRINT("webcam: Failed to queue buffer %zu initially (errno=%d)\n", i, errno);
+            for (size_t j = 0; j <= i; j++) {
                 if (self->buffers[j].start != NULL) {
                     munmap(self->buffers[j].start, self->buffers[j].length);
                 }
