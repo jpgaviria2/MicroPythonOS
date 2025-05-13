@@ -24,12 +24,16 @@
 #define OUTPUT_WIDTH 240   // Resize to 240x240
 #define OUTPUT_HEIGHT 240
 
-// Structure to hold webcam state
-typedef struct {
+// Webcam object type
+typedef struct _webcam_obj_t {
+    mp_obj_base_t base;
     int fd; // File descriptor for the webcam
     void *buffer; // Memory-mapped buffer
     size_t buffer_length; // Length of the buffer
-} webcam_t;
+    bool streaming; // Streaming state
+} webcam_obj_t;
+
+const mp_obj_type_t webcam_type;
 
 // Convert YUYV to grayscale (extract Y component)
 static void yuyv_to_grayscale(uint8_t *src, uint8_t *dst, size_t width, size_t height) {
@@ -59,83 +63,96 @@ static void resize_640x480_to_240x240(uint8_t *src, uint8_t *dst) {
     }
 }
 
-// Function to capture a grayscale image
-static mp_obj_t webcam_capture_grayscale(void) {
-    webcam_t cam = { .fd = -1, .buffer = NULL, .buffer_length = 0 };
-    struct v4l2_format fmt = {0};
-    struct v4l2_buffer buf = {0};
-    struct v4l2_requestbuffers req = {0};
+// Initialize the webcam
+static mp_obj_t webcam_init(void) {
+    webcam_obj_t *self = m_new_obj(webcam_obj_t);
+    self->base.type = &webcam_type;
+    self->fd = -1;
+    self->buffer = NULL;
+    self->buffer_length = 0;
+    self->streaming = false;
 
     // Open the webcam device
-    cam.fd = open(VIDEO_DEVICE, O_RDWR);
-    if (cam.fd < 0) {
+    self->fd = open(VIDEO_DEVICE, O_RDWR);
+    if (self->fd < 0) {
         WEBCAM_DEBUG_PRINT("webcam: Failed to open device %s\n", VIDEO_DEVICE);
         mp_raise_OSError(errno);
     }
 
     // Set format to YUYV at 640x480
+    struct v4l2_format fmt = {0};
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     fmt.fmt.pix.width = CAPTURE_WIDTH;
     fmt.fmt.pix.height = CAPTURE_HEIGHT;
     fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
     fmt.fmt.pix.field = V4L2_FIELD_ANY;
-    if (ioctl(cam.fd, VIDIOC_S_FMT, &fmt) < 0) {
+    if (ioctl(self->fd, VIDIOC_S_FMT, &fmt) < 0) {
         WEBCAM_DEBUG_PRINT("webcam: Failed to set YUYV format at %dx%d\n", CAPTURE_WIDTH, CAPTURE_HEIGHT);
-        close(cam.fd);
+        close(self->fd);
         mp_raise_OSError(errno);
     }
 
     // Request one buffer
+    struct v4l2_requestbuffers req = {0};
     req.count = 1;
     req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     req.memory = V4L2_MEMORY_MMAP;
-    if (ioctl(cam.fd, VIDIOC_REQBUFS, &req) < 0) {
+    if (ioctl(self->fd, VIDIOC_REQBUFS, &req) < 0) {
         WEBCAM_DEBUG_PRINT("webcam: Failed to request memory-mapped buffer\n");
-        close(cam.fd);
+        close(self->fd);
         mp_raise_OSError(errno);
     }
 
     // Query and map the buffer
+    struct v4l2_buffer buf = {0};
     buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     buf.memory = V4L2_MEMORY_MMAP;
     buf.index = 0;
-    if (ioctl(cam.fd, VIDIOC_QUERYBUF, &buf) < 0) {
+    if (ioctl(self->fd, VIDIOC_QUERYBUF, &buf) < 0) {
         WEBCAM_DEBUG_PRINT("webcam: Failed to query buffer properties\n");
-        close(cam.fd);
+        close(self->fd);
         mp_raise_OSError(errno);
     }
 
-    cam.buffer_length = buf.length;
-    cam.buffer = mmap(NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, cam.fd, buf.m.offset);
-    if (cam.buffer == MAP_FAILED) {
+    self->buffer_length = buf.length;
+    self->buffer = mmap(NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, self->fd, buf.m.offset);
+    if (self->buffer == MAP_FAILED) {
         WEBCAM_DEBUG_PRINT("webcam: Failed to map buffer memory\n");
-        close(cam.fd);
+        close(self->fd);
         mp_raise_OSError(errno);
     }
+
+    return MP_OBJ_FROM_PTR(self);
+}
+MP_DEFINE_CONST_FUN_OBJ_0(webcam_init_obj, webcam_init);
+
+// Capture a grayscale image
+static mp_obj_t webcam_capture_grayscale(mp_obj_t self_in) {
+    webcam_obj_t *self = MP_OBJ_TO_PTR(self_in);
 
     // Queue the buffer
-    if (ioctl(cam.fd, VIDIOC_QBUF, &buf) < 0) {
+    struct v4l2_buffer buf = {0};
+    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    buf.memory = V4L2_MEMORY_MMAP;
+    buf.index = 0;
+    if (ioctl(self->fd, VIDIOC_QBUF, &buf) < 0) {
         WEBCAM_DEBUG_PRINT("webcam: Failed to queue buffer for capture\n");
-        munmap(cam.buffer, cam.buffer_length);
-        close(cam.fd);
         mp_raise_OSError(errno);
     }
 
-    // Start streaming
-    enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    if (ioctl(cam.fd, VIDIOC_STREAMON, &type) < 0) {
-        WEBCAM_DEBUG_PRINT("webcam: Failed to start video streaming\n");
-        munmap(cam.buffer, cam.buffer_length);
-        close(cam.fd);
-        mp_raise_OSError(errno);
+    // Start streaming if not already started
+    if (!self->streaming) {
+        enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        if (ioctl(self->fd, VIDIOC_STREAMON, &type) < 0) {
+            WEBCAM_DEBUG_PRINT("webcam: Failed to start video streaming\n");
+            mp_raise_OSError(errno);
+        }
+        self->streaming = true;
     }
 
     // Dequeue the buffer (capture frame)
-    if (ioctl(cam.fd, VIDIOC_DQBUF, &buf) < 0) {
+    if (ioctl(self->fd, VIDIOC_DQBUF, &buf) < 0) {
         WEBCAM_DEBUG_PRINT("webcam: Failed to dequeue captured frame\n");
-        ioctl(cam.fd, VIDIOC_STREAMOFF, &type);
-        munmap(cam.buffer, cam.buffer_length);
-        close(cam.fd);
         mp_raise_OSError(errno);
     }
 
@@ -144,12 +161,9 @@ static mp_obj_t webcam_capture_grayscale(void) {
     uint8_t *grayscale_buf = (uint8_t *)malloc(capture_size);
     if (!grayscale_buf) {
         WEBCAM_DEBUG_PRINT("webcam: Failed to allocate memory for grayscale buffer (%zu bytes)\n", capture_size);
-        ioctl(cam.fd, VIDIOC_STREAMOFF, &type);
-        munmap(cam.buffer, cam.buffer_length);
-        close(cam.fd);
         mp_raise_OSError(ENOMEM);
     }
-    yuyv_to_grayscale((uint8_t *)cam.buffer, grayscale_buf, CAPTURE_WIDTH, CAPTURE_HEIGHT);
+    yuyv_to_grayscale((uint8_t *)self->buffer, grayscale_buf, CAPTURE_WIDTH, CAPTURE_HEIGHT);
 
     // Resize to 240x240
     size_t output_size = OUTPUT_WIDTH * OUTPUT_HEIGHT;
@@ -157,9 +171,6 @@ static mp_obj_t webcam_capture_grayscale(void) {
     if (!resized_buf) {
         WEBCAM_DEBUG_PRINT("webcam: Failed to allocate memory for resized buffer (%zu bytes)\n", output_size);
         free(grayscale_buf);
-        ioctl(cam.fd, VIDIOC_STREAMOFF, &type);
-        munmap(cam.buffer, cam.buffer_length);
-        close(cam.fd);
         mp_raise_OSError(ENOMEM);
     }
     resize_640x480_to_240x240(grayscale_buf, resized_buf);
@@ -170,18 +181,59 @@ static mp_obj_t webcam_capture_grayscale(void) {
 
     // Clean up
     free(resized_buf);
-    ioctl(cam.fd, VIDIOC_STREAMOFF, &type);
-    munmap(cam.buffer, cam.buffer_length);
-    close(cam.fd);
 
     return result;
 }
-MP_DEFINE_CONST_FUN_OBJ_0(webcam_capture_grayscale_obj, webcam_capture_grayscale);
+MP_DEFINE_CONST_FUN_OBJ_1(webcam_capture_grayscale_obj, webcam_capture_grayscale);
+
+// Deinitialize the webcam
+static mp_obj_t webcam_deinit(mp_obj_t self_in) {
+    webcam_obj_t *self = MP_OBJ_TO_PTR(self_in);
+
+    // Stop streaming if active
+    if (self->streaming) {
+        enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        if (ioctl(self->fd, VIDIOC_STREAMOFF, &type) < 0) {
+            WEBCAM_DEBUG_PRINT("webcam: Failed to stop video streaming\n");
+            mp_raise_OSError(errno);
+        }
+        self->streaming = false;
+    }
+
+    // Unmap buffer
+    if (self->buffer != NULL && self->buffer != MAP_FAILED) {
+        munmap(self->buffer, self->buffer_length);
+        self->buffer = NULL;
+        self->buffer_length = 0;
+    }
+
+    // Close device
+    if (self->fd >= 0) {
+        close(self->fd);
+        self->fd = -1;
+    }
+
+    return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_1(webcam_deinit_obj, webcam_deinit);
+
+// Webcam type definition
+static const mp_rom_map_elem_t webcam_locals_dict_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_capture_grayscale), MP_ROM_PTR(&webcam_capture_grayscale_obj) },
+    { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&webcam_deinit_obj) },
+};
+static MP_DEFINE_CONST_DICT(webcam_locals_dict, webcam_locals_dict_table);
+
+const mp_obj_type_t webcam_type = {
+    { &mp_type_type },
+    .name = MP_QSTR_webcam,
+    .locals_dict = (mp_obj_dict_t *)&webcam_locals_dict,
+};
 
 // Module definition
 static const mp_rom_map_elem_t webcam_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_webcam) },
-    { MP_ROM_QSTR(MP_QSTR_capture_grayscale), MP_ROM_PTR(&webcam_capture_grayscale_obj) },
+    { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&webcam_init_obj) },
 };
 static MP_DEFINE_CONST_DICT(webcam_module_globals, webcam_module_globals_table);
 
