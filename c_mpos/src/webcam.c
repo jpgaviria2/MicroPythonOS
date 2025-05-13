@@ -224,24 +224,26 @@ static mp_obj_t webcam_deinit(mp_obj_t self_in) {
 }
 MP_DEFINE_CONST_FUN_OBJ_1(webcam_deinit_obj, webcam_deinit);
 
-// Make new webcam object (optional, for consistency)
-static mp_obj_t webcam_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
-    mp_arg_check_num(n_args, n_kw, 0, 0, false);
-    return webcam_init();
+// Method dispatch for webcam object
+static mp_obj_t webcam_call(mp_obj_t self_in, mp_obj_t attr, mp_obj_t *dest) {
+    if (dest[0] == MP_OBJ_NULL) {
+        // Lookup attribute
+        if (attr == MP_QSTR_capture_grayscale) {
+            dest[0] = MP_OBJ_FROM_PTR(&webcam_capture_grayscale_obj);
+            dest[1] = self_in;
+        } else if (attr == MP_QSTR_deinit) {
+            dest[0] = MP_OBJ_FROM_PTR(&webcam_deinit_obj);
+            dest[1] = self_in;
+        }
+    }
+    return MP_OBJ_NULL;
 }
 
 // Webcam type definition
-static const mp_rom_map_elem_t webcam_locals_dict_table[] = {
-    { MP_ROM_QSTR(MP_QSTR_capture_grayscale), MP_ROM_PTR(&webcam_capture_grayscale_obj) },
-    { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&webcam_deinit_obj) },
-};
-static MP_DEFINE_CONST_DICT(webcam_locals_dict, webcam_locals_dict_table);
-
 static const mp_obj_type_t webcam_type = {
     { &mp_type_type },
     .name = MP_QSTR_webcam,
-    .make_new = webcam_make_new,
-    // Note: locals_dict is handled separately below
+    .call = webcam_call,
 };
 
 // Module definition
@@ -258,10 +260,3 @@ const mp_obj_module_t webcam_user_cmodule = {
 
 // Register the module
 MP_REGISTER_MODULE(MP_QSTR_webcam, webcam_user_cmodule);
-
-// Register the locals dict for the webcam type (post-definition)
-static MP_DEFINE_CONST_OBJ(webcam_locals_dict_obj, &webcam_locals_dict);
-void webcam_type_init(void) {
-    // Dynamically set the locals_dict after type definition
-    *(mp_obj_t *)&webcam_type.locals_dict = MP_OBJ_FROM_PTR(&webcam_locals_dict_obj);
-}
