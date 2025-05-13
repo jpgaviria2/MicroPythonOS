@@ -161,39 +161,50 @@ def build_ui():
     image.set_src(image_dsc)
 
 
-try:
-    # time.sleep(1) doesn't help
-    from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
-    cam = Camera(
-        data_pins=[12,13,15,11,14,10,7,2],
-        vsync_pin=6,
-        href_pin=4,
-        sda_pin=21,
-        scl_pin=16,
-        pclk_pin=9,
-        xclk_pin=8,
-        xclk_freq=20000000,
-        powerdown_pin=-1,
-        reset_pin=-1,
-        #pixel_format=PixelFormat.RGB565,
-        pixel_format=PixelFormat.GRAYSCALE,
-        frame_size=FrameSize.R240X240,
-        grab_mode=GrabMode.LATEST 
-    )
-    #cam.init() automatically done when creating the Camera()
-    #cam.reconfigure(frame_size=FrameSize.HVGA)
-    #frame_size=FrameSize.HVGA, # 480x320
-    #frame_size=FrameSize.QVGA, # 320x240
-    #frame_size=FrameSize.QQVGA # 160x120
-    cam.set_vflip(True)
+def init_cam():
+    try:
+        # time.sleep(1) doesn't help
+        from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
+        cam = Camera(
+            data_pins=[12,13,15,11,14,10,7,2],
+            vsync_pin=6,
+            href_pin=4,
+            sda_pin=21,
+            scl_pin=16,
+            pclk_pin=9,
+            xclk_pin=8,
+            xclk_freq=20000000,
+            powerdown_pin=-1,
+            reset_pin=-1,
+            #pixel_format=PixelFormat.RGB565,
+            pixel_format=PixelFormat.GRAYSCALE,
+            frame_size=FrameSize.R240X240,
+            grab_mode=GrabMode.LATEST 
+        )
+        #cam.init() automatically done when creating the Camera()
+        #cam.reconfigure(frame_size=FrameSize.HVGA)
+        #frame_size=FrameSize.HVGA, # 480x320
+        #frame_size=FrameSize.QVGA, # 320x240
+        #frame_size=FrameSize.QQVGA # 160x120
+        cam.set_vflip(True)
+        return cam
+    except Exception as e:
+        print(f"init_cam exception: {e}")
+        return None
+
+
+cam = init_cam()
+if not cam:
+    print("init cam failed, retrying...")
+    time.sleep(5)
+    cam = init_cam()
+
+	if cam:
     build_ui()
     while appscreen == lv.screen_active() and keepgoing is True:
         try_capture()
         time.sleep_ms(100) # Allow for the MicroPython REPL to still work. Reducing it doesn't seem to affect the on-display FPS.    
     print("App backgrounded, deinitializing camera...")
-    cam.deinit()    
-    show_launcher()        
-except Exception as e:
-    print(f"Exception: {e}")
-
+    cam.deinit()
+    show_launcher()
 
