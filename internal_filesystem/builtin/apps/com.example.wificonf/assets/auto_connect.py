@@ -76,12 +76,14 @@ def attempt_connecting(ssid,password):
 print("auto_connect.py running...")
 load_config()
 
-wlan=network.WLAN(network.STA_IF)
-wlan.active(False) # restart WiFi hardware in case it's in a bad state
-wlan.active(True)
-
-if auto_connect():
-    print("auto_connect.py managed to connect.")
+if len(access_points):
+    wlan=network.WLAN(network.STA_IF)
+    wlan.active(False) # restart WiFi hardware in case it's in a bad state
+    wlan.active(True)
+    if auto_connect():
+        print("auto_connect.py managed to connect.")
+    else:
+        print("auto_connect.py did not manage to connect.")
+        wlan.active(False) # disable to conserve power
 else:
-    print("auto_connect.py did not manage to connect.")
-    wlan.active(False) # disable to conserve power
+    print("auto_connect.py: not access points configured, exiting...")
