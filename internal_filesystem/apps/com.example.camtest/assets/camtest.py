@@ -199,7 +199,7 @@ if not cam:
     time.sleep(5)
     cam = init_cam()
 
-	if cam:
+if cam:
     build_ui()
     while appscreen == lv.screen_active() and keepgoing is True:
         try_capture()
