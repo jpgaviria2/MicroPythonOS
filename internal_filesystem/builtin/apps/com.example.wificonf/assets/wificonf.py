@@ -96,6 +96,7 @@ def start_scan_networks():
         busy_scanning = True
         scan_button.remove_flag(lv.obj.FLAG.CLICKABLE)
         scan_button_label.set_text(scan_button_scanning_text)
+        _thread.stack_size(12*1024)
         _thread.start_new_thread(scan_networks, ())
 
 
@@ -137,6 +138,7 @@ def start_attempt_connecting(ssid,password):
         print("Not attempting connect because busy_connecting.")
     else:
         busy_connecting = True
+        _thread.stack_size(12*1024)
         _thread.start_new_thread(attempt_connecting, (ssid,password))
 
 def show_error(message):
