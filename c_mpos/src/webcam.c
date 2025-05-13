@@ -11,6 +11,9 @@
 #include "py/runtime.h"
 #include "py/mperrno.h"
 
+// Debug print macro
+#define WEBCAM_DEBUG_PRINT(...) mp_printf(&mp_plat_print, __VA_ARGS__)
+
 // Module name
 #define MODULE_NAME "webcam"
 
@@ -66,6 +69,7 @@ static mp_obj_t webcam_capture_grayscale(void) {
     // Open the webcam device
     cam.fd = open(VIDEO_DEVICE, O_RDWR);
     if (cam.fd < 0) {
+        WEBCAM_DEBUG_PRINT("webcam: Failed to open device %s\n", VIDEO_DEVICE);
         mp_raise_OSError(errno);
     }
 
@@ -76,6 +80,7 @@ static mp_obj_t webcam_capture_grayscale(void) {
     fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
     fmt.fmt.pix.field = V4L2_FIELD_ANY;
     if (ioctl(cam.fd, VIDIOC_S_FMT, &fmt) < 0) {
+        WEBCAM_DEBUG_PRINT("webcam: Failed to set YUYV format at %dx%d\n", CAPTURE_WIDTH, CAPTURE_HEIGHT);
         close(cam.fd);
         mp_raise_OSError(errno);
     }
@@ -85,6 +90,7 @@ static mp_obj_t webcam_capture_grayscale(void) {
     req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     req.memory = V4L2_MEMORY_MMAP;
     if (ioctl(cam.fd, VIDIOC_REQBUFS, &req) < 0) {
+        WEBCAM_DEBUG_PRINT("webcam: Failed to request memory-mapped buffer\n");
         close(cam.fd);
         mp_raise_OSError(errno);
     }
@@ -94,6 +100,7 @@ static mp_obj_t webcam_capture_grayscale(void) {
     buf.memory = V4L2_MEMORY_MMAP;
     buf.index = 0;
     if (ioctl(cam.fd, VIDIOC_QUERYBUF, &buf) < 0) {
+        WEBCAM_DEBUG_PRINT("webcam: Failed to query buffer properties\n");
         close(cam.fd);
         mp_raise_OSError(errno);
     }
@@ -101,12 +108,14 @@ static mp_obj_t webcam_capture_grayscale(void) {
     cam.buffer_length = buf.length;
     cam.buffer = mmap(NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, cam.fd, buf.m.offset);
     if (cam.buffer == MAP_FAILED) {
+        WEBCAM_DEBUG_PRINT("webcam: Failed to map buffer memory\n");
         close(cam.fd);
         mp_raise_OSError(errno);
     }
 
     // Queue the buffer
     if (ioctl(cam.fd, VIDIOC_QBUF, &buf) < 0) {
+        WEBCAM_DEBUG_PRINT("webcam: Failed to queue buffer for capture\n");
         munmap(cam.buffer, cam.buffer_length);
         close(cam.fd);
         mp_raise_OSError(errno);
@@ -115,6 +124,7 @@ static mp_obj_t webcam_capture_grayscale(void) {
     // Start streaming
     enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     if (ioctl(cam.fd, VIDIOC_STREAMON, &type) < 0) {
+        WEBCAM_DEBUG_PRINT("webcam: Failed to start video streaming\n");
         munmap(cam.buffer, cam.buffer_length);
         close(cam.fd);
         mp_raise_OSError(errno);
@@ -122,6 +132,7 @@ static mp_obj_t webcam_capture_grayscale(void) {
 
     // Dequeue the buffer (capture frame)
     if (ioctl(cam.fd, VIDIOC_DQBUF, &buf) < 0) {
+        WEBCAM_DEBUG_PRINT("webcam: Failed to dequeue captured frame\n");
         ioctl(cam.fd, VIDIOC_STREAMOFF, &type);
         munmap(cam.buffer, cam.buffer_length);
         close(cam.fd);
@@ -132,6 +143,7 @@ static mp_obj_t webcam_capture_grayscale(void) {
     size_t capture_size = CAPTURE_WIDTH * CAPTURE_HEIGHT;
     uint8_t *grayscale_buf = (uint8_t *)malloc(capture_size);
     if (!grayscale_buf) {
+        WEBCAM_DEBUG_PRINT("webcam: Failed to allocate memory for grayscale buffer (%zu bytes)\n", capture_size);
         ioctl(cam.fd, VIDIOC_STREAMOFF, &type);
         munmap(cam.buffer, cam.buffer_length);
         close(cam.fd);
@@ -143,6 +155,7 @@ static mp_obj_t webcam_capture_grayscale(void) {
     size_t output_size = OUTPUT_WIDTH * OUTPUT_HEIGHT;
     uint8_t *resized_buf = (uint8_t *)malloc(output_size);
     if (!resized_buf) {
+        WEBCAM_DEBUG_PRINT("webcam: Failed to allocate memory for resized buffer (%zu bytes)\n", output_size);
         free(grayscale_buf);
         ioctl(cam.fd, VIDIOC_STREAMOFF, &type);
         munmap(cam.buffer, cam.buffer_length);
