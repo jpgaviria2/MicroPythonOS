@@ -23,7 +23,9 @@
 #define CAPTURE_HEIGHT 480
 #define OUTPUT_WIDTH 240   // Resize to 240x240
 #define OUTPUT_HEIGHT 240
-#define NUM_BUFFERS 2      // Use 2 buffers, as it worked for two captures
+#define NUM_BUFFERS 5      // Use 2 buffers, as it worked for two captures
+#define QUEUE_RETRIES 5    // Number of retry attempts for queueing
+#define QUEUE_RETRY_DELAY_US 100000  // 50ms delay between retries
 
 // Webcam object type
 typedef struct _webcam_obj_t {
@@ -72,27 +74,33 @@ static void resize_640x480_to_240x240(uint8_t *src, uint8_t *dst) {
 static mp_obj_t webcam_capture_grayscale(mp_obj_t self_in) {
     webcam_obj_t *self = MP_OBJ_TO_PTR(self_in);
 
-    // Try to queue a buffer
+    // Try to queue a buffer with retries
     struct v4l2_buffer buf = {0};
     bool queued = false;
-    for (size_t i = 0; i < self->num_buffers; i++) {
-        memset(&buf, 0, sizeof(buf));
-        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        buf.memory = V4L2_MEMORY_MMAP;
-        buf.index = i;
+    for (int attempt = 0; attempt < QUEUE_RETRIES && !queued; attempt++) {
+        for (size_t i = 0; i < self->num_buffers; i++) {
+            memset(&buf, 0, sizeof(buf));
+            buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+            buf.memory = V4L2_MEMORY_MMAP;
+            buf.index = i;
 
-        WEBCAM_DEBUG_PRINT("webcam: Attempting to queue buffer (index=%zu)\n", i);
-        if (ioctl(self->fd, VIDIOC_QBUF, &buf) == 0) {
-            WEBCAM_DEBUG_PRINT("webcam: Successfully queued buffer (index=%zu)\n", i);
-            queued = true;
-            break;
+            WEBCAM_DEBUG_PRINT("webcam: Attempting to queue buffer (index=%zu, attempt=%d)\n", i, attempt + 1);
+            if (ioctl(self->fd, VIDIOC_QBUF, &buf) == 0) {
+                WEBCAM_DEBUG_PRINT("webcam: Successfully queued buffer (index=%zu)\n", i);
+                queued = true;
+                break;
+            }
+            WEBCAM_DEBUG_PRINT("webcam: Failed to queue buffer (index=%zu, errno=%d)\n", i, errno);
         }
-        WEBCAM_DEBUG_PRINT("webcam: Failed to queue buffer (index=%zu, errno=%d)\n", i, errno);
+        if (!queued && attempt < QUEUE_RETRIES - 1) {
+            WEBCAM_DEBUG_PRINT("webcam: No buffers available, retrying after delay\n");
+            usleep(QUEUE_RETRY_DELAY_US); // Wait 50ms before retrying
+        }
     }
 
     if (!queued) {
-        WEBCAM_DEBUG_PRINT("webcam: No buffers available for queuing\n");
-        mp_raise_OSError(EAGAIN); // Try again later
+        WEBCAM_DEBUG_PRINT("webcam: No buffers available after %d retries\n", QUEUE_RETRIES);
+        mp_raise_OSError(EAGAIN);
     }
 
     // Start streaming if not already started
