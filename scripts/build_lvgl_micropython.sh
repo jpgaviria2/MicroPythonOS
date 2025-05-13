@@ -20,7 +20,7 @@ if [ "$buildtype" == "devbuild" ]; then
 	manifest=""
 fi
 
-if [ "$buildtype" != "unix" -o "$buildtype" != "macOS" ]; then
+if [ "$buildtype" != "unix" -a "$buildtype" != "macOS" ]; then
 	python3 make.py --ota --partition-size=4194304 --flash-size=16 esp32 BOARD=ESP32_GENERIC_S3 BOARD_VARIANT=SPIRAM_OCT DISPLAY=st7789 INDEV=cst816s USER_C_MODULE="/home/user/sources/micropython-camera-API/src/micropython.cmake" "$manifest"
 else
 	# build for desktop
