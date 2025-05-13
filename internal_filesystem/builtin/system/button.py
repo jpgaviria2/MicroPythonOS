@@ -8,7 +8,7 @@ import _thread
 button = Pin(0, Pin.IN, Pin.PULL_UP)
 
 # Variables for long press detection
-long_press_duration = 4000
+long_press_duration = 3000
 press_start_time = 0
 is_pressed = False
 
@@ -30,6 +30,7 @@ def handle_long_press():
     machine.bootloader()
 
 def on_long_press(t): # Callback for when long press duration is reached.
+    print("button.py: long press detected")
     global timer
     timer.deinit()  # Stop the timer
     global is_pressed
