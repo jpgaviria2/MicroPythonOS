@@ -23,8 +23,8 @@
 #define CAPTURE_HEIGHT 480
 #define OUTPUT_WIDTH 240   // Resize to 240x240
 #define OUTPUT_HEIGHT 240
-#define NUM_BUFFERS 5      // Use 5 buffers, as it achieved 5 captures
-#define QUEUE_RETRIES 5    // Number of retry attempts for queueing
+#define NUM_BUFFERS 3      // Use 5 buffers, as it achieved 5 captures
+#define QUEUE_RETRIES 3    // Number of retry attempts for queueing
 #define QUEUE_RETRY_DELAY_US 100000  // 100ms delay between retries
 
 // Webcam object type
@@ -393,8 +393,11 @@ static const mp_rom_map_elem_t webcam_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_webcam) },
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&webcam_init_obj) },
     { MP_ROM_QSTR(MP_QSTR_capture_grayscale), MP_ROM_PTR(&webcam_capture_grayscale_obj) },
-    { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR/&webcam_deinit_obj) },
+    { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&webcam_deinit_obj) },
 };
+
+
+
 static MP_DEFINE_CONST_DICT(webcam_module_globals, webcam_module_globals_table);
 
 // Webcam type definition
