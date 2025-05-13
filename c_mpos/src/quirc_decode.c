@@ -6,8 +6,14 @@
 #include "py/runtime.h"
 #include "py/mperrno.h"
 
+#ifdef __xtensa__
 #include "freertos/FreeRTOS.h" // For uxTaskGetStackHighWaterMark
 #include "freertos/task.h"     // For task-related functions
+#else
+size_t uxTaskGetStackHighWaterMark(void * unused) {
+    return 99999999;
+}
+#endif // __xtensa__
 
 #include "../quirc/lib/quirc.h"
 
