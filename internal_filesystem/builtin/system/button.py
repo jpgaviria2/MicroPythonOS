@@ -34,6 +34,7 @@ def on_long_press(t): # Callback for when long press duration is reached.
     timer.deinit()  # Stop the timer
     global is_pressed
     if is_pressed and button.value() == 0:  # Ensure button is still pressed
+        _thread.stack_size(12*1024)
         _thread.start_new_thread(handle_long_press, ())
     else:
         is_pressed = False
