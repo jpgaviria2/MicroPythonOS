@@ -1,3 +1,5 @@
+import time
+
 appscreen = lv.screen_active()
 
 keepgoing = True
@@ -105,7 +107,7 @@ close_label.set_text(lv.SYMBOL.CLOSE)
 close_label.center()
 def close_button_click(e):
     global keepgoing
-    print("Closing camera!")
+    print("Close button clicked")
     keepgoing = False
 
 close_button.add_event_cb(close_button_click,lv.EVENT.CLICKED,None)
@@ -113,23 +115,26 @@ close_button.add_event_cb(close_button_click,lv.EVENT.CLICKED,None)
 
 from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
 
-cam = Camera(
-    data_pins=[12,13,15,11,14,10,7,2],
-    vsync_pin=6,
-    href_pin=4,
-    sda_pin=21,
-    scl_pin=16,
-    pclk_pin=9,
-    xclk_pin=8,
-    xclk_freq=20000000,
-    powerdown_pin=-1,
-    reset_pin=-1,
-    #pixel_format=PixelFormat.RGB565,
-    pixel_format=PixelFormat.GRAYSCALE,
-    frame_size=FrameSize.R240X240,
-    grab_mode=GrabMode.LATEST 
-)
-#cam.init() automatically done when creating the Camera()
+try:
+    cam = Camera(
+        data_pins=[12,13,15,11,14,10,7,2],
+        vsync_pin=6,
+        href_pin=4,
+        sda_pin=21,
+        scl_pin=16,
+        pclk_pin=9,
+        xclk_pin=8,
+        xclk_freq=20000000,
+        powerdown_pin=-1,
+        reset_pin=-1,
+        #pixel_format=PixelFormat.RGB565,
+        pixel_format=PixelFormat.GRAYSCALE,
+        frame_size=FrameSize.R240X240,
+        grab_mode=GrabMode.LATEST 
+    )
+    #cam.init() automatically done when creating the Camera()
+except Exception as e:
+    print(f"Exception while initializing camera: {e}")
 
 #cam.reconfigure(frame_size=FrameSize.HVGA)
 #frame_size=FrameSize.HVGA, # 480x320
@@ -186,8 +191,7 @@ def try_capture():
 try_capture()
 
 
-import time
-while appscreen == lv.screen_active() and keepgoing:
+while appscreen == lv.screen_active() and keepgoing is True:
     try_capture()
     time.sleep_ms(100) # Allow for the MicroPython REPL to still work. Reducing it doesn't seem to affect the on-display FPS.
 

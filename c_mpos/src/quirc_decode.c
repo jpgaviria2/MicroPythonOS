@@ -121,7 +121,7 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
 
     // Convert decoded data to Python string
     QRDECODE_DEBUG_PRINT("qrdecode: Creating Python string\n");
-    mp_obj_t result = mp_obj_new_str((const char *)data->payload, data->payload_len);
+    mp_obj_t result = mp_obj_new_bytes((const uint8_t *)data->payload, data->payload_len);
     QRDECODE_DEBUG_PRINT("qrdecode: Python string created\n");
 
     // Clean up
