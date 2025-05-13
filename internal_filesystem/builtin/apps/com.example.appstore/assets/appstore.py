@@ -16,6 +16,7 @@ install_label = None
 please_wait_label = None
 app_detail_screen = None
 progress_bar = None
+keepdownloadingicons = False
 
 action_label_install = "Install"
 action_label_uninstall = "Uninstall"
@@ -256,11 +257,13 @@ def download_apps(json_url):
 def download_icons():
     global apps
     for app in apps:
+        if not keepdownloadingicons:
+            break
         image_dsc = download_icon(app.icon_url)
         app.image_dsc = image_dsc
         app.image.set_src(image_dsc)
         print(f"Changed image_dsc for {app.icon_url}")
-    print("finished downloading all icons")
+    print("download_icons exiting")
 
 def load_icon(icon_path):
     with open(icon_path, 'rb') as f:
@@ -312,7 +315,9 @@ def create_apps_list():
         desc_label.add_event_cb(lambda e, a=app: show_app_detail(a), lv.EVENT.CLICKED, None)
     print("create_apps_list app done")
     try:
-        _thread.stack_size(16384)
+        global keepdownloadingicons
+        keepdownloadingicons = True
+        _thread.stack_size(12*1024)
         _thread.start_new_thread(download_icons,())
     except Exception as e:
         print("Could not start thread to download icons: ", e)
@@ -403,14 +408,14 @@ def toggle_install(download_url, fullname):
     label_text = install_label.get_text()
     if label_text == action_label_install:
         try:
-            _thread.stack_size(16384)
+            _thread.stack_size(12*1024)
             _thread.start_new_thread(download_and_unzip, (download_url, f"/apps/{fullname}", fullname))
         except Exception as e:
             print("Could not start download_and_unzip thread: ", e)
     elif label_text == action_label_uninstall or label_text == action_label_restore:
         print("Uninstalling app....")
         try:
-            _thread.stack_size(16384)
+            _thread.stack_size(12*1024)
             _thread.start_new_thread(uninstall_app, (f"/apps/{fullname}", fullname))
         except Exception as e:
             print("Could not start download_and_unzip thread: ", e)
@@ -421,7 +426,7 @@ def update_button_click(download_url, fullname):
     update_button.add_flag(lv.obj.FLAG.HIDDEN)
     install_button.set_size(lv.pct(100), 40)
     try:
-        _thread.stack_size(16384)
+        _thread.stack_size(12*1024)
         _thread.start_new_thread(download_and_unzip, (download_url, f"/apps/{fullname}", fullname))
     except Exception as e:
         print("Could not start download_and_unzip thread: ", e)
