@@ -9,20 +9,51 @@ height = 240
 
 # Variable to hold the current memoryview to prevent garbage collection
 current_cam_buffer = None
+image_dsc = None
+image = None
+qr_label = None
 
 
-cont = lv.obj(appscreen)
-cont.set_style_pad_all(0, 0)
-cont.set_style_border_width(0, 0)
-cont.set_size(lv.pct(100), lv.pct(100))
-cont.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
+def print_qr_buffer(buffer):
+    try:
+        # Try to decode buffer as a UTF-8 string
+        result = buffer.decode('utf-8')
+        # Check if the string is printable (ASCII printable characters)
+        if all(32 <= ord(c) <= 126 for c in result):
+            return result
+    except Exception as e:
+        pass
+    # If not a valid string or not printable, convert to hex
+    hex_str = ' '.join([f'{b:02x}' for b in buffer])
+    return hex_str.lower()
 
-snap_button = lv.button(cont)
-snap_button.set_size(60, 60)
-snap_button.align(lv.ALIGN.RIGHT_MID, 0, 0)
-snap_label = lv.label(snap_button)
-snap_label.set_text(lv.SYMBOL.OK)
-snap_label.center()
+# Byte-Order-Mark is added sometimes
+def remove_bom(buffer):
+    bom = b'\xEF\xBB\xBF'
+    if buffer.startswith(bom):
+        return buffer[3:]
+    return buffer
+
+def qrdecode_live():
+    # Image dimensions
+    buffer_size = width * height  # 240 * 240 = 57600 bytes
+    while keepgoing and keepliveqrdecoding:
+        try:
+            import qrdecode
+            result = qrdecode.qrdecode(current_cam_buffer, width, height)
+            result = remove_bom(result)
+            result = print_qr_buffer(result)
+            print(f"QR decoding found: {result}")
+        except Exception as e:
+            print("QR decode error: ", e)
+        time.sleep_ms(500)
+
+
+def close_button_click(e):
+    global keepgoing
+    print("Close button clicked")
+    keepgoing = False
+
 
 def snap_button_click(e):
     print("Picture taken!")
@@ -41,43 +72,6 @@ def snap_button_click(e):
         except OSError as e:
             print(f"Error writing to file: {e}")
 
-snap_button.add_event_cb(snap_button_click,lv.EVENT.CLICKED,None)
-
-
-qr_button = lv.button(cont)
-qr_button.set_size(60, 60)
-qr_button.align(lv.ALIGN.BOTTOM_RIGHT, 0, 0)
-qr_label = lv.label(qr_button)
-qr_label.set_text(lv.SYMBOL.EYE_OPEN)
-qr_label.center()
-
-def process_qr_buffer(buffer):
-    try:
-        # Try to decode buffer as a UTF-8 string
-        result = buffer.decode('utf-8')
-        # Check if the string is printable (ASCII printable characters)
-        if all(32 <= ord(c) <= 126 for c in result):
-            return result
-    except Exception as e:
-        pass
-    # If not a valid string or not printable, convert to hex
-    hex_str = ' '.join([f'{b:02x}' for b in buffer])
-    return hex_str.lower()
-
-def qrdecode_live():
-    # Image dimensions
-    buffer_size = width * height  # 240 * 240 = 57600 bytes
-    while keepgoing and keepliveqrdecoding:
-        try:
-            import qrdecode
-            result = qrdecode.qrdecode(current_cam_buffer, width, height)
-            if result.startswith('\ufeff'): # Remove BOM (\ufeff) from the start of the decoded string, if present
-                result = result[1:]
-            result = process_qr_buffer(result)
-            print(f"QR decoding found: {result}")
-        except Exception as e:
-            print("QR decode error: ", e)
-        time.sleep_ms(500)
 
 def qr_button_click(e):
     global keepliveqrdecoding, qr_label
@@ -96,79 +90,9 @@ def qr_button_click(e):
         keepliveqrdecoding = False
         qr_label.set_text(lv.SYMBOL.EYE_OPEN)
 
-qr_button.add_event_cb(qr_button_click,lv.EVENT.CLICKED,None)
-
-
-close_button = lv.button(cont)
-close_button.set_size(60,60)
-close_button.align(lv.ALIGN.TOP_RIGHT, 0, 0)
-close_label = lv.label(close_button)
-close_label.set_text(lv.SYMBOL.CLOSE)
-close_label.center()
-def close_button_click(e):
-    global keepgoing
-    print("Close button clicked")
-    keepgoing = False
-
-close_button.add_event_cb(close_button_click,lv.EVENT.CLICKED,None)
-
-
-from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
-
-try:
-    cam = Camera(
-        data_pins=[12,13,15,11,14,10,7,2],
-        vsync_pin=6,
-        href_pin=4,
-        sda_pin=21,
-        scl_pin=16,
-        pclk_pin=9,
-        xclk_pin=8,
-        xclk_freq=20000000,
-        powerdown_pin=-1,
-        reset_pin=-1,
-        #pixel_format=PixelFormat.RGB565,
-        pixel_format=PixelFormat.GRAYSCALE,
-        frame_size=FrameSize.R240X240,
-        grab_mode=GrabMode.LATEST 
-    )
-    #cam.init() automatically done when creating the Camera()
-except Exception as e:
-    print(f"Exception while initializing camera: {e}")
-
-#cam.reconfigure(frame_size=FrameSize.HVGA)
-#frame_size=FrameSize.HVGA, # 480x320
-#frame_size=FrameSize.QVGA, # 320x240
-#frame_size=FrameSize.QQVGA # 160x120
-
-cam.set_vflip(True)
-
-
-# Initialize LVGL image widget
-image = lv.image(cont)
-image.align(lv.ALIGN.LEFT_MID, 0, 0)
-image.set_rotation(900)
-
-# Create image descriptor once
-image_dsc = lv.image_dsc_t({
-    "header": {
-        "magic": lv.IMAGE_HEADER_MAGIC,
-        "w": width,
-        "h": height,
-        "stride": width ,
-        #"cf": lv.COLOR_FORMAT.RGB565
-        "cf": lv.COLOR_FORMAT.L8
-    },
-    'data_size': width * height,
-    'data': None  # Will be updated per frame
-})
-
-# Set initial image source (optional, can be set in try_capture)
-image.set_src(image_dsc)
-
 
 def try_capture():
-    global current_cam_buffer
+    global current_cam_buffer, image_dsc, image
     if cam.frame_available():
         # Get new memoryview from camera
         new_cam_buffer = cam.capture()  # Returns memoryview
@@ -187,15 +111,89 @@ def try_capture():
             cam.free_buffer()  # Free the old buffer
         current_cam_buffer = new_cam_buffer  # Store new buffer reference
 
-# Initial capture
-try_capture()
 
 
-while appscreen == lv.screen_active() and keepgoing is True:
-    try_capture()
-    time.sleep_ms(100) # Allow for the MicroPython REPL to still work. Reducing it doesn't seem to affect the on-display FPS.
+def build_ui():
+    global image, image_dsc,qr_label
+    cont = lv.obj(appscreen)
+    cont.set_style_pad_all(0, 0)
+    cont.set_style_border_width(0, 0)
+    cont.set_size(lv.pct(100), lv.pct(100))
+    cont.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)    
+    close_button = lv.button(cont)
+    close_button.set_size(60,60)
+    close_button.align(lv.ALIGN.TOP_RIGHT, 0, 0)
+    close_label = lv.label(close_button)
+    close_label.set_text(lv.SYMBOL.CLOSE)
+    close_label.center()
+    close_button.add_event_cb(close_button_click,lv.EVENT.CLICKED,None)
+    snap_button = lv.button(cont)
+    snap_button.set_size(60, 60)
+    snap_button.align(lv.ALIGN.RIGHT_MID, 0, 0)
+    snap_label = lv.label(snap_button)
+    snap_label.set_text(lv.SYMBOL.OK)
+    snap_label.center()        
+    snap_button.add_event_cb(snap_button_click,lv.EVENT.CLICKED,None)        
+    qr_button = lv.button(cont)
+    qr_button.set_size(60, 60)
+    qr_button.align(lv.ALIGN.BOTTOM_RIGHT, 0, 0)
+    qr_label = lv.label(qr_button)
+    qr_label.set_text(lv.SYMBOL.EYE_OPEN)
+    qr_label.center()
+    qr_button.add_event_cb(qr_button_click,lv.EVENT.CLICKED,None)
+    # Initialize LVGL image widget
+    image = lv.image(cont)
+    image.align(lv.ALIGN.LEFT_MID, 0, 0)
+    image.set_rotation(900)
+    # Create image descriptor once
+    image_dsc = lv.image_dsc_t({
+        "header": {
+            "magic": lv.IMAGE_HEADER_MAGIC,
+            "w": width,
+            "h": height,
+            "stride": width ,
+            #"cf": lv.COLOR_FORMAT.RGB565
+            "cf": lv.COLOR_FORMAT.L8
+        },
+        'data_size': width * height,
+        'data': None  # Will be updated per frame
+    })
+    image.set_src(image_dsc)
 
-print("App backgrounded, deinitializing camera...")
-cam.deinit()
 
-show_launcher()
+try:
+    # time.sleep(1) doesn't help
+    from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
+    cam = Camera(
+        data_pins=[12,13,15,11,14,10,7,2],
+        vsync_pin=6,
+        href_pin=4,
+        sda_pin=21,
+        scl_pin=16,
+        pclk_pin=9,
+        xclk_pin=8,
+        xclk_freq=20000000,
+        powerdown_pin=-1,
+        reset_pin=-1,
+        #pixel_format=PixelFormat.RGB565,
+        pixel_format=PixelFormat.GRAYSCALE,
+        frame_size=FrameSize.R240X240,
+        grab_mode=GrabMode.LATEST 
+    )
+    #cam.init() automatically done when creating the Camera()
+    #cam.reconfigure(frame_size=FrameSize.HVGA)
+    #frame_size=FrameSize.HVGA, # 480x320
+    #frame_size=FrameSize.QVGA, # 320x240
+    #frame_size=FrameSize.QQVGA # 160x120
+    cam.set_vflip(True)
+    build_ui()
+    while appscreen == lv.screen_active() and keepgoing is True:
+        try_capture()
+        time.sleep_ms(100) # Allow for the MicroPython REPL to still work. Reducing it doesn't seem to affect the on-display FPS.    
+    print("App backgrounded, deinitializing camera...")
+    cam.deinit()    
+    show_launcher()        
+except Exception as e:
+    print(f"Exception: {e}")
+
+
