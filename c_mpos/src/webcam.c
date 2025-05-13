@@ -64,69 +64,6 @@ static void resize_640x480_to_240x240(uint8_t *src, uint8_t *dst) {
     }
 }
 
-// Initialize the webcam
-static mp_obj_t webcam_init(void) {
-    webcam_obj_t *self = m_new_obj(webcam_obj_t);
-    self->base.type = &webcam_type;
-    self->fd = -1;
-    self->buffer = NULL;
-    self->buffer_length = 0;
-    self->streaming = false;
-
-    // Open the webcam device
-    self->fd = open(VIDEO_DEVICE, O_RDWR);
-    if (self->fd < 0) {
-        WEBCAM_DEBUG_PRINT("webcam: Failed to open device %s\n", VIDEO_DEVICE);
-        mp_raise_OSError(errno);
-    }
-
-    // Set format to YUYV at 640x480
-    struct v4l2_format fmt = {0};
-    fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    fmt.fmt.pix.width = CAPTURE_WIDTH;
-    fmt.fmt.pix.height = CAPTURE_HEIGHT;
-    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-    fmt.fmt.pix.field = V4L2_FIELD_ANY;
-    if (ioctl(self->fd, VIDIOC_S_FMT, &fmt) < 0) {
-        WEBCAM_DEBUG_PRINT("webcam: Failed to set YUYV format at %dx%d\n", CAPTURE_WIDTH, CAPTURE_HEIGHT);
-        close(self->fd);
-        mp_raise_OSError(errno);
-    }
-
-    // Request one buffer
-    struct v4l2_requestbuffers req = {0};
-    req.count = 1;
-    req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    req.memory = V4L2_MEMORY_MMAP;
-    if (ioctl(self->fd, VIDIOC_REQBUFS, &req) < 0) {
-        WEBCAM_DEBUG_PRINT("webcam: Failed to request memory-mapped buffer\n");
-        close(self->fd);
-        mp_raise_OSError(errno);
-    }
-
-    // Query and map the buffer
-    struct v4l2_buffer buf = {0};
-    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    buf.memory = V4L2_MEMORY_MMAP;
-    buf.index = 0;
-    if (ioctl(self->fd, VIDIOC_QUERYBUF, &buf) < 0) {
-        WEBCAM_DEBUG_PRINT("webcam: Failed to query buffer properties\n");
-        close(self->fd);
-        mp_raise_OSError(errno);
-    }
-
-    self->buffer_length = buf.length;
-    self->buffer = mmap(NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, self->fd, buf.m.offset);
-    if (self->buffer == MAP_FAILED) {
-        WEBCAM_DEBUG_PRINT("webcam: Failed to map buffer memory\n");
-        close(self->fd);
-        mp_raise_OSError(errno);
-    }
-
-    return MP_OBJ_FROM_PTR(self);
-}
-MP_DEFINE_CONST_FUN_OBJ_0(webcam_init_obj, webcam_init);
-
 // Capture a grayscale image
 static mp_obj_t webcam_capture_grayscale(mp_obj_t self_in) {
     webcam_obj_t *self = MP_OBJ_TO_PTR(self_in);
@@ -224,33 +161,88 @@ static mp_obj_t webcam_deinit(mp_obj_t self_in) {
 }
 MP_DEFINE_CONST_FUN_OBJ_1(webcam_deinit_obj, webcam_deinit);
 
-// Attribute lookup for webcam object
-static void webcam_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
-    if (dest[0] == MP_OBJ_NULL) {
-        // Lookup attribute
-        if (attr == MP_QSTR_capture_grayscale) {
-            dest[0] = MP_OBJ_FROM_PTR(&webcam_capture_grayscale_obj);
-            dest[1] = self_in;
-        } else if (attr == MP_QSTR_deinit) {
-            dest[0] = MP_OBJ_FROM_PTR(&webcam_deinit_obj);
-            dest[1] = self_in;
-        }
-    }
-}
+// Initialize the webcam and return a tuple with the object and methods
+static mp_obj_t webcam_init(void) {
+    webcam_obj_t *self = m_new_obj(webcam_obj_t);
+    self->base.type = &webcam_type;
+    self->fd = -1;
+    self->buffer = NULL;
+    self->buffer_length = 0;
+    self->streaming = false;
 
-// Webcam type definition
-static const mp_obj_type_t webcam_type = {
-    { &mp_type_type },
-    .name = MP_QSTR_webcam,
-    .attr = webcam_attr,
-};
+    // Open the webcam device
+    self->fd = open(VIDEO_DEVICE, O_RDWR);
+    if (self->fd < 0) {
+        WEBCAM_DEBUG_PRINT("webcam: Failed to open device %s\n", VIDEO_DEVICE);
+        mp_raise_OSError(errno);
+    }
+
+    // Set format to YUYV at 640x480
+    struct v4l2_format fmt = {0};
+    fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    fmt.fmt.pix.width = CAPTURE_WIDTH;
+    fmt.fmt.pix.height = CAPTURE_HEIGHT;
+    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+    fmt.fmt.pix.field = V4L2_FIELD_ANY;
+    if (ioctl(self->fd, VIDIOC_S_FMT, &fmt) < 0) {
+        WEBCAM_DEBUG_PRINT("webcam: Failed to set YUYV format at %dx%d\n", CAPTURE_WIDTH, CAPTURE_HEIGHT);
+        close(self->fd);
+        mp_raise_OSError(errno);
+    }
+
+    // Request one buffer
+    struct v4l2_requestbuffers req = {0};
+    req.count = 1;
+    req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    req.memory = V4L2_MEMORY_MMAP;
+    if (ioctl(self->fd, VIDIOC_REQBUFS, &req) < 0) {
+        WEBCAM_DEBUG_PRINT("webcam: Failed to request memory-mapped buffer\n");
+        close(self->fd);
+        mp_raise_OSError(errno);
+    }
+
+    // Query and map the buffer
+    struct v4l2_buffer buf = {0};
+    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    buf.memory = V4L2_MEMORY_MMAP;
+    buf.index = 0;
+    if (ioctl(self->fd, VIDIOC_QUERYBUF, &buf) < 0) {
+        WEBCAM_DEBUG_PRINT("webcam: Failed to query buffer properties\n");
+        close(self->fd);
+        mp_raise_OSError(errno);
+    }
+
+    self->buffer_length = buf.length;
+    self->buffer = mmap(NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, self->fd, buf.m.offset);
+    if (self->buffer == MAP_FAILED) {
+        WEBCAM_DEBUG_PRINT("webcam: Failed to map buffer memory\n");
+        close(self->fd);
+        mp_raise_OSError(errno);
+    }
+
+    // Create a tuple to hold the webcam object and method references
+    mp_obj_t tuple[3];
+    tuple[0] = MP_OBJ_FROM_PTR(self);
+    tuple[1] = MP_OBJ_FROM_PTR(&webcam_capture_grayscale_obj);
+    tuple[2] = MP_OBJ_FROM_PTR(&webcam_deinit_obj);
+    return mp_obj_new_tuple(3, tuple);
+}
+MP_DEFINE_CONST_FUN_OBJ_0(webcam_init_obj, webcam_init);
 
 // Module definition
 static const mp_rom_map_elem_t webcam_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_webcam) },
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&webcam_init_obj) },
+    { MP_ROM_QSTR(MP_QSTR_capture_grayscale), MP_ROM_PTR(&webcam_capture_grayscale_obj) },
+    { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&webcam_deinit_obj) },
 };
 static MP_DEFINE_CONST_DICT(webcam_module_globals, webcam_module_globals_table);
+
+// Webcam type definition
+static const mp_obj_type_t webcam_type = {
+    { &mp_type_type },
+    .name = MP_QSTR_webcam,
+};
 
 const mp_obj_module_t webcam_user_cmodule = {
     .base = { &mp_type_module },
