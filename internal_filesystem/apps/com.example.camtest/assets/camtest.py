@@ -1,6 +1,7 @@
 appscreen = lv.screen_active()
 
 keepgoing = True
+keepliveqrdecoding = False
 width = 240
 height = 240
 
@@ -48,21 +49,50 @@ qr_label = lv.label(qr_button)
 qr_label.set_text(lv.SYMBOL.EYE_OPEN)
 qr_label.center()
 
-def qr_button_click(e):
-    print("Decoding QR")
-    # Image dimensions
-    width = 240
-    height = 240
-    buffer_size = width * height  # 240 * 240 = 57600 bytes
+def process_qr_buffer(buffer):
     try:
-        import qrdecode
-        result = qrdecode.qrdecode(current_cam_buffer, width, height)
-        if result.startswith('\ufeff'): # Remove BOM (\ufeff) from the start of the decoded string, if present
-            result = result[1:]
-        print(f"QR decoding found: {result}")
-    except Exception as e:
-        print("QR decode error: ", e)
+        # Try to decode buffer as a UTF-8 string
+        result = buffer.decode('utf-8')
+        # Check if the string is printable (ASCII printable characters)
+        if all(32 <= ord(c) <= 126 for c in result):
+            return result
+    except UnicodeDecodeError:
+        pass
+    # If not a valid string or not printable, convert to hex
+    hex_str = ' '.join([f'{b:02x}' for b in buffer])
+    return hex_str.lower()
 
+def qrdecode_live():
+    # Image dimensions
+    buffer_size = width * height  # 240 * 240 = 57600 bytes
+    while keepgoing and keepliveqrdecoding:
+        try:
+            import qrdecode
+            result = qrdecode.qrdecode(current_cam_buffer, width, height)
+            if result.startswith('\ufeff'): # Remove BOM (\ufeff) from the start of the decoded string, if present
+                result = result[1:]
+            result = process_qr_buffer(result)
+            print(f"QR decoding found: {result}")
+        except Exception as e:
+            print("QR decode error: ", e)
+        time.sleep_ms(500)
+
+def qr_button_click(e):
+    global keepliveqrdecoding, qr_label
+    if not keepliveqrdecoding:
+        print("Activating live QR decoding...")
+        keepliveqrdecoding = True
+        qr_label.set_text(lv.SYMBOL.EYE_CLOSE)
+        try:
+            import _thread
+            _thread.stack_size(12*1024) # 16KB is too much
+            _thread.start_new_thread(qrdecode_live, ())
+        except Exception as e:
+            print("Could not start live QR decoding thread: ", e)
+    else:
+        print("Deactivating live QR decoding...")
+        keepliveqrdecoding = False
+        qr_label.set_text(lv.SYMBOL.EYE_OPEN)
 
 qr_button.add_event_cb(qr_button_click,lv.EVENT.CLICKED,None)
 
