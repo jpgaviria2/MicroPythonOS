@@ -16,8 +16,10 @@
 
 // Default webcam device
 #define VIDEO_DEVICE "/dev/video0"
-#define WIDTH 240
-#define HEIGHT 240
+#define CAPTURE_WIDTH 640  // Capture at 640x480
+#define CAPTURE_HEIGHT 480
+#define OUTPUT_WIDTH 240   // Resize to 240x240
+#define OUTPUT_HEIGHT 240
 
 // Structure to hold webcam state
 typedef struct {
@@ -67,10 +69,10 @@ static mp_obj_t webcam_capture_grayscale(void) {
         mp_raise_OSError(errno);
     }
 
-    // Set format to YUYV
+    // Set format to YUYV at 640x480
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    fmt.fmt.pix.width = WIDTH;
-    fmt.fmt.pix.height = HEIGHT;
+    fmt.fmt.pix.width = CAPTURE_WIDTH;
+    fmt.fmt.pix.height = CAPTURE_HEIGHT;
     fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
     fmt.fmt.pix.field = V4L2_FIELD_ANY;
     if (ioctl(cam.fd, VIDIOC_S_FMT, &fmt) < 0) {
@@ -126,22 +128,35 @@ static mp_obj_t webcam_capture_grayscale(void) {
         mp_raise_OSError(errno);
     }
 
-    // Convert YUYV to grayscale
-    size_t grayscale_size = WIDTH * HEIGHT;
-    uint8_t *grayscale_buf = (uint8_t *)malloc(grayscale_size);
+    // Convert YUYV to grayscale (640x480)
+    size_t capture_size = CAPTURE_WIDTH * CAPTURE_HEIGHT;
+    uint8_t *grayscale_buf = (uint8_t *)malloc(capture_size);
     if (!grayscale_buf) {
         ioctl(cam.fd, VIDIOC_STREAMOFF, &type);
         munmap(cam.buffer, cam.buffer_length);
         close(cam.fd);
         mp_raise_OSError(ENOMEM);
     }
-    yuyv_to_grayscale((uint8_t *)cam.buffer, grayscale_buf, WIDTH, HEIGHT);
+    yuyv_to_grayscale((uint8_t *)cam.buffer, grayscale_buf, CAPTURE_WIDTH, CAPTURE_HEIGHT);
+
+    // Resize to 240x240
+    size_t output_size = OUTPUT_WIDTH * OUTPUT_HEIGHT;
+    uint8_t *resized_buf = (uint8_t *)malloc(output_size);
+    if (!resized_buf) {
+        free(grayscale_buf);
+        ioctl(cam.fd, VIDIOC_STREAMOFF, &type);
+        munmap(cam.buffer, cam.buffer_length);
+        close(cam.fd);
+        mp_raise_OSError(ENOMEM);
+    }
+    resize_640x480_to_240x240(grayscale_buf, resized_buf);
+    free(grayscale_buf); // Free the 640x480 buffer
 
     // Create MicroPython bytes object
-    mp_obj_t result = mp_obj_new_bytes(grayscale_buf, grayscale_size);
+    mp_obj_t result = mp_obj_new_bytes(resized_buf, output_size);
 
     // Clean up
-    free(grayscale_buf);
+    free(resized_buf);
     ioctl(cam.fd, VIDIOC_STREAMOFF, &type);
     munmap(cam.buffer, cam.buffer_length);
     close(cam.fd);
@@ -164,4 +179,3 @@ const mp_obj_module_t webcam_user_cmodule = {
 
 // Register the module
 MP_REGISTER_MODULE(MP_QSTR_webcam, webcam_user_cmodule);
-
