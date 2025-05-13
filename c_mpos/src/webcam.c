@@ -224,8 +224,8 @@ static mp_obj_t webcam_deinit(mp_obj_t self_in) {
 }
 MP_DEFINE_CONST_FUN_OBJ_1(webcam_deinit_obj, webcam_deinit);
 
-// Method dispatch for webcam object
-static mp_obj_t webcam_call(mp_obj_t self_in, mp_obj_t attr, mp_obj_t *dest) {
+// Attribute lookup for webcam object
+static void webcam_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
     if (dest[0] == MP_OBJ_NULL) {
         // Lookup attribute
         if (attr == MP_QSTR_capture_grayscale) {
@@ -236,14 +236,13 @@ static mp_obj_t webcam_call(mp_obj_t self_in, mp_obj_t attr, mp_obj_t *dest) {
             dest[1] = self_in;
         }
     }
-    return MP_OBJ_NULL;
 }
 
 // Webcam type definition
 static const mp_obj_type_t webcam_type = {
     { &mp_type_type },
     .name = MP_QSTR_webcam,
-    .call = webcam_call,
+    .attr = webcam_attr,
 };
 
 // Module definition
