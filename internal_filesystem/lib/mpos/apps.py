@@ -159,18 +159,6 @@ def parse_manifest(manifest_path):
         print(f"parse_manifest: error loading manifest_path: {manifest_path}")
         return default_app
 
-def long_path_to_filename(path):
-    try:
-        if not path or not isinstance(path, str):
-            return None
-        # Extract filename using rsplit and take the last part
-        filename = path.rsplit('/', 1)[-1]
-        # Limit to the first 7 characters
-        return filename[:7]
-    except Exception as e:
-        print(f"Error extracting filename: {str(e)}")
-        return None
-
 def auto_connect():
     # A generic "start at boot" mechanism hasn't been implemented yet, so do it like this:
     custom_auto_connect = "apps/com.example.wificonf/assets/auto_connect.py"
