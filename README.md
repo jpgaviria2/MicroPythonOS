@@ -107,7 +107,11 @@ Building for desktop
 ====================
 Building to run as an app on the Linux desktop or MacOS (untested) is supported.
 
-To do so, make sure you have the necessary dependencies (see https://github.com/lvgl-micropython/) and then run:
+To do so, make sure you have the necessary dependencies:
+- see https://github.com/lvgl-micropython/
+- sudo apt install libv4l-dev # for webcam.c
+
+...and then run:
 
 ```
 ~/sources/PiggyOS/scripts/build_lvgl_micropython.sh unix

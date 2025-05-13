@@ -12,6 +12,7 @@ current_cam_buffer = None
 image_dsc = None
 image = None
 qr_label = None
+use_webcam = False
 
 
 def print_qr_buffer(buffer):
@@ -92,12 +93,12 @@ def qr_button_click(e):
 
 
 def try_capture():
-    global current_cam_buffer, image_dsc, image
-    if cam.frame_available():
-        # Get new memoryview from camera
+    global current_cam_buffer, image_dsc, image, use_webcam
+    if use_webcam:
+        new_cam_buffer = webcam.capture_grayscale()
+    elif cam.frame_available():
         new_cam_buffer = cam.capture()  # Returns memoryview
-        # Verify buffer size
-        #if len(new_cam_buffer) != width * height * 2:
+    if len(new_cam_buffer):
         #    print("Invalid buffer size:", len(new_cam_buffer))
         #    cam.free_buffer()
         #    return
@@ -107,10 +108,9 @@ def try_capture():
         image.set_src(image_dsc)
         #image.invalidate() #does not work
         # Free the previous buffer (if any) after setting new data
-        if current_cam_buffer is not None:
+        if current_cam_buffer is not None and not use_webcam:
             cam.free_buffer()  # Free the old buffer
         current_cam_buffer = new_cam_buffer  # Store new buffer reference
-
 
 
 def build_ui():
@@ -195,16 +195,22 @@ def init_cam():
 
 cam = init_cam()
 if not cam:
-    print("init cam failed, retrying...")
-    time.sleep(5)
-    cam = init_cam()
+    print("init cam failed, retrying with webcam...")
+    try:
+        import webcam
+        current_cam_buffer = webcam.capture_grayscale()
+        use_webcam = True
+    except Exception as e:
+        print(f"camtest.py: webcam exception: {e}")
 
-if cam:
+if cam or use_webcam:
     build_ui()
     while appscreen == lv.screen_active() and keepgoing is True:
         try_capture()
         time.sleep_ms(100) # Allow for the MicroPython REPL to still work. Reducing it doesn't seem to affect the on-display FPS.    
     print("App backgrounded, deinitializing camera...")
     cam.deinit()
-    show_launcher()
+else:
+   print("No camera found, exiting...")
 
+show_launcher()

@@ -1,4 +1,3 @@
-//#include <Python.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -17,8 +16,8 @@
 
 // Default webcam device
 #define VIDEO_DEVICE "/dev/video0"
-#define WIDTH 640
-#define HEIGHT 480
+#define WIDTH 240
+#define HEIGHT 240
 
 // Structure to hold webcam state
 typedef struct {
@@ -31,6 +30,27 @@ typedef struct {
 static void yuyv_to_grayscale(uint8_t *src, uint8_t *dst, size_t width, size_t height) {
     for (size_t i = 0; i < width * height * 2; i += 2) {
         dst[i / 2] = src[i]; // Y component is every other byte
+    }
+}
+
+// Resize 640x480 grayscale to 240x240
+static void resize_640x480_to_240x240(uint8_t *src, uint8_t *dst) {
+    const int src_width = 640;
+    const int src_height = 480;
+    const int dst_width = 240;
+    const int dst_height = 240;
+
+    // Scaling factors
+    float x_ratio = (float)src_width / dst_width;
+    float y_ratio = (float)src_height / dst_height;
+
+    for (int y = 0; y < dst_height; y++) {
+        for (int x = 0; x < dst_width; x++) {
+            // Nearest-neighbor interpolation
+            int src_x = (int)(x * x_ratio);
+            int src_y = (int)(y * y_ratio);
+            dst[y * dst_width + x] = src[src_y * src_width + src_x];
+        }
     }
 }
 
