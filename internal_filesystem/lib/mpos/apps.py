@@ -13,6 +13,7 @@ import mpos.ui
 # Run the script in the current thread:
 def execute_script(script_source, is_file, is_launcher, is_graphical):
     thread_id = _thread.get_ident()
+    compile_name = 'script' if not is_file else script_source
     print(f"Thread {thread_id}: executing script")
     try:
         if is_file:
@@ -45,7 +46,6 @@ def execute_script(script_source, is_file, is_launcher, is_graphical):
             }
         print(f"Thread {thread_id}: starting script")
         try:
-            compile_name = 'script' if not is_file else long_path_to_filename(script_source) # Only filename, to avoid 'name too long' error
             compiled_script = compile(script_source, compile_name, 'exec')
             exec(compiled_script, script_globals)
         except Exception as e:
