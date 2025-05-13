@@ -33,7 +33,8 @@ typedef struct _webcam_obj_t {
     bool streaming; // Streaming state
 } webcam_obj_t;
 
-const mp_obj_type_t webcam_type;
+// Forward declaration of the webcam type
+static const mp_obj_type_t webcam_type;
 
 // Convert YUYV to grayscale (extract Y component)
 static void yuyv_to_grayscale(uint8_t *src, uint8_t *dst, size_t width, size_t height) {
@@ -182,6 +183,12 @@ static mp_obj_t webcam_capture_grayscale(mp_obj_t self_in) {
     // Clean up
     free(resized_buf);
 
+    // Re-queue the buffer for the next capture
+    if (ioctl(self->fd, VIDIOC_QBUF, &buf) < 0) {
+        WEBCAM_DEBUG_PRINT("webcam: Failed to re-queue buffer after capture\n");
+        mp_raise_OSError(errno);
+    }
+
     return result;
 }
 MP_DEFINE_CONST_FUN_OBJ_1(webcam_capture_grayscale_obj, webcam_capture_grayscale);
@@ -217,6 +224,12 @@ static mp_obj_t webcam_deinit(mp_obj_t self_in) {
 }
 MP_DEFINE_CONST_FUN_OBJ_1(webcam_deinit_obj, webcam_deinit);
 
+// Make new webcam object (optional, for consistency)
+static mp_obj_t webcam_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
+    mp_arg_check_num(n_args, n_kw, 0, 0, false);
+    return webcam_init();
+}
+
 // Webcam type definition
 static const mp_rom_map_elem_t webcam_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_capture_grayscale), MP_ROM_PTR(&webcam_capture_grayscale_obj) },
@@ -224,10 +237,11 @@ static const mp_rom_map_elem_t webcam_locals_dict_table[] = {
 };
 static MP_DEFINE_CONST_DICT(webcam_locals_dict, webcam_locals_dict_table);
 
-const mp_obj_type_t webcam_type = {
+static const mp_obj_type_t webcam_type = {
     { &mp_type_type },
     .name = MP_QSTR_webcam,
-    .locals_dict = (mp_obj_dict_t *)&webcam_locals_dict,
+    .make_new = webcam_make_new,
+    // Note: locals_dict is handled separately below
 };
 
 // Module definition
@@ -244,3 +258,10 @@ const mp_obj_module_t webcam_user_cmodule = {
 
 // Register the module
 MP_REGISTER_MODULE(MP_QSTR_webcam, webcam_user_cmodule);
+
+// Register the locals dict for the webcam type (post-definition)
+static MP_DEFINE_CONST_OBJ(webcam_locals_dict_obj, &webcam_locals_dict);
+void webcam_type_init(void) {
+    // Dynamically set the locals_dict after type definition
+    *(mp_obj_t *)&webcam_type.locals_dict = MP_OBJ_FROM_PTR(&webcam_locals_dict_obj);
+}
