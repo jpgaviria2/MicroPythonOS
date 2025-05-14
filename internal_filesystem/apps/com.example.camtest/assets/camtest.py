@@ -98,7 +98,7 @@ def try_capture():
         new_cam_buffer = cam.capture_grayscale()
     elif cam.frame_available():
         new_cam_buffer = cam.capture()  # Returns memoryview
-    if len(new_cam_buffer):
+    if new_cam_buffer and len(new_cam_buffer):
         #    print("Invalid buffer size:", len(new_cam_buffer))
         #    cam.free_buffer()
         #    return
@@ -200,7 +200,11 @@ class Webcam:
         # webcam.init() returns (obj, capture_grayscale, deinit)
         self.obj, self._capture_grayscale, self._deinit = webcam.init()
     def capture_grayscale(self):
-        return self._capture_grayscale(self.obj)
+        try:
+            return self._capture_grayscale(self.obj)
+        except Exception as e:
+            print(f"capture got exception {e}")
+            self.deinit()
     def deinit(self):
         return self._deinit(self.obj)
 

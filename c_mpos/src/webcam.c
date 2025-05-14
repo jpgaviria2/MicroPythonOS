@@ -23,8 +23,8 @@
 #define CAPTURE_HEIGHT 480
 #define OUTPUT_WIDTH 240   // Resize to 240x240
 #define OUTPUT_HEIGHT 240
-#define NUM_BUFFERS 2      // Revert to 2 buffers, as it achieved 2 captures
-#define QUEUE_RETRIES 10   // Increase retries for robustness
+#define NUM_BUFFERS 10      // Revert to 2 buffers, as it achieved 2 captures
+#define QUEUE_RETRIES 5   // Increase retries for robustness
 #define QUEUE_RETRY_DELAY_US 200000  // 200ms delay between retries
 
 // Webcam object type
