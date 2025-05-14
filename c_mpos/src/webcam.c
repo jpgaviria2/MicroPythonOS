@@ -164,17 +164,19 @@ static mp_obj_t capture_frame(webcam_obj_t *self) {
     return result;
 }
 
-static mp_obj_t webcam_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
+static mp_obj_t webcam_init(mp_obj_t type_in, mp_obj_t device_obj) {
     webcam_obj_t *self = m_new_obj(webcam_obj_t);
-    self->base.type = type;
+    self->base.type = MP_OBJ_TO_PTR(type_in);
     self->fd = -1;
 
-    if (init_webcam(self, "/dev/video0") < 0) {
+    const char *device = mp_obj_str_get_str(device_obj);
+    if (init_webcam(self, device) < 0) {
         mp_raise_OSError(MP_EIO);
     }
 
     return MP_OBJ_FROM_PTR(self);
 }
+MP_DEFINE_CONST_FUN_OBJ_2(webcam_init_obj, webcam_init);
 
 static mp_obj_t webcam_deinit(mp_obj_t self_in) {
     webcam_obj_t *self = MP_OBJ_TO_PTR(self_in);
@@ -196,24 +198,25 @@ static const mp_rom_map_elem_t webcam_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&webcam_deinit_obj) },
     { MP_ROM_QSTR(MP_QSTR_capture_frame), MP_ROM_PTR(&webcam_capture_frame_obj) },
 };
-static MP_DEFINE_CONST_DICT(webcam_locals_dict, webcam_locals_dict_table);
+MP_DEFINE_CONST_DICT(webcam_locals_dict, webcam_locals_dict_table);
 
 static const mp_obj_type_t webcam_type = {
     { &mp_type_type },
     .name = MP_QSTR_Webcam,
-    .make_new = webcam_make_new,
-    .locals_dict = (mp_obj_dict_t*)&webcam_locals_dict,
 };
 
 static const mp_rom_map_elem_t mp_module_webcam_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_webcam) },
     { MP_ROM_QSTR(MP_QSTR_Webcam), MP_ROM_PTR(&webcam_type) },
+    { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&webcam_init_obj) },
+    { MP_ROM_QSTR(MP_QSTR_capture_frame), MP_ROM_PTR(&webcam_capture_frame_obj) },
+    { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&webcam_deinit_obj) },
 };
 static MP_DEFINE_CONST_DICT(mp_module_webcam_globals, mp_module_webcam_globals_table);
 
-const mp_obj_module_t mp_module_webcam = {
+const mp_obj_module_t webcam_user_cmodule = {
     .base = { &mp_type_module },
-    .globals = (mp_obj_dict_t*)&mp_module_webcam_globals,
+    .globals = (mp_obj_dict_t *)&mp_module_webcam_globals,
 };
 
-MP_REGISTER_MODULE(MP_QSTR_webcam, mp_module_webcam);
+MP_REGISTER_MODULE(MP_QSTR_webcam, webcam_user_cmodule);
