@@ -221,7 +221,7 @@ if not cam:
     except Exception as e:
         print(f"camtest.py: webcam exception: {e}")
 
-time.sleep_ms(1000)
+#time.sleep_ms(1000)
 memview = webcam.capture_frame(cam)  # Returns memoryview
 time.sleep_ms(1000)
 static_bytes_obj = bytes(memview)
