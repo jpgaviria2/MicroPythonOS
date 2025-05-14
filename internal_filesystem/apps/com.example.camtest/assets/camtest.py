@@ -15,6 +15,7 @@ image = None
 qr_label = None
 use_webcam = False
 
+memview = None
 
 def print_qr_buffer(buffer):
     try:
@@ -160,7 +161,6 @@ def build_ui():
     image.align(lv.ALIGN.LEFT_MID, 0, 0)
     image.set_rotation(900)
     # Create image descriptor once
-    memview = webcam.capture_frame(cam)  # Returns memoryview
     image_dsc = lv.image_dsc_t({
         "header": {
             "magic": lv.IMAGE_HEADER_MAGIC,
@@ -171,7 +171,7 @@ def build_ui():
             "cf": lv.COLOR_FORMAT.L8
         },
         'data_size': width * height,
-        'data': memview  # Will be updated per frame
+        'data': None # Will be updated per frame
     })
     image.set_src(image_dsc)
 
@@ -221,6 +221,11 @@ if not cam:
     except Exception as e:
         print(f"camtest.py: webcam exception: {e}")
 
+time.sleep_ms(1000)
+memview = webcam.capture_frame(cam)  # Returns memoryview
+time.sleep_ms(1000)
+static_bytes_obj = bytes(memview)
+
 if cam or use_webcam:
     build_ui()
     count=0
@@ -228,10 +233,15 @@ if cam or use_webcam:
         print(f"capture nr {count}")
         count += 1
         #try_capture()
-        webcam.recapture_frame(cam)
-        #image.invalidate()
+        #webcam.recapture_frame(cam)
+        bytes_obj = bytes(memview)
+        print(f"got bytes: {len(bytes_obj)}")
+        image_dsc.data = bytes_obj
+        #image_dsc.data = static_bytes_obj
+        time.sleep_ms(200) # Allow for the MicroPython REPL to still work. Reducing it doesn't seem to affect the on-display FPS.    
+        # somehow, everything's fine until I tell LVGL to redraw the image:
+        image.invalidate()
         #image.set_src(image_dsc)
-        time.sleep_ms(100) # Allow for the MicroPython REPL to still work. Reducing it doesn't seem to affect the on-display FPS.    
     print("App backgrounded, deinitializing camera...")
     if use_webcam:
         webcam.deinit(cam)  # Deinitializes webcam
