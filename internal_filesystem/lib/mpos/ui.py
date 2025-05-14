@@ -1,6 +1,8 @@
 import lvgl as lv
 import mpos.apps
 
+th = None
+
 NOTIFICATION_BAR_HEIGHT=24
 
 CLOCK_UPDATE_INTERVAL = 1000 # 10 or even 1 ms doesn't seem to change the framerate but 100ms is enough

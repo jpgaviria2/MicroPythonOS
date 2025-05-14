@@ -35,6 +35,7 @@ def execute_script(script_source, is_file, is_launcher, is_graphical):
             lv.screen_load(newscreen)
             script_globals = {
                 'lv': lv,
+                'th': mpos.ui.th,
                 'NOTIFICATION_BAR_HEIGHT': mpos.ui.NOTIFICATION_BAR_HEIGHT, # for apps that want to leave space for notification bar
                 'appscreen': newscreen,
                 'start_app': start_app, # for launcher apps
