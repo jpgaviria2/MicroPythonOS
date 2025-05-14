@@ -101,16 +101,15 @@ def qr_button_click(e):
 def try_capture():
     global current_cam_buffer, image_dsc, image, use_webcam
     if use_webcam:
-        new_cam_buffer = webcam.capture_frame(cam)
+        current_cam_buffer = webcam.capture_frame(cam)
     elif cam.frame_available():
-        new_cam_buffer = cam.capture()  # Returns memoryview
-    if new_cam_buffer and len(new_cam_buffer):
-        image_dsc.data = new_cam_buffer
+        current_cam_buffer = cam.capture()  # Returns memoryview
+    if current_cam_buffer and len(current_cam_buffer):
+        image_dsc.data = current_cam_buffer
+        #image.invalidate() # does not work so do this:
         image.set_src(image_dsc)
-        #image.invalidate() #does not work
         if not use_webcam:
             cam.free_buffer()  # Free the old buffer
-        current_cam_buffer = new_cam_buffer  # Store new buffer reference
     else:
         print("No image received from camera, ignoring...")
         return
@@ -147,7 +146,8 @@ def build_ui():
     # Initialize LVGL image widget
     image = lv.image(cont)
     image.align(lv.ALIGN.LEFT_MID, 0, 0)
-    image.set_rotation(900)
+    if not use_webcam:
+        image.set_rotation(900)
     # Create image descriptor once
     image_dsc = lv.image_dsc_t({
         "header": {
