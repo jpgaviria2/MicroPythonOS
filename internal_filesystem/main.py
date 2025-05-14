@@ -1,10 +1,11 @@
 import task_handler
-th = task_handler.TaskHandler(duration=5) # 5ms is recommended for MicroPython+LVGL on desktop
+
 
 import mpos.ui
 mpos.ui.create_rootscreen()
 mpos.ui.create_notification_bar()
 mpos.ui.create_drawer(display)
+mpos.ui.th = task_handler.TaskHandler(duration=5) # 5ms is recommended for MicroPython+LVGL on desktop
 
 try:
     import freezefs_mount_builtin
