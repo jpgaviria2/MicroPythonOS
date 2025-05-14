@@ -17,9 +17,8 @@
 #define OUTPUT_WIDTH 240
 #define OUTPUT_HEIGHT 240
 
-#define WEBCAM_DEBUG_PRINT(...) mp_printf(&mp_plat_print, __VA_ARGS__);
+#define WEBCAM_DEBUG_PRINT(...) mp_printf(&mp_plat_print, __VA_ARGS__)
 
-// Forward declaration of the webcam type
 static const mp_obj_type_t webcam_type;
 
 typedef struct _webcam_obj_t {
@@ -28,7 +27,7 @@ typedef struct _webcam_obj_t {
     void *buffers[NUM_BUFFERS];
     size_t buffer_length;
     int frame_count;
-    unsigned char *gray_buffer; // Persistent buffer for memoryview
+    unsigned char *gray_buffer;
 } webcam_obj_t;
 
 static void yuyv_to_grayscale_240x240(unsigned char *yuyv, unsigned char *gray, int in_width, int in_height) {
@@ -48,7 +47,7 @@ static void yuyv_to_grayscale_240x240(unsigned char *yuyv, unsigned char *gray, 
 static void save_raw(const char *filename, unsigned char *data, int width, int height) {
     FILE *fp = fopen(filename, "wb");
     if (!fp) {
-        fprintf(stderr, "Cannot open file %s: %s\n", filename, strerror(errno));
+        WEBCAM_DEBUG_PRINT("Cannot open file %s: %s\n", filename, strerror(errno));
         return;
     }
     fwrite(data, 1, width * height, fp);
@@ -58,7 +57,7 @@ static void save_raw(const char *filename, unsigned char *data, int width, int h
 static int init_webcam(webcam_obj_t *self, const char *device) {
     self->fd = open(device, O_RDWR);
     if (self->fd < 0) {
-        fprintf(stderr, "Cannot open device: %s\n", strerror(errno));
+        WEBCAM_DEBUG_PRINT("Cannot open device: %s\n", strerror(errno));
         return -1;
     }
 
@@ -69,7 +68,7 @@ static int init_webcam(webcam_obj_t *self, const char *device) {
     fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
     fmt.fmt.pix.field = V4L2_FIELD_ANY;
     if (ioctl(self->fd, VIDIOC_S_FMT, &fmt) < 0) {
-        fprintf(stderr, "Cannot set format: %s\n", strerror(errno));
+        WEBCAM_DEBUG_PRINT("Cannot set format: %s\n", strerror(errno));
         close(self->fd);
         return -1;
     }
@@ -79,7 +78,7 @@ static int init_webcam(webcam_obj_t *self, const char *device) {
     req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     req.memory = V4L2_MEMORY_MMAP;
     if (ioctl(self->fd, VIDIOC_REQBUFS, &req) < 0) {
-        fprintf(stderr, "Cannot request buffers: %s\n", strerror(errno));
+        WEBCAM_DEBUG_PRINT("Cannot request buffers: %s\n", strerror(errno));
         close(self->fd);
         return -1;
     }
@@ -90,14 +89,14 @@ static int init_webcam(webcam_obj_t *self, const char *device) {
         buf.memory = V4L2_MEMORY_MMAP;
         buf.index = i;
         if (ioctl(self->fd, VIDIOC_QUERYBUF, &buf) < 0) {
-            fprintf(stderr, "Cannot query buffer: %s\n", strerror(errno));
+            WEBCAM_DEBUG_PRINT("Cannot query buffer: %s\n", strerror(errno));
             close(self->fd);
             return -1;
         }
         self->buffer_length = buf.length;
         self->buffers[i] = mmap(NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, self->fd, buf.m.offset);
         if (self->buffers[i] == MAP_FAILED) {
-            fprintf(stderr, "Cannot map buffer: %s\n", strerror(errno));
+            WEBCAM_DEBUG_PRINT("Cannot map buffer: %s\n", strerror(errno));
             close(self->fd);
             return -1;
         }
@@ -109,21 +108,21 @@ static int init_webcam(webcam_obj_t *self, const char *device) {
         buf.memory = V4L2_MEMORY_MMAP;
         buf.index = i;
         if (ioctl(self->fd, VIDIOC_QBUF, &buf) < 0) {
-        fprintf(stderr, "Cannot queue buffer: %s\n", strerror(errno));
+            WEBCAM_DEBUG_PRINT("Cannot queue buffer: %s\n", strerror(errno));
             return -1;
         }
     }
 
     enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     if (ioctl(self->fd, VIDIOC_STREAMON, &type) < 0) {
-        fprintf(stderr, "Cannot start streaming: %s\n", strerror(errno));
+        WEBCAM_DEBUG_PRINT("Cannot start streaming: %s\n", strerror(errno));
         return -1;
     }
 
     self->frame_count = 0;
     self->gray_buffer = (unsigned char *)malloc(OUTPUT_WIDTH * OUTPUT_HEIGHT);
     if (!self->gray_buffer) {
-        fprintf(stderr, "Cannot allocate gray buffer: %s\n", strerror(errno));
+        WEBCAM_DEBUG_PRINT("Cannot allocate gray buffer: %s\n", strerror(errno));
         close(self->fd);
         return -1;
     }
@@ -165,10 +164,6 @@ static mp_obj_t capture_frame(webcam_obj_t *self) {
 
     yuyv_to_grayscale_240x240(self->buffers[buf.index], self->gray_buffer, WIDTH, HEIGHT);
 
-    //char filename[32];
-    //snprintf(filename, sizeof(filename), "frame_%03d.raw", self->frame_count++);
-    //save_raw(filename, self->gray_buffer, OUTPUT_WIDTH, OUTPUT_HEIGHT);
-
     mp_obj_t result = mp_obj_new_memoryview('b', OUTPUT_WIDTH * OUTPUT_HEIGHT, self->gray_buffer);
 
     if (ioctl(self->fd, VIDIOC_QBUF, &buf) < 0) {
@@ -180,7 +175,7 @@ static mp_obj_t capture_frame(webcam_obj_t *self) {
 
 static mp_obj_t webcam_init(size_t n_args, const mp_obj_t *args) {
     mp_arg_check_num(n_args, 0, 0, 1, false);
-    const char *device = "/dev/video0"; // Default device
+    const char *device = "/dev/video0";
     if (n_args == 1) {
         device = mp_obj_str_get_str(args[0]);
     }
