@@ -101,24 +101,24 @@ def try_capture():
     else:
         new_cam_buffer = cam.capture()  # Returns memoryview for other camera
     if new_cam_buffer and len(new_cam_buffer) == 240 * 240:
-        # Update image descriptor with new buffer
-        #image.set_src(None)
-        #image_dsc.data = None
-        # Set image source to update LVGL
-        image_dsc.data = new_cam_buffer
-        #image.set_src(image_dsc)
-        # Free the previous buffer (if any)
         if current_cam_buffer is not None:
             if use_webcam:
-                pass
-                #webcam.free_buffer(cam)  # Explicitly free webcam buffer
+                #pass
+                webcam.free_buffer(cam)  # Explicitly free webcam buffer
             else:
                 cam.free_buffer()  # Free other camera buffer
         else:
             pass
-            #print("current_cam_buffer is None, not freeing...")
-        #current_cam_buffer = None
-        #current_cam_buffer = new_cam_buffer  # Store new buffer reference
+            print("current_cam_buffer is None, not freeing...")
+        current_cam_buffer = None
+        current_cam_buffer = new_cam_buffer  # Store new buffer reference
+        # Update image descriptor with new buffer
+        # Set image source to update LVGL
+        image_dsc.data = None # this doesnt help
+        #image.set_src(None) this crashes it
+        image_dsc.data = current_cam_buffer
+        image.invalidate()
+        #image.set_src(image_dsc)
     else:
         print("Invalid buffer size:", len(new_cam_buffer))
         if use_webcam:
