@@ -94,6 +94,16 @@ def qr_button_click(e):
 
 
 def try_capture():
+    global current_cam_buffer, image_dsc, image
+    new_cam_buffer = webcam.capture_frame(cam)  # Returns memoryview
+    if new_cam_buffer and len(new_cam_buffer) == 240 * 240:
+        image_dsc.data = new_cam_buffer  # Update image descriptor
+        image.set_src(image_dsc)  # Update LVGL image
+        current_cam_buffer = None  # Clear reference to allow GC
+    else:
+        print("Invalid buffer size:", len(new_cam_buffer))
+
+def try_capture_old():
     global current_cam_buffer, image_dsc, image, use_webcam
     if use_webcam:
         new_cam_buffer = webcam.capture_frame(cam)
@@ -107,6 +117,7 @@ def try_capture():
         image_dsc.data = new_cam_buffer
         # Set image source to update LVGL (implicitly invalidates widget)
         image.set_src(image_dsc)
+        #current_cam_buffer = None  # Clear reference to allow GC
         #image.invalidate() #does not work
         # Free the previous buffer (if any) after setting new data
         if current_cam_buffer is not None and not use_webcam:

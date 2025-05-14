@@ -26,6 +26,7 @@ typedef struct _webcam_obj_t {
     void *buffers[NUM_BUFFERS];
     size_t buffer_length;
     int frame_count;
+    unsigned char *gray_buffer; // Persistent buffer for memoryview
 } webcam_obj_t;
 
 static void yuyv_to_grayscale_240x240(unsigned char *yuyv, unsigned char *gray, int in_width, int in_height) {
@@ -106,7 +107,7 @@ static int init_webcam(webcam_obj_t *self, const char *device) {
         buf.memory = V4L2_MEMORY_MMAP;
         buf.index = i;
         if (ioctl(self->fd, VIDIOC_QBUF, &buf) < 0) {
-            fprintf(stderr, "Cannot queue buffer: %s\n", strerror(errno));
+        fprintf(stderr, "Cannot queue buffer: %s\n", strerror(errno));
             return -1;
         }
     }
@@ -118,6 +119,12 @@ static int init_webcam(webcam_obj_t *self, const char *device) {
     }
 
     self->frame_count = 0;
+    self->gray_buffer = (unsigned char *)malloc(OUTPUT_WIDTH * OUTPUT_HEIGHT);
+    if (!self->gray_buffer) {
+        fprintf(stderr, "Cannot allocate gray buffer: %s\n", strerror(errno));
+        close(self->fd);
+        return -1;
+    }
     return 0;
 }
 
@@ -133,6 +140,11 @@ static void deinit_webcam(webcam_obj_t *self) {
         }
     }
 
+    if (self->gray_buffer) {
+        free(self->gray_buffer);
+        self->gray_buffer = NULL;
+    }
+
     close(self->fd);
     self->fd = -1;
 }
@@ -145,20 +157,17 @@ static mp_obj_t capture_frame(webcam_obj_t *self) {
         mp_raise_OSError(MP_EIO);
     }
 
-    unsigned char *gray = (unsigned char *)malloc(OUTPUT_WIDTH * OUTPUT_HEIGHT);
-    if (!gray) {
+    if (!self->gray_buffer) {
         mp_raise_OSError(MP_ENOMEM);
     }
 
-    yuyv_to_grayscale_240x240(self->buffers[buf.index], gray, WIDTH, HEIGHT);
+    yuyv_to_grayscale_240x240(self->buffers[buf.index], self->gray_buffer, WIDTH, HEIGHT);
 
     char filename[32];
     snprintf(filename, sizeof(filename), "frame_%03d.raw", self->frame_count++);
-    save_raw(filename, gray, OUTPUT_WIDTH, OUTPUT_HEIGHT);
+    save_raw(filename, self->gray_buffer, OUTPUT_WIDTH, OUTPUT_HEIGHT);
 
-    mp_obj_t result = mp_obj_new_bytes(gray, OUTPUT_WIDTH * OUTPUT_HEIGHT);
-
-    free(gray);
+    mp_obj_t result = mp_obj_new_memoryview(0x01, OUTPUT_WIDTH * OUTPUT_HEIGHT, self->gray_buffer);
 
     if (ioctl(self->fd, VIDIOC_QBUF, &buf) < 0) {
         mp_raise_OSError(MP_EIO);
@@ -177,6 +186,7 @@ static mp_obj_t webcam_init(size_t n_args, const mp_obj_t *args) {
     webcam_obj_t *self = m_new_obj(webcam_obj_t);
     self->base.type = &webcam_type;
     self->fd = -1;
+    self->gray_buffer = NULL;
 
     if (init_webcam(self, device) < 0) {
         mp_raise_OSError(MP_EIO);
