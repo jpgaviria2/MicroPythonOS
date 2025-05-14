@@ -16,7 +16,7 @@ th.disable()
 
 cam = webcam.init("/dev/video0")  # Initialize webcam with device path
 #memview = None
-memview = webcam.capture_frame(cam)  # Returns memoryview
+#memview = webcam.capture_frame(cam)  # Returns memoryview
 #time.sleep_ms(1000)
 #static_bytes_obj = bytes(memview)
 
@@ -34,13 +34,13 @@ image_dsc = lv.image_dsc_t({
         "cf": lv.COLOR_FORMAT.L8
     },
     'data_size': width * height,
-    'data': memview # Will be updated per frame
+    'data': None # Will be updated per frame
 })
 image.set_src(image_dsc)
 
 #memview = webcam.capture_frame(cam)  # Returns memoryview
 
-for i in range(300):
+for i in range(100):
     print(f"iteration {i}")
     webcam.recapture_frame(cam) #refresh memview
     #memview = 
@@ -48,7 +48,7 @@ for i in range(300):
     #print(f"got bytes: {len(bytes_obj)}")
     #image_dsc.data = bytes_obj
     #image_dsc.data = static_bytes_obj
-    #image_dsc.data = webcam.capture_frame(cam)  # Returns memoryview
+    image_dsc.data = webcam.capture_frame(cam)  # Returns memoryview
     image.set_src(image_dsc)
     #image.invalidate()
     lv.task_handler()

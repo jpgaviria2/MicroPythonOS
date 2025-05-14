@@ -2,6 +2,7 @@ import time
 import webcam
 
 appscreen = lv.screen_active()
+th.disable()
 
 keepgoing = True
 keepliveqrdecoding = False
@@ -94,7 +95,7 @@ def qr_button_click(e):
         qr_label.set_text(lv.SYMBOL.EYE_OPEN)
 
 
-def try_capture():
+def try_capture_only_webcam():
     global current_cam_buffer, image_dsc, image
     new_cam_buffer = webcam.capture_frame(cam)  # Returns memoryview
     if new_cam_buffer and len(new_cam_buffer) == 240 * 240:
@@ -106,7 +107,7 @@ def try_capture():
     else:
         print("Invalid buffer size:", len(new_cam_buffer))
 
-def try_capture_old():
+def try_capture():
     global current_cam_buffer, image_dsc, image, use_webcam
     if use_webcam:
         new_cam_buffer = webcam.capture_frame(cam)
@@ -123,8 +124,8 @@ def try_capture_old():
         #current_cam_buffer = None  # Clear reference to allow GC
         #image.invalidate() #does not work
         # Free the previous buffer (if any) after setting new data
-        #if current_cam_buffer is not None and not use_webcam:
-        #    cam.free_buffer()  # Free the old buffer
+        if current_cam_buffer is not None and not use_webcam:
+            cam.free_buffer()  # Free the old buffer
         current_cam_buffer = new_cam_buffer  # Store new buffer reference
 
 
@@ -178,7 +179,6 @@ def build_ui():
 
 def init_cam():
     try:
-        # time.sleep(1) doesn't help
         from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
         cam = Camera(
             data_pins=[12,13,15,11,14,10,7,2],
@@ -221,27 +221,15 @@ if not cam:
     except Exception as e:
         print(f"camtest.py: webcam exception: {e}")
 
-#time.sleep_ms(1000)
-memview = webcam.capture_frame(cam)  # Returns memoryview
-time.sleep_ms(1000)
-static_bytes_obj = bytes(memview)
-
-if cam or use_webcam:
+if cam:
     build_ui()
     count=0
     while appscreen == lv.screen_active() and keepgoing is True:
-        print(f"capture nr {count}")
-        count += 1
-        #try_capture()
-        #webcam.recapture_frame(cam)
-        bytes_obj = bytes(memview)
-        print(f"got bytes: {len(bytes_obj)}")
-        #image_dsc.data = bytes_obj
-        image_dsc.data = static_bytes_obj
-        time.sleep_ms(200) # Allow for the MicroPython REPL to still work. Reducing it doesn't seem to affect the on-display FPS.    
-        # somehow, everything's fine until I tell LVGL to redraw the image:
-        #image.invalidate()
-        image.set_src(image_dsc)
+        try_capture()
+        # Task handler needs to be updated from the same thread, otherwise it causes concurrency issues:
+        lv.task_handler()
+        time.sleep_ms(5)
+        lv.tick_inc(5)
     print("App backgrounded, deinitializing camera...")
     if use_webcam:
         webcam.deinit(cam)  # Deinitializes webcam
@@ -250,6 +238,7 @@ if cam or use_webcam:
 else:
    print("No camera found, exiting...")
 
+th.enable()
 show_launcher()
 
 
