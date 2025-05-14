@@ -1,5 +1,4 @@
 import time
-import webcam
 
 appscreen = lv.screen_active()
 th.disable()
@@ -202,6 +201,7 @@ cam = init_cam()
 if not cam:
     print("camtest.py: no internal camera found, trying webcam on /dev/video0")
     try:
+        import webcam
         cam = webcam.init("/dev/video0")  # Initialize webcam with device path
         use_webcam = True
     except Exception as e:
