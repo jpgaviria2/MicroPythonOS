@@ -13,7 +13,7 @@
 
 #define WIDTH 640
 #define HEIGHT 480
-#define NUM_BUFFERS 1 # more buffers doesnt seem to help so one is enough
+#define NUM_BUFFERS 1 // more buffers doesnt seem to help so one is enough
 #define OUTPUT_WIDTH 240
 #define OUTPUT_HEIGHT 240
 
