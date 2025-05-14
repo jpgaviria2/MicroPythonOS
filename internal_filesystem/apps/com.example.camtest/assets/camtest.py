@@ -152,11 +152,11 @@ def build_ui():
             "magic": lv.IMAGE_HEADER_MAGIC,
             "w": width,
             "h": height,
-            "stride": width ,
-            #"cf": lv.COLOR_FORMAT.RGB565
-            "cf": lv.COLOR_FORMAT.L8
+            "stride": width * 2,
+            "cf": lv.COLOR_FORMAT.RGB565
+            #"cf": lv.COLOR_FORMAT.L8
         },
-        'data_size': width * height,
+        'data_size': width * height * 2,
         'data': None # Will be updated per frame
     })
     image.set_src(image_dsc)
@@ -176,8 +176,8 @@ def init_cam():
             xclk_freq=20000000,
             powerdown_pin=-1,
             reset_pin=-1,
-            #pixel_format=PixelFormat.RGB565,
-            pixel_format=PixelFormat.GRAYSCALE,
+            pixel_format=PixelFormat.RGB565,
+            #pixel_format=PixelFormat.GRAYSCALE,
             frame_size=FrameSize.R240X240,
             grab_mode=GrabMode.LATEST 
         )
