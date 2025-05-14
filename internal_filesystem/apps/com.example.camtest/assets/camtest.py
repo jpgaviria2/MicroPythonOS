@@ -43,7 +43,7 @@ def qrdecode_live():
     while keepgoing and keepliveqrdecoding:
         try:
             import qrdecode
-            result = qrdecode.qrdecode(current_cam_buffer, width, height)
+            result = qrdecode.qrdecode_rgb565(current_cam_buffer, width, height)
             result = remove_bom(result)
             result = print_qr_buffer(result)
             print(f"QR decoding found: {result}")
