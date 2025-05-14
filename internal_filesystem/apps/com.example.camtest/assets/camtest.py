@@ -209,7 +209,10 @@ if not cam:
 
 if cam or use_webcam:
     build_ui()
+    count=0
     while appscreen == lv.screen_active() and keepgoing is True:
+        print(f"capture nr {count}")
+        count += 1
         try_capture()
         time.sleep_ms(100) # Allow for the MicroPython REPL to still work. Reducing it doesn't seem to affect the on-display FPS.    
     print("App backgrounded, deinitializing camera...")

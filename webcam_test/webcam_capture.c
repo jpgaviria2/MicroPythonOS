@@ -185,7 +185,7 @@ int main() {
         return -1;
     }
 
-    if (capture_frames(100) < 0) {
+    if (capture_frames(1000) < 0) {
         printf("Frame capture failed\n");
         deinit_webcam();
         return -1;
