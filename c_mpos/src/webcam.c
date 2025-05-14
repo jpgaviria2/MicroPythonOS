@@ -195,7 +195,7 @@ static mp_obj_t capture_frame(webcam_obj_t *self) {
     //snprintf(filename, sizeof(filename), "frame_%03d.raw", self->frame_count++);
     //save_raw(filename, self->gray_buffer, OUTPUT_WIDTH, OUTPUT_HEIGHT);
 
-    mp_obj_t result = mp_obj_new_memoryview(0x01, OUTPUT_WIDTH * OUTPUT_HEIGHT, self->gray_buffer);
+    mp_obj_t result = mp_obj_new_memoryview('b', OUTPUT_WIDTH * OUTPUT_HEIGHT, self->gray_buffer);
 
     if (ioctl(self->fd, VIDIOC_QBUF, &buf) < 0) {
         mp_raise_OSError(MP_EIO);
