@@ -1,3 +1,10 @@
+# This code grabs images from the camera in RGB565 format (2 bytes per pixel)
+# and sends that to the QR decoder if QR decoding is enabled.
+# The QR decoder then converts the RGB565 to grayscale, as that's what quirc operates on.
+# It would be slightly more efficient to capture the images from the camera in L8/grayscale format,
+# or in YUV format and discarding the U and V planes, but then the image will be gray (not great UX)
+# and the performance impact of converting RGB565 to grayscale is probably minimal anyway.
+
 import time
 
 appscreen = lv.screen_active()
@@ -101,7 +108,7 @@ def try_capture():
     if use_webcam:
         current_cam_buffer = webcam.capture_frame(cam, "rgb565")
     elif cam.frame_available():
-        current_cam_buffer = cam.capture()  # Returns memoryview
+        current_cam_buffer = cam.capture()
     if current_cam_buffer and len(current_cam_buffer):
         image_dsc.data = current_cam_buffer
         #image.invalidate() # does not work so do this:
