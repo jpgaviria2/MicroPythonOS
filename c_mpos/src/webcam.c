@@ -1,7 +1,3 @@
-#include "py/obj.h"
-#include "py/runtime.h"
-#include "py/mperrno.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -11,6 +7,9 @@
 #include <sys/mman.h>
 #include <string.h>
 #include <errno.h>
+#include "py/obj.h"
+#include "py/runtime.h"
+#include "py/mperrno.h"
 
 #define WIDTH 640
 #define HEIGHT 480
@@ -18,7 +17,6 @@
 #define OUTPUT_WIDTH 240
 #define OUTPUT_HEIGHT 240
 
-// Webcam object structure
 typedef struct _webcam_obj_t {
     mp_obj_base_t base;
     int fd;
@@ -27,7 +25,6 @@ typedef struct _webcam_obj_t {
     int frame_count;
 } webcam_obj_t;
 
-// Convert YUYV to grayscale and downscale to 240x240
 static void yuyv_to_grayscale_240x240(unsigned char *yuyv, unsigned char *gray, int in_width, int in_height) {
     float x_ratio = (float)in_width / OUTPUT_WIDTH;
     float y_ratio = (float)in_height / OUTPUT_HEIGHT;
@@ -42,7 +39,6 @@ static void yuyv_to_grayscale_240x240(unsigned char *yuyv, unsigned char *gray, 
     }
 }
 
-// Save grayscale frame as .raw
 static void save_raw(const char *filename, unsigned char *data, int width, int height) {
     FILE *fp = fopen(filename, "wb");
     if (!fp) {
@@ -53,7 +49,6 @@ static void save_raw(const char *filename, unsigned char *data, int width, int h
     fclose(fp);
 }
 
-// Initialize webcam
 static int init_webcam(webcam_obj_t *self, const char *device) {
     self->fd = open(device, O_RDWR);
     if (self->fd < 0) {
@@ -123,7 +118,6 @@ static int init_webcam(webcam_obj_t *self, const char *device) {
     return 0;
 }
 
-// Deinitialize webcam
 static void deinit_webcam(webcam_obj_t *self) {
     if (self->fd < 0) return;
 
@@ -140,40 +134,43 @@ static void deinit_webcam(webcam_obj_t *self) {
     self->fd = -1;
 }
 
-// Capture a single frame
 static mp_obj_t capture_frame(webcam_obj_t *self) {
     struct v4l2_buffer buf = {0};
     buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     buf.memory = V4L2_MEMORY_MMAP;
     if (ioctl(self->fd, VIDIOC_DQBUF, &buf) < 0) {
-        mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Cannot dequeue buffer"));
+        mp_raise_OSError(MP_EIO);
     }
 
-    // Convert to grayscale 240x240
-    unsigned char *gray = mp_obj_new_bytearray(OUTPUT_WIDTH * OUTPUT_HEIGHT);
+    unsigned char *gray = (unsigned char *)malloc(OUTPUT_WIDTH * OUTPUT_HEIGHT);
+    if (!gray) {
+        mp_raise_OSError(MP_ENOMEM);
+    }
+
     yuyv_to_grayscale_240x240(self->buffers[buf.index], gray, WIDTH, HEIGHT);
 
-    // Save to file
     char filename[32];
     snprintf(filename, sizeof(filename), "frame_%03d.raw", self->frame_count++);
     save_raw(filename, gray, OUTPUT_WIDTH, OUTPUT_HEIGHT);
 
-    // Requeue buffer
+    mp_obj_t result = mp_obj_new_bytes(gray, OUTPUT_WIDTH * OUTPUT_HEIGHT);
+
+    free(gray);
+
     if (ioctl(self->fd, VIDIOC_QBUF, &buf) < 0) {
-        mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Cannot requeue buffer"));
+        mp_raise_OSError(MP_EIO);
     }
 
-    return mp_obj_new_bytes(gray, OUTPUT_WIDTH * OUTPUT_HEIGHT);
+    return result;
 }
 
-// MicroPython bindings
 static mp_obj_t webcam_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     webcam_obj_t *self = m_new_obj(webcam_obj_t);
     self->base.type = type;
     self->fd = -1;
 
     if (init_webcam(self, "/dev/video0") < 0) {
-        mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Webcam initialization failed"));
+        mp_raise_OSError(MP_EIO);
     }
 
     return MP_OBJ_FROM_PTR(self);
@@ -189,7 +186,7 @@ MP_DEFINE_CONST_FUN_OBJ_1(webcam_deinit_obj, webcam_deinit);
 static mp_obj_t webcam_capture_frame(mp_obj_t self_in) {
     webcam_obj_t *self = MP_OBJ_TO_PTR(self_in);
     if (self->fd < 0) {
-        mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Webcam not initialized"));
+        mp_raise_OSError(MP_EIO);
     }
     return capture_frame(self);
 }
