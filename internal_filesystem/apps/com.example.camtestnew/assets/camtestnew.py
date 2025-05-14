@@ -15,7 +15,7 @@ import time
 th.disable()
 
 cam = webcam.init("/dev/video0")  # Initialize webcam with device path
-memview = webcam.capture_frame(cam)  # Returns memoryview
+#memview = webcam.capture_frame(cam)  # Returns memoryview
 #time.sleep_ms(1000)
 #static_bytes_obj = bytes(memview)
 
@@ -33,19 +33,20 @@ image_dsc = lv.image_dsc_t({
         "cf": lv.COLOR_FORMAT.L8
     },
     'data_size': width * height,
-    'data': memview # Will be updated per frame
+    'data': None # Will be updated per frame
 })
 image.set_src(image_dsc)
 
 for i in range(600):
     #print(f"iteration {i}")
-    webcam.recapture_frame(cam) #refresh memview
+    #webcam.recapture_frame(cam) #refresh memview
+    memview = webcam.capture_frame(cam)  # Returns memoryview
     #bytes_obj = bytes(memview)
     #print(f"got bytes: {len(bytes_obj)}")
     #image_dsc.data = static_bytes_obj
-    #image_dsc.data = bytes_obj
-    #image.set_src(image_dsc)
-    image.invalidate()
+    image_dsc.data = memview
+    image.set_src(image_dsc)
+    #image.invalidate()
     lv.task_handler()
     time.sleep_ms(5) # seems to need more than 0 or 1 ms, otherwise there's almost never a new image...
     lv.tick_inc(5)
