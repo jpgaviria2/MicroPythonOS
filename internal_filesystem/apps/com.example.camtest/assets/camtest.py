@@ -99,7 +99,9 @@ def try_capture():
     if new_cam_buffer and len(new_cam_buffer) == 240 * 240:
         image_dsc.data = new_cam_buffer  # Update image descriptor
         image.set_src(image_dsc)  # Update LVGL image
-        current_cam_buffer = None  # Clear reference to allow GC
+        #if current_cam_buffer is not None:
+        #    webcam.free_buffer(cam)  # Free the old buffer
+        #current_cam_buffer = new_cam_buffer  # Clear reference to allow GC
     else:
         print("Invalid buffer size:", len(new_cam_buffer))
 
@@ -120,8 +122,8 @@ def try_capture_old():
         #current_cam_buffer = None  # Clear reference to allow GC
         #image.invalidate() #does not work
         # Free the previous buffer (if any) after setting new data
-        if current_cam_buffer is not None and not use_webcam:
-            cam.free_buffer()  # Free the old buffer
+        #if current_cam_buffer is not None and not use_webcam:
+        #    cam.free_buffer()  # Free the old buffer
         current_cam_buffer = new_cam_buffer  # Store new buffer reference
 
 

@@ -163,9 +163,9 @@ static mp_obj_t capture_frame(webcam_obj_t *self) {
 
     yuyv_to_grayscale_240x240(self->buffers[buf.index], self->gray_buffer, WIDTH, HEIGHT);
 
-    char filename[32];
-    snprintf(filename, sizeof(filename), "frame_%03d.raw", self->frame_count++);
-    save_raw(filename, self->gray_buffer, OUTPUT_WIDTH, OUTPUT_HEIGHT);
+    //char filename[32];
+    //snprintf(filename, sizeof(filename), "frame_%03d.raw", self->frame_count++);
+    //save_raw(filename, self->gray_buffer, OUTPUT_WIDTH, OUTPUT_HEIGHT);
 
     mp_obj_t result = mp_obj_new_memoryview(0x01, OUTPUT_WIDTH * OUTPUT_HEIGHT, self->gray_buffer);
 
