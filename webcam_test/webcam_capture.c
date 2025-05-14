@@ -11,6 +11,8 @@
 #define WIDTH 640
 #define HEIGHT 480
 #define NUM_BUFFERS 4
+#define OUTPUT_WIDTH 240
+#define OUTPUT_HEIGHT 240
 
 // Global variables
 int fd = -1;
@@ -18,41 +20,32 @@ struct v4l2_buffer buf;
 void *buffers[NUM_BUFFERS];
 size_t buffer_length;
 
-// Convert YUYV to RGB for PPM output
-void yuyv_to_rgb(unsigned char *yuyv, unsigned char *rgb, int width, int height) {
-    for (int i = 0; i < width * height; i++) {
-        int index = i * 2;
-        int y = yuyv[index];
-        int u = yuyv[index + 1];
-        int v = yuyv[index + 3];
+// Convert YUYV to grayscale and downscale to 240x240
+void yuyv_to_grayscale_240x240(unsigned char *yuyv, unsigned char *gray, int in_width, int in_height) {
+    // Downscale factors
+    float x_ratio = (float)in_width / OUTPUT_WIDTH;
+    float y_ratio = (float)in_height / OUTPUT_HEIGHT;
 
-        int r = y + (1.402 * (v - 128));
-        int g = y - (0.344 * (u - 128)) - (0.714 * (v - 128));
-        int b = y + (1.772 * (u - 128));
-
-        r = r < 0 ? 0 : (r > 255 ? 255 : r);
-        g = g < 0 ? 0 : (g > 255 ? 255 : g);
-        b = b < 0 ? 0 : (b > 255 ? 255 : b);
-
-        rgb[i * 3 + 0] = r;
-        rgb[i * 3 + 1] = g;
-        rgb[i * 3 + 2] = b;
+    for (int y = 0; y < OUTPUT_HEIGHT; y++) {
+        for (int x = 0; x < OUTPUT_WIDTH; x++) {
+            // Nearest-neighbor interpolation
+            int src_x = (int)(x * x_ratio);
+            int src_y = (int)(y * y_ratio);
+            int src_index = (src_y * in_width + src_x) * 2; // YUYV: 2 bytes per pixel
+            gray[y * OUTPUT_WIDTH + x] = yuyv[src_index]; // Use Y component for grayscale
+        }
     }
 }
 
-// Save frame as PPM
-void save_ppm(const char *filename, unsigned char *data, int width, int height) {
+// Save grayscale frame as .raw
+void save_raw(const char *filename, unsigned char *data, int width, int height) {
     FILE *fp = fopen(filename, "wb");
     if (!fp) {
         perror("Cannot open file");
         return;
     }
-    fprintf(fp, "P6\n%d %d\n255\n", width, height);
-    unsigned char *rgb = malloc(width * height * 3);
-    yuyv_to_rgb(data, rgb, width, height);
-    fwrite(rgb, 1, width * height * 3, fp);
+    fwrite(data, 1, width * height, fp); // Write raw grayscale data
     fclose(fp);
-    free(rgb);
 }
 
 int init_webcam(const char *device) {
@@ -158,8 +151,11 @@ int capture_frame(char *filename) {
         return -1;
     }
 
-    // Save frame
-    save_ppm(filename, buffers[buf.index], WIDTH, HEIGHT);
+    // Convert and save frame
+    unsigned char *gray = malloc(OUTPUT_WIDTH * OUTPUT_HEIGHT);
+    yuyv_to_grayscale_240x240(buffers[buf.index], gray, WIDTH, HEIGHT);
+    save_raw(filename, gray, OUTPUT_WIDTH, OUTPUT_HEIGHT);
+    free(gray);
 
     // Requeue buffer
     if (ioctl(fd, VIDIOC_QBUF, &buf) < 0) {
@@ -173,7 +169,7 @@ int capture_frame(char *filename) {
 int capture_frames(int n) {
     for (int i = 0; i < n; i++) {
         char filename[32];
-        snprintf(filename, sizeof(filename), "frame_%03d.ppm", i);
+        snprintf(filename, sizeof(filename), "frame_%03d.raw", i);
         if (capture_frame(filename) < 0) {
             printf("Failed to capture frame %d\n", i);
             return -1;
