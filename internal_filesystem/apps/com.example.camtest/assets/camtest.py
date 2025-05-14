@@ -114,11 +114,26 @@ def try_capture():
         current_cam_buffer = new_cam_buffer  # Store new buffer reference
         # Update image descriptor with new buffer
         # Set image source to update LVGL
-        image_dsc.data = None # this doesnt help
-        #image.set_src(None) this crashes it
-        image_dsc.data = current_cam_buffer
-        image.invalidate()
-        #image.set_src(image_dsc)
+        #image_dsc.data = None # this doesnt help
+        #image.set_src(None) #this crashes it
+        oldsrc = image.get_src()
+        if oldsrc:
+            oldsrc.delete()
+        #image_dsc.data = current_cam_buffer
+        image_dsc = lv.image_dsc_t({
+            "header": {
+                "magic": lv.IMAGE_HEADER_MAGIC,
+                "w": width,
+                "h": height,
+                "stride": width ,
+                #"cf": lv.COLOR_FORMAT.RGB565
+                "cf": lv.COLOR_FORMAT.L8
+            },
+            'data_size': width * height,
+            'data': current_cam_buffer  # Will be updated per frame
+        })
+        #image.invalidate()
+        image.set_src(image_dsc)
     else:
         print("Invalid buffer size:", len(new_cam_buffer))
         if use_webcam:
