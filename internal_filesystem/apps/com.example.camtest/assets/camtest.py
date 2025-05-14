@@ -92,8 +92,33 @@ def qr_button_click(e):
         keepliveqrdecoding = False
         qr_label.set_text(lv.SYMBOL.EYE_OPEN)
 
-
 def try_capture():
+    global current_cam_buffer, image_dsc, image
+    use_webcam = True  # Set to True for webcam module
+    if use_webcam:
+        new_cam_buffer = webcam.capture_frame(cam)  # Returns bytes
+    else:
+        new_cam_buffer = cam.capture()  # Returns memoryview for other camera
+    if new_cam_buffer and len(new_cam_buffer) == 240 * 240:
+        # Update image descriptor with new buffer
+        image_dsc.data = new_cam_buffer
+        # Set image source to update LVGL
+        image.set_src(image_dsc)
+        # Free the previous buffer (if any)
+        if current_cam_buffer is not None:
+            if use_webcam:
+                webcam.free_buffer(cam)  # Explicitly free webcam buffer
+            else:
+                cam.free_buffer()  # Free other camera buffer
+        current_cam_buffer = new_cam_buffer  # Store new buffer reference
+    else:
+        print("Invalid buffer size:", len(new_cam_buffer))
+        if use_webcam:
+            webcam.free_buffer(cam)
+        else:
+            cam.free_buffer()
+
+def try_capture_again():
     global current_cam_buffer, image_dsc, image
     new_cam_buffer = webcam.capture_frame(cam)  # Returns memoryview
     if new_cam_buffer and len(new_cam_buffer) == 240 * 240:

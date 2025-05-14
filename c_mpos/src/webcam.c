@@ -107,7 +107,7 @@ static int init_webcam(webcam_obj_t *self, const char *device) {
         buf.memory = V4L2_MEMORY_MMAP;
         buf.index = i;
         if (ioctl(self->fd, VIDIOC_QBUF, &buf) < 0) {
-        fprintf(stderr, "Cannot queue buffer: %s\n", strerror(errno));
+            fprintf(stderr, "Cannot queue buffer: %s\n", strerror(errno));
             return -1;
         }
     }
@@ -149,6 +149,14 @@ static void deinit_webcam(webcam_obj_t *self) {
     self->fd = -1;
 }
 
+static mp_obj_t free_buffer(webcam_obj_t *self) {
+    if (self->gray_buffer) {
+        free(self->gray_buffer);
+        self->gray_buffer = NULL;
+    }
+    return mp_const_none;
+}
+
 static mp_obj_t capture_frame(webcam_obj_t *self) {
     struct v4l2_buffer buf = {0};
     buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -158,7 +166,10 @@ static mp_obj_t capture_frame(webcam_obj_t *self) {
     }
 
     if (!self->gray_buffer) {
-        mp_raise_OSError(MP_ENOMEM);
+        self->gray_buffer = (unsigned char *)malloc(OUTPUT_WIDTH * OUTPUT_HEIGHT);
+        if (!self->gray_buffer) {
+            mp_raise_OSError(MP_ENOMEM);
+        }
     }
 
     yuyv_to_grayscale_240x240(self->buffers[buf.index], self->gray_buffer, WIDTH, HEIGHT);
@@ -167,7 +178,7 @@ static mp_obj_t capture_frame(webcam_obj_t *self) {
     snprintf(filename, sizeof(filename), "frame_%03d.raw", self->frame_count++);
     save_raw(filename, self->gray_buffer, OUTPUT_WIDTH, OUTPUT_HEIGHT);
 
-    mp_obj_t result = mp_obj_new_memoryview(0x01, OUTPUT_WIDTH * OUTPUT_HEIGHT, self->gray_buffer);
+    mp_obj_t result = mp_obj_new_bytes(self->gray_buffer, OUTPUT_WIDTH * OUTPUT_HEIGHT);
 
     if (ioctl(self->fd, VIDIOC_QBUF, &buf) < 0) {
         mp_raise_OSError(MP_EIO);
@@ -203,6 +214,12 @@ static mp_obj_t webcam_deinit(mp_obj_t self_in) {
 }
 MP_DEFINE_CONST_FUN_OBJ_1(webcam_deinit_obj, webcam_deinit);
 
+static mp_obj_t webcam_free_buffer(mp_obj_t self_in) {
+    webcam_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    return free_buffer(self);
+}
+MP_DEFINE_CONST_FUN_OBJ_1(webcam_free_buffer_obj, webcam_free_buffer);
+
 static mp_obj_t webcam_capture_frame(mp_obj_t self_in) {
     webcam_obj_t *self = MP_OBJ_TO_PTR(self_in);
     if (self->fd < 0) {
@@ -223,6 +240,7 @@ static const mp_rom_map_elem_t mp_module_webcam_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&webcam_init_obj) },
     { MP_ROM_QSTR(MP_QSTR_capture_frame), MP_ROM_PTR(&webcam_capture_frame_obj) },
     { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&webcam_deinit_obj) },
+    { MP_ROM_QSTR(MP_QSTR_free_buffer), MP_ROM_PTR(&webcam_free_buffer_obj) },
 };
 static MP_DEFINE_CONST_DICT(mp_module_webcam_globals, mp_module_webcam_globals_table);
 
