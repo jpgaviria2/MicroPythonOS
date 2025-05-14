@@ -31,15 +31,22 @@ typedef struct _webcam_obj_t {
 } webcam_obj_t;
 
 static void yuyv_to_grayscale_240x240(unsigned char *yuyv, unsigned char *gray, int in_width, int in_height) {
-    float x_ratio = (float)in_width / OUTPUT_WIDTH;
-    float y_ratio = (float)in_height / OUTPUT_HEIGHT;
+    // Crop to 480x480 centered region
+    int crop_size = 480;
+    int crop_x_offset = (in_width - crop_size) / 2; // Center the crop: (640 - 480) / 2 = 80
+    int crop_y_offset = (in_height - crop_size) / 2; // Center the crop: (480 - 480) / 2 = 0
+
+    // Downscale ratios from 480x480 to 240x240
+    float x_ratio = (float)crop_size / OUTPUT_WIDTH; // 480 / 240 = 2.0
+    float y_ratio = (float)crop_size / OUTPUT_HEIGHT; // 480 / 240 = 2.0
 
     for (int y = 0; y < OUTPUT_HEIGHT; y++) {
         for (int x = 0; x < OUTPUT_WIDTH; x++) {
-            int src_x = (int)(x * x_ratio);
-            int src_y = (int)(y * y_ratio);
-            int src_index = (src_y * in_width + src_x) * 2;
-            gray[y * OUTPUT_WIDTH + x] = yuyv[src_index];
+            // Map output pixel to cropped region
+            int src_x = (int)(x * x_ratio) + crop_x_offset; // Adjust for crop offset
+            int src_y = (int)(y * y_ratio) + crop_y_offset; // Adjust for crop offset
+            int src_index = (src_y * in_width + src_x) * 2; // YUYV uses 2 bytes per pixel
+            gray[y * OUTPUT_WIDTH + x] = yuyv[src_index]; // Extract Y channel
         }
     }
 }
