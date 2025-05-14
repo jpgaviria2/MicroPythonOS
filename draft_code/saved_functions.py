@@ -602,7 +602,7 @@ def log_callback(level, log_str):
     # Convert log_str to string if it's a bytes object
     log_str = log_str.decode() if isinstance(log_str, bytes) else log_str
     # Optional: Print for debugging
-    print(f"Level: {level}, Log: {log_str}")
+    #print(f"Level: {level}, Log: {log_str}")
     # Log message format: "sysmon: 25 FPS (refr_cnt: 8 | redraw_cnt: 1), ..."
     if "sysmon:" in log_str and "FPS" in log_str:
         try:
@@ -628,14 +628,18 @@ def get_fps():
 
 
 # Main loop
-for _ in range(10):
-    import time
-    fps = get_fps()
-    if fps > 0:  # Only print when FPS is updated
-        print("Current FPS:", fps)
-    time.sleep(1)
+def print_fps():
+    for _ in range(100):
+        import time
+        fps = get_fps()
+        if fps > 0:  # Only print when FPS is updated
+            print("Current FPS:", fps)
+        time.sleep(1)
 
 
+import _thread
+_thread.stack_size(12*1024)
+_thread.start_new_thread(print_fps, ())
 
 # crash:
 

@@ -61,9 +61,12 @@ def close_button_click(e):
 
 def snap_button_click(e):
     print("Picture taken!")
+    import os
     try:
-        import os
         os.mkdir("data")
+    except OSError:
+        pass
+    try:
         os.mkdir("data/com.example.camtest")
     except OSError:
         pass
@@ -95,18 +98,6 @@ def qr_button_click(e):
         qr_label.set_text(lv.SYMBOL.EYE_OPEN)
 
 
-def try_capture_only_webcam():
-    global current_cam_buffer, image_dsc, image
-    new_cam_buffer = webcam.capture_frame(cam)  # Returns memoryview
-    if new_cam_buffer and len(new_cam_buffer) == 240 * 240:
-        image_dsc.data = new_cam_buffer  # Update image descriptor
-        image.set_src(image_dsc)  # Update LVGL image
-        #if current_cam_buffer is not None:
-        #    webcam.free_buffer(cam)  # Free the old buffer
-        #current_cam_buffer = new_cam_buffer  # Clear reference to allow GC
-    else:
-        print("Invalid buffer size:", len(new_cam_buffer))
-
 def try_capture():
     global current_cam_buffer, image_dsc, image, use_webcam
     if use_webcam:
@@ -114,19 +105,15 @@ def try_capture():
     elif cam.frame_available():
         new_cam_buffer = cam.capture()  # Returns memoryview
     if new_cam_buffer and len(new_cam_buffer):
-        #    print("Invalid buffer size:", len(new_cam_buffer))
-        #    cam.free_buffer()
-        #    return
-        # Update image descriptor with new memoryview
         image_dsc.data = new_cam_buffer
-        # Set image source to update LVGL (implicitly invalidates widget)
         image.set_src(image_dsc)
-        #current_cam_buffer = None  # Clear reference to allow GC
         #image.invalidate() #does not work
-        # Free the previous buffer (if any) after setting new data
-        if current_cam_buffer is not None and not use_webcam:
+        if not use_webcam:
             cam.free_buffer()  # Free the old buffer
         current_cam_buffer = new_cam_buffer  # Store new buffer reference
+    else:
+        print("No image received from camera, ignoring...")
+        return
 
 
 def build_ui():
@@ -214,7 +201,7 @@ def init_cam():
 
 cam = init_cam()
 if not cam:
-    print("init cam failed, retrying with webcam...")
+    print("camtest.py: no internal camera found, trying webcam on /dev/video0")
     try:
         cam = webcam.init("/dev/video0")  # Initialize webcam with device path
         use_webcam = True
@@ -228,9 +215,9 @@ if cam:
         try_capture()
         # Task handler needs to be updated from the same thread, otherwise it causes concurrency issues:
         lv.task_handler()
-        time.sleep_ms(5)
-        lv.tick_inc(5)
-    print("App backgrounded, deinitializing camera...")
+        time.sleep_ms(1)
+        lv.tick_inc(1)
+    print("camtest.py: stopping...")
     if use_webcam:
         webcam.deinit(cam)  # Deinitializes webcam
     else:
