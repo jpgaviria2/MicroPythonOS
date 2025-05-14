@@ -11,7 +11,7 @@ height=240
 
 import time
 
-th.disable()
+#th.disable()
 
 
 from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
@@ -26,10 +26,10 @@ cam = Camera(
     xclk_freq=20000000,
     powerdown_pin=-1,
     reset_pin=-1,
-    #pixel_format=PixelFormat.RGB565,
+    pixel_format=PixelFormat.RGB565,
     #pixel_format=PixelFormat.GRAYSCALE,
     #pixel_format=PixelFormat.YUV420,
-    pixel_format=PixelFormat.YUV422, # works
+    #pixel_format=PixelFormat.YUV422, # works
     frame_size=FrameSize.R240X240,
     grab_mode=GrabMode.LATEST 
 )
@@ -38,7 +38,7 @@ cam = Camera(
 
 image = lv.image(lv.screen_active())
 image.align(lv.ALIGN.LEFT_MID, 0, 0)
-image.set_rotation(900)
+#image.set_rotation(900)
 
 # Create image descriptor once
 image_dsc = lv.image_dsc_t({
@@ -46,10 +46,18 @@ image_dsc = lv.image_dsc_t({
         "magic": lv.IMAGE_HEADER_MAGIC,
         "w": width,
         "h": height,
-        "stride": width,
-        "cf": lv.COLOR_FORMAT.I422
+        "stride": width *2,
+        #"cf": lv.COLOR_FORMAT.L8 # works
+        "cf": lv.COLOR_FORMAT.RGB565 # works
+        #"cf": lv.COLOR_FORMAT.I422 #doesnt show anything
+        #"cf": lv.COLOR_FORMAT.I420 #doesnt show anything
+        #"cf": lv.COLOR_FORMAT.I420
+        #"cf": lv.COLOR_FORMAT.YUY2
+        #"cf": lv.COLOR_FORMAT.UYVY
+        #"cf": lv.COLOR_FORMAT.NV12
     },
-    'data_size': width * height,
+    'data_size': width * height * 2 ,
+    #'data_size': 86400,
     'data': None # Will be updated per frame
 })
 image.set_src(image_dsc)
@@ -61,13 +69,13 @@ for i in range(100):
     image_dsc.data = cam.capture()  # Returns memoryview
     image.set_src(image_dsc)
     #image.invalidate()
-    lv.task_handler()
+    #lv.task_handler()
     time.sleep_ms(5) # seems to need more than 0 or 1 ms, otherwise there's almost never a new image...
-    lv.tick_inc(5)
+    #lv.tick_inc(5)
 
 
 print("cleanup")
 cam.deinit()
 
 
-th.enable()
+#th.enable()
