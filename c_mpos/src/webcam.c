@@ -7,13 +7,14 @@
 #include <sys/mman.h>
 #include <string.h>
 #include <errno.h>
+#include <stdint.h>
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/mperrno.h"
 
 #define WIDTH 640
 #define HEIGHT 480
-#define NUM_BUFFERS 1 // more buffers doesnt seem to help so one is enough
+#define NUM_BUFFERS 1
 #define OUTPUT_WIDTH 240
 #define OUTPUT_HEIGHT 240
 
@@ -27,26 +28,61 @@ typedef struct _webcam_obj_t {
     void *buffers[NUM_BUFFERS];
     size_t buffer_length;
     int frame_count;
-    unsigned char *gray_buffer;
+    unsigned char *gray_buffer; // For grayscale
+    uint16_t *rgb565_buffer;   // For RGB565
 } webcam_obj_t;
 
-static void yuyv_to_grayscale_240x240(unsigned char *yuyv, unsigned char *gray, int in_width, int in_height) {
-    // Crop to 480x480 centered region
+static void yuyv_to_rgb565_240x240(unsigned char *yuyv, uint16_t *rgb565, int in_width, int in_height) {
     int crop_size = 480;
-    int crop_x_offset = (in_width - crop_size) / 2; // Center the crop: (640 - 480) / 2 = 80
-    int crop_y_offset = (in_height - crop_size) / 2; // Center the crop: (480 - 480) / 2 = 0
-
-    // Downscale ratios from 480x480 to 240x240
-    float x_ratio = (float)crop_size / OUTPUT_WIDTH; // 480 / 240 = 2.0
-    float y_ratio = (float)crop_size / OUTPUT_HEIGHT; // 480 / 240 = 2.0
+    int crop_x_offset = (in_width - crop_size) / 2;
+    int crop_y_offset = (in_height - crop_size) / 2;
+    float x_ratio = (float)crop_size / OUTPUT_WIDTH;
+    float y_ratio = (float)crop_size / OUTPUT_HEIGHT;
 
     for (int y = 0; y < OUTPUT_HEIGHT; y++) {
         for (int x = 0; x < OUTPUT_WIDTH; x++) {
-            // Map output pixel to cropped region
-            int src_x = (int)(x * x_ratio) + crop_x_offset; // Adjust for crop offset
-            int src_y = (int)(y * y_ratio) + crop_y_offset; // Adjust for crop offset
-            int src_index = (src_y * in_width + src_x) * 2; // YUYV uses 2 bytes per pixel
-            gray[y * OUTPUT_WIDTH + x] = yuyv[src_index]; // Extract Y channel
+            int src_x = (int)(x * x_ratio) + crop_x_offset;
+            int src_y = (int)(y * y_ratio) + crop_y_offset;
+            int src_index = (src_y * in_width + src_x) * 2;
+
+            int y0 = yuyv[src_index];
+            int u = yuyv[src_index + 1];
+            int v = yuyv[src_index + 3];
+
+            int c = y0 - 16;
+            int d = u - 128;
+            int e = v - 128;
+
+            int r = (298 * c + 409 * e + 128) >> 8;
+            int g = (298 * c - 100 * d - 208 * e + 128) >> 8;
+            int b = (298 * c + 516 * d + 128) >> 8;
+
+            r = r < 0 ? 0 : (r > 255 ? 255 : r);
+            g = g < 0 ? 0 : (g > 255 ? 255 : g);
+            b = b < 0 ? 0 : (b > 255 ? 255 : b);
+
+            uint16_t r5 = (r >> 3) & 0x1F;
+            uint16_t g6 = (g >> 2) & 0x3F;
+            uint16_t b5 = (b >> 3) & 0x1F;
+
+            rgb565[y * OUTPUT_WIDTH + x] = (r5 << 11) | (g6 << 5) | b5;
+        }
+    }
+}
+
+static void yuyv_to_grayscale_240x240(unsigned char *yuyv, unsigned char *gray, int in_width, int in_height) {
+    int crop_size = 480;
+    int crop_x_offset = (in_width - crop_size) / 2;
+    int crop_y_offset = (in_height - crop_size) / 2;
+    float x_ratio = (float)crop_size / OUTPUT_WIDTH;
+    float y_ratio = (float)crop_size / OUTPUT_HEIGHT;
+
+    for (int y = 0; y < OUTPUT_HEIGHT; y++) {
+        for (int x = 0; x < OUTPUT_WIDTH; x++) {
+            int src_x = (int)(x * x_ratio) + crop_x_offset;
+            int src_y = (int)(y * y_ratio) + crop_y_offset;
+            int src_index = (src_y * in_width + src_x) * 2;
+            gray[y * OUTPUT_WIDTH + x] = yuyv[src_index];
         }
     }
 }
@@ -58,6 +94,16 @@ static void save_raw(const char *filename, unsigned char *data, int width, int h
         return;
     }
     fwrite(data, 1, width * height, fp);
+    fclose(fp);
+}
+
+static void save_raw_rgb565(const char *filename, uint16_t *data, int width, int height) {
+    FILE *fp = fopen(filename, "wb");
+    if (!fp) {
+        WEBCAM_DEBUG_PRINT("Cannot open file %s: %s\n", filename, strerror(errno));
+        return;
+    }
+    fwrite(data, sizeof(uint16_t), width * height, fp);
     fclose(fp);
 }
 
@@ -127,9 +173,12 @@ static int init_webcam(webcam_obj_t *self, const char *device) {
     }
 
     self->frame_count = 0;
-    self->gray_buffer = (unsigned char *)malloc(OUTPUT_WIDTH * OUTPUT_HEIGHT);
-    if (!self->gray_buffer) {
-        WEBCAM_DEBUG_PRINT("Cannot allocate gray buffer: %s\n", strerror(errno));
+    self->gray_buffer = (unsigned char *)malloc(OUTPUT_WIDTH * OUTPUT_HEIGHT * sizeof(unsigned char));
+    self->rgb565_buffer = (uint16_t *)malloc(OUTPUT_WIDTH * OUTPUT_HEIGHT * sizeof(uint16_t));
+    if (!self->gray_buffer || !self->rgb565_buffer) {
+        WEBCAM_DEBUG_PRINT("Cannot allocate buffers: %s\n", strerror(errno));
+        free(self->gray_buffer);
+        free(self->rgb565_buffer);
         close(self->fd);
         return -1;
     }
@@ -148,24 +197,25 @@ static void deinit_webcam(webcam_obj_t *self) {
         }
     }
 
-    if (self->gray_buffer) {
-        free(self->gray_buffer);
-        self->gray_buffer = NULL;
-    }
+    free(self->gray_buffer);
+    self->gray_buffer = NULL;
+    free(self->rgb565_buffer);
+    self->rgb565_buffer = NULL;
 
     close(self->fd);
     self->fd = -1;
 }
 
 static mp_obj_t free_buffer(webcam_obj_t *self) {
-    if (self->gray_buffer) {
-        free(self->gray_buffer);
-        self->gray_buffer = NULL;
-    }
+    free(self->gray_buffer);
+    self->gray_buffer = NULL;
+    free(self->rgb565_buffer);
+    self->rgb565_buffer = NULL;
     return mp_const_none;
 }
 
-static mp_obj_t capture_frame(webcam_obj_t *self) {
+static mp_obj_t capture_frame(mp_obj_t self_in, mp_obj_t format) {
+    webcam_obj_t *self = MP_OBJ_TO_PTR(self_in);
     struct v4l2_buffer buf = {0};
     buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     buf.memory = V4L2_MEMORY_MMAP;
@@ -174,25 +224,40 @@ static mp_obj_t capture_frame(webcam_obj_t *self) {
     }
 
     if (!self->gray_buffer) {
-        self->gray_buffer = (unsigned char *)malloc(OUTPUT_WIDTH * OUTPUT_HEIGHT);
+        self->gray_buffer = (unsigned char *)malloc(OUTPUT_WIDTH * OUTPUT_HEIGHT * sizeof(unsigned char));
         if (!self->gray_buffer) {
             mp_raise_OSError(MP_ENOMEM);
         }
     }
-
-    yuyv_to_grayscale_240x240(self->buffers[buf.index], self->gray_buffer, WIDTH, HEIGHT);
-
-//    char filename[32];
-//    snprintf(filename, sizeof(filename), "frame_%03d.raw", self->frame_count++);
-//    save_raw(filename, self->gray_buffer, OUTPUT_WIDTH, OUTPUT_HEIGHT);
-
-    mp_obj_t result = mp_obj_new_memoryview('b', OUTPUT_WIDTH * OUTPUT_HEIGHT, self->gray_buffer);
-
-    if (ioctl(self->fd, VIDIOC_QBUF, &buf) < 0) {
-        mp_raise_OSError(MP_EIO);
+    if (!self->rgb565_buffer) {
+        self->rgb565_buffer = (uint16_t *)malloc(OUTPUT_WIDTH * OUTPUT_HEIGHT * sizeof(uint16_t));
+        if (!self->rgb565_buffer) {
+            mp_raise_OSError(MP_ENOMEM);
+        }
     }
 
-    return result;
+    const char *fmt = mp_obj_str_get_str(format);
+    if (strcmp(fmt, "grayscale") == 0) {
+        yuyv_to_grayscale_240x240(self->buffers[buf.index], self->gray_buffer, WIDTH, HEIGHT);
+        // char filename[32];
+        // snprintf(filename, sizeof(filename), "frame_%03d.raw", self->frame_count++);
+        // save_raw(filename, self->gray_buffer, OUTPUT_WIDTH, OUTPUT_HEIGHT);
+        mp_obj_t result = mp_obj_new_memoryview('B', OUTPUT_WIDTH * OUTPUT_HEIGHT, self->gray_buffer);
+        if (ioctl(self->fd, VIDIOC_QBUF, &buf) < 0) {
+            mp_raise_OSError(MP_EIO);
+        }
+        return result;
+    } else {
+        yuyv_to_rgb565_240x240(self->buffers[buf.index], self->rgb565_buffer, WIDTH, HEIGHT);
+        // char filename[32];
+        // snprintf(filename, sizeof(filename), "frame_%03d.rgb565", self->frame_count++);
+        // save_raw_rgb565(filename, self->rgb565_buffer, OUTPUT_WIDTH, OUTPUT_HEIGHT);
+        mp_obj_t result = mp_obj_new_memoryview('H', OUTPUT_WIDTH * OUTPUT_HEIGHT, self->rgb565_buffer);
+        if (ioctl(self->fd, VIDIOC_QBUF, &buf) < 0) {
+            mp_raise_OSError(MP_EIO);
+        }
+        return result;
+    }
 }
 
 static mp_obj_t webcam_init(size_t n_args, const mp_obj_t *args) {
@@ -206,6 +271,7 @@ static mp_obj_t webcam_init(size_t n_args, const mp_obj_t *args) {
     self->base.type = &webcam_type;
     self->fd = -1;
     self->gray_buffer = NULL;
+    self->rgb565_buffer = NULL;
 
     if (init_webcam(self, device) < 0) {
         mp_raise_OSError(MP_EIO);
@@ -228,14 +294,14 @@ static mp_obj_t webcam_free_buffer(mp_obj_t self_in) {
 }
 MP_DEFINE_CONST_FUN_OBJ_1(webcam_free_buffer_obj, webcam_free_buffer);
 
-static mp_obj_t webcam_capture_frame(mp_obj_t self_in) {
+static mp_obj_t webcam_capture_frame(mp_obj_t self_in, mp_obj_t format) {
     webcam_obj_t *self = MP_OBJ_TO_PTR(self_in);
     if (self->fd < 0) {
         mp_raise_OSError(MP_EIO);
     }
-    return capture_frame(self);
+    return capture_frame(self, format);
 }
-MP_DEFINE_CONST_FUN_OBJ_1(webcam_capture_frame_obj, webcam_capture_frame);
+MP_DEFINE_CONST_FUN_OBJ_2(webcam_capture_frame_obj, webcam_capture_frame);
 
 static const mp_obj_type_t webcam_type = {
     { &mp_type_type },

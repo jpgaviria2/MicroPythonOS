@@ -99,7 +99,7 @@ def qr_button_click(e):
 def try_capture():
     global current_cam_buffer, image_dsc, image, use_webcam
     if use_webcam:
-        current_cam_buffer = webcam.capture_frame(cam)
+        current_cam_buffer = webcam.capture_frame(cam, "rgb565")
     elif cam.frame_available():
         current_cam_buffer = cam.capture()  # Returns memoryview
     if current_cam_buffer and len(current_cam_buffer):
