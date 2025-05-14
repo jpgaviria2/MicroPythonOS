@@ -149,6 +149,34 @@ static void deinit_webcam(webcam_obj_t *self) {
     self->fd = -1;
 }
 
+static mp_obj_t recapture_frame(webcam_obj_t *self) {
+    struct v4l2_buffer buf = {0};
+    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    buf.memory = V4L2_MEMORY_MMAP;
+    if (ioctl(self->fd, VIDIOC_DQBUF, &buf) < 0) {
+        mp_raise_OSError(MP_EIO);
+    }
+
+    if (!self->gray_buffer) {
+        mp_raise_OSError(MP_ENOMEM);
+    }
+
+    yuyv_to_grayscale_240x240(self->buffers[buf.index], self->gray_buffer, WIDTH, HEIGHT);
+
+    //char filename[32];
+    //snprintf(filename, sizeof(filename), "frame_%03d.raw", self->frame_count++);
+    //save_raw(filename, self->gray_buffer, OUTPUT_WIDTH, OUTPUT_HEIGHT);
+
+    //mp_obj_t result = mp_obj_new_memoryview(0x01, OUTPUT_WIDTH * OUTPUT_HEIGHT, self->gray_buffer);
+    mp_obj_t result = mp_const_none;
+
+    if (ioctl(self->fd, VIDIOC_QBUF, &buf) < 0) {
+        mp_raise_OSError(MP_EIO);
+    }
+
+    return result;
+}
+
 static mp_obj_t capture_frame(webcam_obj_t *self) {
     struct v4l2_buffer buf = {0};
     buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -212,6 +240,16 @@ static mp_obj_t webcam_capture_frame(mp_obj_t self_in) {
 }
 MP_DEFINE_CONST_FUN_OBJ_1(webcam_capture_frame_obj, webcam_capture_frame);
 
+static mp_obj_t webcam_recapture_frame(mp_obj_t self_in) {
+    webcam_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    if (self->fd < 0) {
+        mp_raise_OSError(MP_EIO);
+    }
+    return recapture_frame(self);
+}
+MP_DEFINE_CONST_FUN_OBJ_1(webcam_recapture_frame_obj, webcam_recapture_frame);
+
+
 static const mp_obj_type_t webcam_type = {
     { &mp_type_type },
     .name = MP_QSTR_Webcam,
@@ -222,6 +260,7 @@ static const mp_rom_map_elem_t mp_module_webcam_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_Webcam), MP_ROM_PTR(&webcam_type) },
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&webcam_init_obj) },
     { MP_ROM_QSTR(MP_QSTR_capture_frame), MP_ROM_PTR(&webcam_capture_frame_obj) },
+    { MP_ROM_QSTR(MP_QSTR_recapture_frame), MP_ROM_PTR(&webcam_recapture_frame_obj) },
     { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&webcam_deinit_obj) },
 };
 static MP_DEFINE_CONST_DICT(mp_module_webcam_globals, mp_module_webcam_globals_table);

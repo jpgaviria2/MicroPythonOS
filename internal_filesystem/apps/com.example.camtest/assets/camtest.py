@@ -128,7 +128,7 @@ def try_capture_old():
 
 
 def build_ui():
-    global image, image_dsc,qr_label
+    global image, image_dsc,qr_label, cam
     cont = lv.obj(appscreen)
     cont.set_style_pad_all(0, 0)
     cont.set_style_border_width(0, 0)
@@ -160,6 +160,7 @@ def build_ui():
     image.align(lv.ALIGN.LEFT_MID, 0, 0)
     image.set_rotation(900)
     # Create image descriptor once
+    memview = webcam.capture_frame(cam)  # Returns memoryview
     image_dsc = lv.image_dsc_t({
         "header": {
             "magic": lv.IMAGE_HEADER_MAGIC,
@@ -170,7 +171,7 @@ def build_ui():
             "cf": lv.COLOR_FORMAT.L8
         },
         'data_size': width * height,
-        'data': None  # Will be updated per frame
+        'data': memview  # Will be updated per frame
     })
     image.set_src(image_dsc)
 
@@ -226,7 +227,10 @@ if cam or use_webcam:
     while appscreen == lv.screen_active() and keepgoing is True:
         print(f"capture nr {count}")
         count += 1
-        try_capture()
+        #try_capture()
+        webcam.recapture_frame(cam)
+        #image.invalidate()
+        #image.set_src(image_dsc)
         time.sleep_ms(100) # Allow for the MicroPython REPL to still work. Reducing it doesn't seem to affect the on-display FPS.    
     print("App backgrounded, deinitializing camera...")
     if use_webcam:
