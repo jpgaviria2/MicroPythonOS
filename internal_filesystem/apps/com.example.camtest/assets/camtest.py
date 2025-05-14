@@ -110,8 +110,6 @@ def try_capture():
                 webcam.free_buffer(cam)  # Explicitly free webcam buffer
             else:
                 cam.free_buffer()  # Free other camera buffer
-        else:
-            print("current_cam_buffer is None, not freeing...")
         current_cam_buffer = new_cam_buffer  # Store new buffer reference
     else:
         print("Invalid buffer size:", len(new_cam_buffer))

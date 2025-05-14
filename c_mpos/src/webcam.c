@@ -11,14 +11,14 @@
 #include "py/runtime.h"
 #include "py/mperrno.h"
 
-// Forward declaration of the webcam type
-static const mp_obj_type_t webcam_type;
-
 #define WIDTH 640
 #define HEIGHT 480
 #define NUM_BUFFERS 4
 #define OUTPUT_WIDTH 240
 #define OUTPUT_HEIGHT 240
+
+// Forward declaration of the webcam type
+static const mp_obj_type_t webcam_type;
 
 typedef struct _webcam_obj_t {
     mp_obj_base_t base;
@@ -178,7 +178,7 @@ static mp_obj_t capture_frame(webcam_obj_t *self) {
     snprintf(filename, sizeof(filename), "frame_%03d.raw", self->frame_count++);
     save_raw(filename, self->gray_buffer, OUTPUT_WIDTH, OUTPUT_HEIGHT);
 
-    mp_obj_t result = mp_obj_new_memoryview(0x01, OUTPUT_WIDTH * OUTPUT_HEIGHT, self->gray_buffer);
+    mp_obj_t result = mp_obj_new_bytes(self->gray_buffer, OUTPUT_WIDTH * OUTPUT_HEIGHT);
 
     if (ioctl(self->fd, VIDIOC_QBUF, &buf) < 0) {
         mp_raise_OSError(MP_EIO);
