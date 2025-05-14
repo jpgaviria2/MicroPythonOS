@@ -236,12 +236,12 @@ if cam or use_webcam:
         #webcam.recapture_frame(cam)
         bytes_obj = bytes(memview)
         print(f"got bytes: {len(bytes_obj)}")
-        image_dsc.data = bytes_obj
-        #image_dsc.data = static_bytes_obj
+        #image_dsc.data = bytes_obj
+        image_dsc.data = static_bytes_obj
         time.sleep_ms(200) # Allow for the MicroPython REPL to still work. Reducing it doesn't seem to affect the on-display FPS.    
         # somehow, everything's fine until I tell LVGL to redraw the image:
-        image.invalidate()
-        #image.set_src(image_dsc)
+        #image.invalidate()
+        image.set_src(image_dsc)
     print("App backgrounded, deinitializing camera...")
     if use_webcam:
         webcam.deinit(cam)  # Deinitializes webcam

@@ -13,7 +13,7 @@
 
 #define WIDTH 640
 #define HEIGHT 480
-#define NUM_BUFFERS 4
+#define NUM_BUFFERS 1
 #define OUTPUT_WIDTH 240
 #define OUTPUT_HEIGHT 240
 
