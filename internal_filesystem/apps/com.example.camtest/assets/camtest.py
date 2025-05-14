@@ -1,4 +1,5 @@
 import time
+import webcam
 
 appscreen = lv.screen_active()
 
@@ -95,7 +96,7 @@ def qr_button_click(e):
 def try_capture():
     global current_cam_buffer, image_dsc, image, use_webcam
     if use_webcam:
-        new_cam_buffer = cam.capture_grayscale()
+        new_cam_buffer = webcam.capture_frame(cam)
     elif cam.frame_available():
         new_cam_buffer = cam.capture()  # Returns memoryview
     if new_cam_buffer and len(new_cam_buffer):
@@ -193,27 +194,15 @@ def init_cam():
         return None
 
 
-import webcam
 
-class Webcam:
-    def __init__(self):
-        # webcam.init() returns (obj, capture_grayscale, deinit)
-        self.obj, self._capture_grayscale, self._deinit = webcam.init()
-    def capture_grayscale(self):
-        try:
-            return self._capture_grayscale(self.obj)
-        except Exception as e:
-            print(f"capture got exception {e}")
-            self.deinit()
-    def deinit(self):
-        return self._deinit(self.obj)
+
 
 
 cam = init_cam()
 if not cam:
     print("init cam failed, retrying with webcam...")
     try:
-        cam = Webcam()
+        cam = webcam.init("/dev/video0")  # Initialize webcam with device path
         use_webcam = True
     except Exception as e:
         print(f"camtest.py: webcam exception: {e}")
@@ -224,8 +213,13 @@ if cam or use_webcam:
         try_capture()
         time.sleep_ms(100) # Allow for the MicroPython REPL to still work. Reducing it doesn't seem to affect the on-display FPS.    
     print("App backgrounded, deinitializing camera...")
-    cam.deinit()
+    if use_webcam:
+        webcam.deinit(cam)  # Deinitializes webcam
+    else:
+        cam.deinit()
 else:
    print("No camera found, exiting...")
 
 show_launcher()
+
+

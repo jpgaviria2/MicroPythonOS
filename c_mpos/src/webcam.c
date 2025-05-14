@@ -17,6 +17,9 @@
 #define OUTPUT_WIDTH 240
 #define OUTPUT_HEIGHT 240
 
+// Forward declaration of the webcam type
+static const mp_obj_type_t webcam_type;
+
 typedef struct _webcam_obj_t {
     mp_obj_base_t base;
     int fd;
@@ -164,15 +167,15 @@ static mp_obj_t capture_frame(webcam_obj_t *self) {
     return result;
 }
 
-static mp_obj_t webcam_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
-    mp_arg_check_num(n_args, n_kw, 0, 1, false);
+static mp_obj_t webcam_init(size_t n_args, const mp_obj_t *args) {
+    mp_arg_check_num(n_args, 0, 0, 1, false);
     const char *device = "/dev/video0"; // Default device
     if (n_args == 1) {
         device = mp_obj_str_get_str(args[0]);
     }
 
     webcam_obj_t *self = m_new_obj(webcam_obj_t);
-    self->base.type = type;
+    self->base.type = &webcam_type;
     self->fd = -1;
 
     if (init_webcam(self, device) < 0) {
@@ -181,6 +184,7 @@ static mp_obj_t webcam_make_new(const mp_obj_type_t *type, size_t n_args, size_t
 
     return MP_OBJ_FROM_PTR(self);
 }
+MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(webcam_init_obj, 0, 1, webcam_init);
 
 static mp_obj_t webcam_deinit(mp_obj_t self_in) {
     webcam_obj_t *self = MP_OBJ_TO_PTR(self_in);
@@ -198,22 +202,17 @@ static mp_obj_t webcam_capture_frame(mp_obj_t self_in) {
 }
 MP_DEFINE_CONST_FUN_OBJ_1(webcam_capture_frame_obj, webcam_capture_frame);
 
-static const mp_rom_map_elem_t webcam_locals_dict_table[] = {
-    { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&webcam_deinit_obj) },
-    { MP_ROM_QSTR(MP_QSTR_capture_frame), MP_ROM_PTR(&webcam_capture_frame_obj) },
-};
-static MP_DEFINE_CONST_DICT(webcam_locals_dict, webcam_locals_dict_table);
-
 static const mp_obj_type_t webcam_type = {
     { &mp_type_type },
     .name = MP_QSTR_Webcam,
-    .make_new = webcam_make_new,
-    .locals_dict = (mp_obj_dict_t *)&webcam_locals_dict,
 };
 
 static const mp_rom_map_elem_t mp_module_webcam_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_webcam) },
     { MP_ROM_QSTR(MP_QSTR_Webcam), MP_ROM_PTR(&webcam_type) },
+    { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&webcam_init_obj) },
+    { MP_ROM_QSTR(MP_QSTR_capture_frame), MP_ROM_PTR(&webcam_capture_frame_obj) },
+    { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&webcam_deinit_obj) },
 };
 static MP_DEFINE_CONST_DICT(mp_module_webcam_globals, mp_module_webcam_globals_table);
 
