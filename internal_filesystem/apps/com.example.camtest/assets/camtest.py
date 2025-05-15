@@ -185,9 +185,19 @@ def build_ui():
         'data': None # Will be updated per frame
     })
     image.set_src(image_dsc)
+    #status_label_cont = lv.obj(appscreen)
+    #status_label_cont.set_size(240,240)
+    #status_label_cont.set_pos(0,0)
+    #status_label_cont.set_style_text_color(lv.color_white(), 0)
+    #status_label_cont.set_style_bg_opa(50, 0)
     status_label = lv.label(appscreen)
     status_label.set_text(status_label_text)
-    status_label.set_style_text_font(lv.font_montserrat_16, 0)
+    status_label.set_long_mode(lv.label.LONG.WRAP)
+    status_label.set_style_text_font(lv.font_montserrat_18, 0)
+    status_label.set_style_text_color(lv.color_white(), 0)
+    status_label.set_style_bg_color(lv.color_black(), 0)
+    status_label.set_style_bg_opa(66, 0)
+    status_label.set_width(lv.pct(100))
     status_label.center()
 
 
