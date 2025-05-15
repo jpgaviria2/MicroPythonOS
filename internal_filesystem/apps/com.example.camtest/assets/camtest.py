@@ -17,13 +17,15 @@ current_cam_buffer = None
 image_dsc = None
 image = None
 qr_label = None
-status_label = None
+
 use_webcam = False
 qr_button = None
 snap_button = None
 
-
-memview = None
+status_label = None
+status_label_text = "No camera found."
+status_label_text_searching = "Searching QR codes..."
+status_label_text_found = "Decoding QR..."
 
 def print_qr_buffer(buffer):
     try:
@@ -46,8 +48,7 @@ def remove_bom(buffer):
     return buffer
 
 def qrdecode_live():
-    # Image dimensions
-    buffer_size = width * height  # 240 * 240 = 57600 bytes
+    global status_label, status_label_text
     while keepgoing and keepliveqrdecoding:
         try:
             import qrdecode
@@ -55,8 +56,14 @@ def qrdecode_live():
             result = remove_bom(result)
             result = print_qr_buffer(result)
             print(f"QR decoding found: {result}")
-        except Exception as e:
-            print("QR decode error: ", e)
+            status_label_text = f"QR decoded: {result}"
+            stop_qr_decoding()
+        except ValueError as e:
+            print("QR ValueError: ", e)
+            status_label_text = status_label_text_searching
+        except TypeError as e:
+            print("QR TypeError: ", e)
+            status_label_text = status_label_text_found
         time.sleep_ms(500)
 
 
@@ -87,22 +94,32 @@ def snap_button_click(e):
             print(f"Error writing to file: {e}")
 
 
+def start_qr_decoding():
+    global qr_label, keepliveqrdecoding
+    print("Activating live QR decoding...")
+    keepliveqrdecoding = True
+    qr_label.set_text(lv.SYMBOL.EYE_CLOSE)
+    try:
+        import _thread
+        _thread.stack_size(12*1024) # 16KB is too much
+        _thread.start_new_thread(qrdecode_live, ())
+    except Exception as e:
+        print("Could not start live QR decoding thread: ", e)
+
+def stop_qr_decoding():
+    global qr_label, keepliveqrdecoding, status_label_text
+    print("Deactivating live QR decoding...")
+    keepliveqrdecoding = False
+    qr_label.set_text(lv.SYMBOL.EYE_OPEN)
+    if status_label_text == status_label_text_searching or status_label_text == status_label_text_found: # if it found a QR code, then leave it
+        status_label_text = ""
+
 def qr_button_click(e):
-    global keepliveqrdecoding, qr_label
+    global keepliveqrdecoding
     if not keepliveqrdecoding:
-        print("Activating live QR decoding...")
-        keepliveqrdecoding = True
-        qr_label.set_text(lv.SYMBOL.EYE_CLOSE)
-        try:
-            import _thread
-            _thread.stack_size(12*1024) # 16KB is too much
-            _thread.start_new_thread(qrdecode_live, ())
-        except Exception as e:
-            print("Could not start live QR decoding thread: ", e)
+        start_qr_decoding()
     else:
-        print("Deactivating live QR decoding...")
-        keepliveqrdecoding = False
-        qr_label.set_text(lv.SYMBOL.EYE_OPEN)
+        stop_qr_decoding()
 
 def try_capture():
     global current_cam_buffer, image_dsc, image, use_webcam
@@ -169,7 +186,8 @@ def build_ui():
     })
     image.set_src(image_dsc)
     status_label = lv.label(appscreen)
-    status_label.set_text("No camera found.")
+    status_label.set_text(status_label_text)
+    status_label.set_style_text_font(lv.font_montserrat_16, 0)
     status_label.center()
 
 
@@ -210,7 +228,7 @@ build_ui()
 
 cam = init_cam()
 if cam:
-    image.set_rotation(900)
+    image.set_rotation(900) # internal camera is rotated 90 degrees
 else:
     print("camtest.py: no internal camera found, trying webcam on /dev/video0")
     try:
@@ -221,7 +239,7 @@ else:
         print(f"camtest.py: webcam exception: {e}")
 
 if cam:
-    status_label.set_text("")
+    status_label_text = ""
     qr_button.remove_flag(lv.obj.FLAG.HIDDEN)
     snap_button.remove_flag(lv.obj.FLAG.HIDDEN)
 
@@ -229,11 +247,13 @@ if cam:
 th.disable()
 
 while appscreen == lv.screen_active() and keepgoing is True:
-    if cam:
-        try_capture()
+    if status_label.get_text() != status_label_text:
+        status_label.set_text(status_label_text)
     lv.task_handler()
     time.sleep_ms(5)
     lv.tick_inc(5)
+    if cam:
+        try_capture()
 
 print("camtest.py: stopping...")
 

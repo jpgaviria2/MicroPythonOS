@@ -81,7 +81,7 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
         free(data);
         free(code);
         quirc_destroy(qr);
-        mp_raise_ValueError(MP_ERROR_TEXT("failed to decode QR code"));
+        mp_raise_TypeError(MP_ERROR_TEXT("failed to decode QR code"));
     }
 
     mp_obj_t result = mp_obj_new_bytes((const uint8_t *)data->payload, data->payload_len);
