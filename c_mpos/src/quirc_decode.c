@@ -5,6 +5,7 @@
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/mperrno.h"
+#include "py/nlr.h" // Include for nlr_buf_t
 
 #ifdef __xtensa__
 #include "freertos/FreeRTOS.h"
@@ -45,11 +46,13 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
     if (!qr) {
         mp_raise_OSError(MP_ENOMEM);
     }
+    QRDECODE_DEBUG_PRINT("qrdecode: Allocated quirc object\n");
 
     if (quirc_resize(qr, width, height) < 0) {
         quirc_destroy(qr);
         mp_raise_OSError(MP_ENOMEM);
     }
+    QRDECODE_DEBUG_PRINT("qrdecode: Resized quirc object\n");
 
     uint8_t *image;
     image = quirc_begin(qr, NULL, NULL);
@@ -59,6 +62,7 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
     int count = quirc_count(qr);
     if (count == 0) {
         quirc_destroy(qr);
+        QRDECODE_DEBUG_PRINT("qrdecode: No QR code found, freed quirc object\n");
         mp_raise_ValueError(MP_ERROR_TEXT("no QR code found"));
     }
 
@@ -67,6 +71,7 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
         quirc_destroy(qr);
         mp_raise_OSError(MP_ENOMEM);
     }
+    QRDECODE_DEBUG_PRINT("qrdecode: Allocated quirc_code\n");
     quirc_extract(qr, 0, code);
 
     struct quirc_data *data = (struct quirc_data *)malloc(sizeof(struct quirc_data));
@@ -75,11 +80,14 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
         quirc_destroy(qr);
         mp_raise_OSError(MP_ENOMEM);
     }
+    QRDECODE_DEBUG_PRINT("qrdecode: Allocated quirc_data\n");
+
     int err = quirc_decode(code, data);
     if (err != QUIRC_SUCCESS) {
         free(data);
         free(code);
         quirc_destroy(qr);
+        QRDECODE_DEBUG_PRINT("qrdecode: Decode failed, freed data, code, and quirc object\n");
         mp_raise_TypeError(MP_ERROR_TEXT("failed to decode QR code"));
     }
 
@@ -88,6 +96,7 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
     free(data);
     free(code);
     quirc_destroy(qr);
+    QRDECODE_DEBUG_PRINT("qrdecode: Freed data, code, and quirc object, returning result\n");
     return result;
 }
 
@@ -116,6 +125,7 @@ static mp_obj_t qrdecode_rgb565(mp_uint_t n_args, const mp_obj_t *args) {
     if (!gray_buffer) {
         mp_raise_OSError(MP_ENOMEM);
     }
+    QRDECODE_DEBUG_PRINT("qrdecode_rgb565: Allocated gray_buffer (%u bytes)\n", width * height * sizeof(uint8_t));
 
     uint16_t *rgb565 = (uint16_t *)bufinfo.buf;
     for (size_t i = 0; i < (size_t)(width * height); i++) {
@@ -132,8 +142,20 @@ static mp_obj_t qrdecode_rgb565(mp_uint_t n_args, const mp_obj_t *args) {
         mp_obj_new_int(height)
     };
 
-    mp_obj_t result = qrdecode(3, gray_args);
-    free(gray_buffer);
+    mp_obj_t result = MP_OBJ_NULL;
+    nlr_buf_t exception_handler;
+    if (nlr_push(&exception_handler) == 0) {
+        result = qrdecode(3, gray_args);
+        nlr_pop();
+        QRDECODE_DEBUG_PRINT("qrdecode_rgb565: qrdecode succeeded, freeing gray_buffer\n");
+        free(gray_buffer);
+    } else {
+        QRDECODE_DEBUG_PRINT("qrdecode_rgb565: Exception caught, freeing gray_buffer\n");
+        free(gray_buffer);
+        nlr_pop();
+        nlr_raise(exception_handler.ret_val);
+    }
+
     return result;
 }
 

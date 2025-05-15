@@ -54,6 +54,7 @@ def qrdecode_live():
         try:
             import qrdecode
             result = qrdecode.qrdecode_rgb565(current_cam_buffer, width, height)
+            #raise ValueError('A very specific bad thing happened.')
             result = remove_bom(result)
             result = print_qr_buffer(result)
             print(f"QR decoding found: {result}")
@@ -65,6 +66,8 @@ def qrdecode_live():
         except TypeError as e:
             print("QR TypeError: ", e)
             status_label_text = status_label_text_found
+        except Exception as e:
+            print("QR got other error: ", e)
         time.sleep_ms(100)
 
 
