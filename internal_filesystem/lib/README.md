@@ -5,3 +5,5 @@ This /lib folder contains:
 - mip.install('github:jonnor/micropython-zipfile')
 - mip.install("shutil") for shutil.rmtree('/apps/com.example.files') # for rmtree()
 
+- maybe mip.install("aiohttp") # easy websockets
+- maybe mip.install("base64") # for nostr etc

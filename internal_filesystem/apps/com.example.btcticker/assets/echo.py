@@ -1,5 +1,8 @@
+# example from https://github.com/micropython/micropython-lib/blob/master/python-ecosys/aiohttp/examples/ws.py
+# works with:
 # import mip
-# mip.install(aiohttp)
+# mip.install("aiohttp")
+# but only on esp32 target, not unix?!
 
 import sys
 import ssl
