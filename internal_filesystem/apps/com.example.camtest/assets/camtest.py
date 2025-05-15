@@ -23,6 +23,7 @@ qr_button = None
 snap_button = None
 
 status_label = None
+status_label_cont = None
 status_label_text = "No camera found."
 status_label_text_searching = "Searching QR codes..."
 status_label_text_found = "Decoding QR..."
@@ -56,7 +57,7 @@ def qrdecode_live():
             result = remove_bom(result)
             result = print_qr_buffer(result)
             print(f"QR decoding found: {result}")
-            status_label_text = f"QR decoded: {result}"
+            status_label_text = result
             stop_qr_decoding()
         except ValueError as e:
             print("QR ValueError: ", e)
@@ -139,7 +140,7 @@ def try_capture():
 
 
 def build_ui():
-    global image, image_dsc,qr_label, status_label, cam, use_webcam, qr_button, snap_button
+    global image, image_dsc,qr_label, status_label, cam, use_webcam, qr_button, snap_button, status_label_cont
     cont = lv.obj(appscreen)
     cont.set_style_pad_all(0, 0)
     cont.set_style_border_width(0, 0)
@@ -185,18 +186,16 @@ def build_ui():
         'data': None # Will be updated per frame
     })
     image.set_src(image_dsc)
-    #status_label_cont = lv.obj(appscreen)
-    #status_label_cont.set_size(240,240)
-    #status_label_cont.set_pos(0,0)
-    #status_label_cont.set_style_text_color(lv.color_white(), 0)
-    #status_label_cont.set_style_bg_opa(50, 0)
-    status_label = lv.label(appscreen)
+    status_label_cont = lv.obj(appscreen)
+    status_label_cont.set_size(lv.pct(60),lv.pct(50))
+    status_label_cont.center()
+    status_label_cont.set_style_bg_color(lv.color_white(), 0)
+    status_label_cont.set_style_bg_opa(66, 0)
+    status_label_cont.set_style_border_width(0, 0)
+    status_label = lv.label(status_label_cont)
     status_label.set_text(status_label_text)
     status_label.set_long_mode(lv.label.LONG.WRAP)
-    status_label.set_style_text_font(lv.font_montserrat_18, 0)
     status_label.set_style_text_color(lv.color_white(), 0)
-    status_label.set_style_bg_color(lv.color_black(), 0)
-    status_label.set_style_bg_opa(66, 0)
     status_label.set_width(lv.pct(100))
     status_label.center()
 
@@ -259,6 +258,10 @@ th.disable()
 while appscreen == lv.screen_active() and keepgoing is True:
     if status_label.get_text() != status_label_text:
         status_label.set_text(status_label_text)
+        if status_label_text:
+            status_label_cont.remove_flag(lv.obj.FLAG.HIDDEN)
+        else:
+            status_label_cont.add_flag(lv.obj.FLAG.HIDDEN)
     lv.task_handler()
     time.sleep_ms(5)
     lv.tick_inc(5)
