@@ -64,7 +64,7 @@ def qrdecode_live():
         except TypeError as e:
             print("QR TypeError: ", e)
             status_label_text = status_label_text_found
-        time.sleep_ms(500)
+        time.sleep_ms(100)
 
 
 def close_button_click(e):
