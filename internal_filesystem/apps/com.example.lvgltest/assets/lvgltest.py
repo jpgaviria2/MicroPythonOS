@@ -45,10 +45,12 @@ def run_benchmark():
     
     while appscreen == lv.screen_active():
         add_spinner_and_update()
-        time.sleep(3)
+        time.sleep(4)
 
        
 try:
     run_benchmark()
 except Exception as e:
     print(f"Error in benchmark: {e}")
+
+print("lvgltest.py exiting")
