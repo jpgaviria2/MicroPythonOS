@@ -1,4 +1,4 @@
-appscreen == lv.screen_active()
+appscreen = lv.screen_active()
 
 import time
 import random
@@ -15,28 +15,25 @@ metrics_label = None
 def add_spinner_and_update():
     global spinner_count, metrics_label
     try:
+        x = random.randint(0, appscreen.get_width() - SPINNER_SIZE)
+        y = random.randint(0, appscreen.get_height() - SPINNER_SIZE)
+        spinner_count += 1
+        print(f"Placing spinner {spinner_count} with size {SPINNER_SIZE} at {x},{y}")
         spinner = lv.spinner(appscreen)
         spinner.set_size(SPINNER_SIZE, SPINNER_SIZE)
-        spinner.set_pos(
-            random.randint(0, appscreen.get_width() - SPINNER_SIZE),
-            random.randint(0, appscreen.get_height() - SPINNER_SIZE)
-        )
-        spinner_count += 1
+        spinner.set_pos(x, y)
     except Exception as e:
-        print(f"Failed to create spinner {spinner_count + 1}: {e}")
+        print(f"Failed to create spinner {spinner_count}: {e}")
         return
     
     metrics_label.set_text(f"Spinners: {spinner_count}")
-    print(f"Added spinner {spinner_count}")
+    print(f"Finished adding spinner {spinner_count}")
 
 def run_benchmark():
     global spinner_count, metrics_label
     print("Starting LVGL spinner benchmark...")
     
-    scr = appscreen
-    scr.set_style_bg_color(lv.color_black(), 0)
-    
-    metrics_label = lv.label(scr)
+    metrics_label = lv.label(appscreen)
     metrics_label.set_style_text_color(lv.color_white(), 0)
     metrics_label.set_style_bg_color(lv.color_black(), 0)
     metrics_label.set_style_bg_opa(lv.OPA.COVER, 0)
