@@ -52,7 +52,6 @@ static mp_obj_t qrdecode(mp_uint_t n_args, const mp_obj_t *args) {
     }
 
     uint8_t *image;
-    quirc_begin(qr, NULL, NULL);
     image = quirc_begin(qr, NULL, NULL);
     memcpy(image, bufinfo.buf, width * height);
     quirc_end(qr);
