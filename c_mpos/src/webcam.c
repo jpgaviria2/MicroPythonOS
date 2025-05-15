@@ -108,10 +108,11 @@ static void save_raw_rgb565(const char *filename, uint16_t *data, int width, int
 }
 
 static int init_webcam(webcam_obj_t *self, const char *device) {
+    //WEBCAM_DEBUG_PRINT("webcam.c: init_webcam\n");
     self->fd = open(device, O_RDWR);
     if (self->fd < 0) {
         WEBCAM_DEBUG_PRINT("Cannot open device: %s\n", strerror(errno));
-        return -1;
+        return -errno;
     }
 
     struct v4l2_format fmt = {0};
@@ -123,7 +124,7 @@ static int init_webcam(webcam_obj_t *self, const char *device) {
     if (ioctl(self->fd, VIDIOC_S_FMT, &fmt) < 0) {
         WEBCAM_DEBUG_PRINT("Cannot set format: %s\n", strerror(errno));
         close(self->fd);
-        return -1;
+        return -errno;
     }
 
     struct v4l2_requestbuffers req = {0};
@@ -133,7 +134,7 @@ static int init_webcam(webcam_obj_t *self, const char *device) {
     if (ioctl(self->fd, VIDIOC_REQBUFS, &req) < 0) {
         WEBCAM_DEBUG_PRINT("Cannot request buffers: %s\n", strerror(errno));
         close(self->fd);
-        return -1;
+        return -errno;
     }
 
     for (int i = 0; i < NUM_BUFFERS; i++) {
@@ -144,14 +145,14 @@ static int init_webcam(webcam_obj_t *self, const char *device) {
         if (ioctl(self->fd, VIDIOC_QUERYBUF, &buf) < 0) {
             WEBCAM_DEBUG_PRINT("Cannot query buffer: %s\n", strerror(errno));
             close(self->fd);
-            return -1;
+            return -errno;
         }
         self->buffer_length = buf.length;
         self->buffers[i] = mmap(NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, self->fd, buf.m.offset);
         if (self->buffers[i] == MAP_FAILED) {
             WEBCAM_DEBUG_PRINT("Cannot map buffer: %s\n", strerror(errno));
             close(self->fd);
-            return -1;
+            return -errno;
         }
     }
 
@@ -162,14 +163,14 @@ static int init_webcam(webcam_obj_t *self, const char *device) {
         buf.index = i;
         if (ioctl(self->fd, VIDIOC_QBUF, &buf) < 0) {
             WEBCAM_DEBUG_PRINT("Cannot queue buffer: %s\n", strerror(errno));
-            return -1;
+            return -errno;
         }
     }
 
     enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     if (ioctl(self->fd, VIDIOC_STREAMON, &type) < 0) {
         WEBCAM_DEBUG_PRINT("Cannot start streaming: %s\n", strerror(errno));
-        return -1;
+        return -errno;
     }
 
     self->frame_count = 0;
@@ -180,7 +181,7 @@ static int init_webcam(webcam_obj_t *self, const char *device) {
         free(self->gray_buffer);
         free(self->rgb565_buffer);
         close(self->fd);
-        return -1;
+        return -errno;
     }
     return 0;
 }
@@ -215,12 +216,14 @@ static mp_obj_t free_buffer(webcam_obj_t *self) {
 }
 
 static mp_obj_t capture_frame(mp_obj_t self_in, mp_obj_t format) {
+    int res = 0;
     webcam_obj_t *self = MP_OBJ_TO_PTR(self_in);
     struct v4l2_buffer buf = {0};
     buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     buf.memory = V4L2_MEMORY_MMAP;
-    if (ioctl(self->fd, VIDIOC_DQBUF, &buf) < 0) {
-        mp_raise_OSError(MP_EIO);
+    res = ioctl(self->fd, VIDIOC_DQBUF, &buf);
+    if (res < 0) {
+        mp_raise_OSError(-res);
     }
 
     if (!self->gray_buffer) {
@@ -243,8 +246,9 @@ static mp_obj_t capture_frame(mp_obj_t self_in, mp_obj_t format) {
         // snprintf(filename, sizeof(filename), "frame_%03d.raw", self->frame_count++);
         // save_raw(filename, self->gray_buffer, OUTPUT_WIDTH, OUTPUT_HEIGHT);
         mp_obj_t result = mp_obj_new_memoryview('B', OUTPUT_WIDTH * OUTPUT_HEIGHT, self->gray_buffer);
-        if (ioctl(self->fd, VIDIOC_QBUF, &buf) < 0) {
-            mp_raise_OSError(MP_EIO);
+        res = ioctl(self->fd, VIDIOC_QBUF, &buf);
+        if (res < 0) {
+            mp_raise_OSError(-res);
         }
         return result;
     } else {
@@ -253,8 +257,9 @@ static mp_obj_t capture_frame(mp_obj_t self_in, mp_obj_t format) {
         // snprintf(filename, sizeof(filename), "frame_%03d.rgb565", self->frame_count++);
         // save_raw_rgb565(filename, self->rgb565_buffer, OUTPUT_WIDTH, OUTPUT_HEIGHT);
         mp_obj_t result = mp_obj_new_memoryview('H', OUTPUT_WIDTH * OUTPUT_HEIGHT, self->rgb565_buffer);
-        if (ioctl(self->fd, VIDIOC_QBUF, &buf) < 0) {
-            mp_raise_OSError(MP_EIO);
+        res = ioctl(self->fd, VIDIOC_QBUF, &buf);
+        if (res < 0) {
+            mp_raise_OSError(-res);
         }
         return result;
     }
@@ -273,8 +278,9 @@ static mp_obj_t webcam_init(size_t n_args, const mp_obj_t *args) {
     self->gray_buffer = NULL;
     self->rgb565_buffer = NULL;
 
-    if (init_webcam(self, device) < 0) {
-        mp_raise_OSError(MP_EIO);
+    int res = init_webcam(self, device);
+    if (res < 0) {
+        mp_raise_OSError(-res);
     }
 
     return MP_OBJ_FROM_PTR(self);

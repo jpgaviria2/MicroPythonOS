@@ -7,9 +7,6 @@
 
 import time
 
-appscreen = lv.screen_active()
-th.disable()
-
 keepgoing = True
 keepliveqrdecoding = False
 width = 240
@@ -20,7 +17,11 @@ current_cam_buffer = None
 image_dsc = None
 image = None
 qr_label = None
+status_label = None
 use_webcam = False
+qr_button = None
+snap_button = None
+
 
 memview = None
 
@@ -121,7 +122,7 @@ def try_capture():
 
 
 def build_ui():
-    global image, image_dsc,qr_label, cam
+    global image, image_dsc,qr_label, status_label, cam, use_webcam, qr_button, snap_button
     cont = lv.obj(appscreen)
     cont.set_style_pad_all(0, 0)
     cont.set_style_border_width(0, 0)
@@ -137,12 +138,14 @@ def build_ui():
     snap_button = lv.button(cont)
     snap_button.set_size(60, 60)
     snap_button.align(lv.ALIGN.RIGHT_MID, 0, 0)
+    snap_button.add_flag(lv.obj.FLAG.HIDDEN)
     snap_label = lv.label(snap_button)
     snap_label.set_text(lv.SYMBOL.OK)
-    snap_label.center()        
-    snap_button.add_event_cb(snap_button_click,lv.EVENT.CLICKED,None)        
+    snap_label.center()
+    snap_button.add_event_cb(snap_button_click,lv.EVENT.CLICKED,None)
     qr_button = lv.button(cont)
     qr_button.set_size(60, 60)
+    qr_button.add_flag(lv.obj.FLAG.HIDDEN)
     qr_button.align(lv.ALIGN.BOTTOM_RIGHT, 0, 0)
     qr_label = lv.label(qr_button)
     qr_label.set_text(lv.SYMBOL.EYE_OPEN)
@@ -151,8 +154,6 @@ def build_ui():
     # Initialize LVGL image widget
     image = lv.image(cont)
     image.align(lv.ALIGN.LEFT_MID, 0, 0)
-    if not use_webcam:
-        image.set_rotation(900)
     # Create image descriptor once
     image_dsc = lv.image_dsc_t({
         "header": {
@@ -167,6 +168,9 @@ def build_ui():
         'data': None # Will be updated per frame
     })
     image.set_src(image_dsc)
+    status_label = lv.label(appscreen)
+    status_label.set_text("No camera found.")
+    status_label.center()
 
 
 def init_cam():
@@ -201,11 +205,13 @@ def init_cam():
 
 
 
-
-
+appscreen = lv.screen_active()
+build_ui()
 
 cam = init_cam()
-if not cam:
+if cam:
+    image.set_rotation(900)
+else:
     print("camtest.py: no internal camera found, trying webcam on /dev/video0")
     try:
         import webcam
@@ -215,23 +221,28 @@ if not cam:
         print(f"camtest.py: webcam exception: {e}")
 
 if cam:
-    build_ui()
-    count=0
-    while appscreen == lv.screen_active() and keepgoing is True:
+    status_label.set_text("")
+    qr_button.remove_flag(lv.obj.FLAG.HIDDEN)
+    snap_button.remove_flag(lv.obj.FLAG.HIDDEN)
+
+# Task handler needs to be updated from this app's thread, otherwise it causes concurrency issues
+th.disable()
+
+while appscreen == lv.screen_active() and keepgoing is True:
+    if cam:
         try_capture()
-        # Task handler needs to be updated from the same thread, otherwise it causes concurrency issues:
-        lv.task_handler()
-        time.sleep_ms(1)
-        lv.tick_inc(1)
-    print("camtest.py: stopping...")
-    if use_webcam:
-        webcam.deinit(cam)  # Deinitializes webcam
-    else:
-        cam.deinit()
-else:
-   print("No camera found, exiting...")
+    lv.task_handler()
+    time.sleep_ms(5)
+    lv.tick_inc(5)
 
-th.enable()
+print("camtest.py: stopping...")
+
+if use_webcam:
+    webcam.deinit(cam)
+elif cam:
+    cam.deinit()
+
+
+print("camtest.py: showing launcher...")
 show_launcher()
-
-
+th.enable()
