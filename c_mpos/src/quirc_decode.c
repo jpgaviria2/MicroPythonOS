@@ -142,7 +142,6 @@ static mp_obj_t qrdecode_rgb565(mp_uint_t n_args, const mp_obj_t *args) {
         mp_obj_new_int(height)
     };
 
-    //mp_obj_t result = MP_OBJ_NULL;
     mp_obj_t result = mp_const_none;
     nlr_buf_t exception_handler;
     if (nlr_push(&exception_handler) == 0) {
@@ -153,6 +152,8 @@ static mp_obj_t qrdecode_rgb565(mp_uint_t n_args, const mp_obj_t *args) {
     } else {
         QRDECODE_DEBUG_PRINT("qrdecode_rgb565: Exception caught, freeing gray_buffer\n");
         free(gray_buffer);
+        // Re-raising the exception results in an Unhandled exception in thread started by <function qrdecode_live at 0x7f6f55af0680>
+        // which isn't caught, even when catching Exception, so this looks like a bug in MicroPython...
         //nlr_pop();
         //nlr_raise(exception_handler.ret_val);
     }
