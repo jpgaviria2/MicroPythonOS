@@ -142,7 +142,8 @@ static mp_obj_t qrdecode_rgb565(mp_uint_t n_args, const mp_obj_t *args) {
         mp_obj_new_int(height)
     };
 
-    mp_obj_t result = MP_OBJ_NULL;
+    //mp_obj_t result = MP_OBJ_NULL;
+    mp_obj_t result = mp_const_none;
     nlr_buf_t exception_handler;
     if (nlr_push(&exception_handler) == 0) {
         result = qrdecode(3, gray_args);
@@ -152,8 +153,8 @@ static mp_obj_t qrdecode_rgb565(mp_uint_t n_args, const mp_obj_t *args) {
     } else {
         QRDECODE_DEBUG_PRINT("qrdecode_rgb565: Exception caught, freeing gray_buffer\n");
         free(gray_buffer);
-        nlr_pop();
-        nlr_raise(exception_handler.ret_val);
+        //nlr_pop();
+        //nlr_raise(exception_handler.ret_val);
     }
 
     return result;

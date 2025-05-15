@@ -54,12 +54,15 @@ def qrdecode_live():
         try:
             import qrdecode
             result = qrdecode.qrdecode_rgb565(current_cam_buffer, width, height)
-            #raise ValueError('A very specific bad thing happened.')
-            result = remove_bom(result)
-            result = print_qr_buffer(result)
-            print(f"QR decoding found: {result}")
-            status_label_text = result
-            stop_qr_decoding()
+            if not result:
+                status_label_text = status_label_text_searching
+            else:
+                #raise ValueError('A very specific bad thing happened.')
+                result = remove_bom(result)
+                result = print_qr_buffer(result)
+                print(f"QR decoding found: {result}")
+                status_label_text = result
+                stop_qr_decoding()
         except ValueError as e:
             print("QR ValueError: ", e)
             status_label_text = status_label_text_searching
