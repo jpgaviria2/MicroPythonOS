@@ -256,7 +256,7 @@ static mp_obj_t capture_frame(mp_obj_t self_in, mp_obj_t format) {
         // char filename[32];
         // snprintf(filename, sizeof(filename), "frame_%03d.rgb565", self->frame_count++);
         // save_raw_rgb565(filename, self->rgb565_buffer, OUTPUT_WIDTH, OUTPUT_HEIGHT);
-        mp_obj_t result = mp_obj_new_memoryview('b', OUTPUT_WIDTH * OUTPUT_HEIGHT, self->rgb565_buffer);
+        mp_obj_t result = mp_obj_new_memoryview('b', OUTPUT_WIDTH * OUTPUT_HEIGHT * 2, self->rgb565_buffer);
         res = ioctl(self->fd, VIDIOC_QBUF, &buf);
         if (res < 0) {
             mp_raise_OSError(-res);
