@@ -3,7 +3,7 @@
 import lcd_bus
 import lvgl as lv
 import sdl_display
-import sdl_pointer
+
 import mpos.ui
 
 TFT_HOR_RES=320
@@ -16,7 +16,11 @@ buf1 = bus.allocate_framebuffer(TFT_HOR_RES * TFT_VER_RES * 2, 0)
 display = sdl_display.SDLDisplay(data_bus=bus,display_width=TFT_HOR_RES,display_height=TFT_VER_RES,frame_buffer1=buf1,color_space=lv.COLOR_FORMAT.RGB565)
 display.init()
 
+import sdl_pointer
 mouse = sdl_pointer.SDLPointer()
+
+import sdl_keyboard
+keyboard = sdl_keyboard.SDLKeyboard()
 
 # Swipe detection state
 start_y = None  # Store the starting Y-coordinate of the mouse press
