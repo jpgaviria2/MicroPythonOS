@@ -19,16 +19,16 @@ display.init()
 import sdl_pointer
 mouse = sdl_pointer.SDLPointer()
 
-import sdl_keyboard
-keyboard = sdl_keyboard.SDLKeyboard()
+#import sdl_keyboard
+#keyboard = sdl_keyboard.SDLKeyboard()
 
 
-def keyboard_cb(event):
-    global canvas
-    event_code=event.get_code()
-    print(f"boot_unix: code={event_code}") # target={event.get_target()}, user_data={event.get_user_data()}, param={event.get_param()}
+#def keyboard_cb(event):
+ #   global canvas
+  #  event_code=event.get_code()
+   # print(f"boot_unix: code={event_code}") # target={event.get_target()}, user_data={event.get_user_data()}, param={event.get_param()}
 
-keyboard.add_event_cb(keyboard_cb, lv.EVENT.ALL, None)
+#keyboard.add_event_cb(keyboard_cb, lv.EVENT.ALL, None)
 
 
 # Swipe detection state
