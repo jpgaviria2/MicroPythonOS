@@ -245,9 +245,8 @@ def download_icons():
             break
         image_dsc = download_icon(app.icon_url)
         app.image_dsc = image_dsc
-        app.image.set_src(image_dsc)
-        print(f"Changed image_dsc for {app.icon_url}")
-    print("download_icons exiting")
+    print("Finished downloading icons, scheduling stop of refresh timer...")
+    lv.async_call(lambda l: refresh_icons.pause(), None)
 
 def load_icon(icon_path):
     with open(icon_path, 'rb') as f:
@@ -279,9 +278,6 @@ def create_apps_list():
         cont.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
         cont.add_event_cb(lambda e, a=app: show_app_detail(a), lv.EVENT.CLICKED, None)
         icon_spacer = lv.image(cont)
-        #image_dsc = default_icon_dsc
-        #app.image_dsc = image_dsc
-        #icon_spacer.set_src(image_dsc)
         icon_spacer.set_size(64, 64)
         app.image = icon_spacer
         icon_spacer.add_event_cb(lambda e, a=app: show_app_detail(a), lv.EVENT.CLICKED, None)
@@ -301,7 +297,7 @@ def create_apps_list():
     try:
         global keepdownloadingicons
         keepdownloadingicons = True
-        _thread.stack_size(32*1024)
+        _thread.stack_size(32*1024) # seems to need 32KB for urequests
         _thread.start_new_thread(download_icons,())
     except Exception as e:
         print("Could not start thread to download icons: ", e)
@@ -424,16 +420,25 @@ def back_to_main(event):
     lv.screen_load(appscreen)
 
 
+def refresh_icons_cb(timer):
+    #print("Refreshing app icons...")
+    for app in apps:
+        #print("Refreshing icon for {app.name}")
+        app.image.set_src(app.image_dsc)
+
 def janitor_cb(timer):
     global keeprunning
     if lv.screen_active() != appscreen or app_detail_screen == lv.screen_active():
         print("appstore.py backgrounded, cleaning up...")
         janitor.delete()
+        refresh_icons.delete()
         appscreen.clean()
         appscreen.delete()
         restart_launcher() # refresh the launcher
         print("appstore.py ending")
 
+janitor = lv.timer_create(janitor_cb, 500, None)
+refresh_icons = lv.timer_create(refresh_icons_cb, 500, None)
 
 appscreen = lv.screen_active()
 please_wait_label = lv.label(appscreen)
@@ -451,3 +456,5 @@ if can_check_network and not network.WLAN(network.STA_IF).isconnected():
 else:
     _thread.stack_size(12*1024)
     _thread.start_new_thread(download_apps, ("http://demo.lnpiggy.com:2121/apps.json",))
+
+
