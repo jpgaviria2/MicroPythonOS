@@ -1,6 +1,11 @@
 appscreen = lv.screen_active()
 
-import network
+havenetwork = True
+try:
+    import network
+except Exception as e:
+    havenetwork = False
+
 import ujson
 import os
 import time
@@ -29,21 +34,21 @@ scan_button_scanning_text = "Scanning..."
 def load_config():
     print("load_config: Checking for /data directory")
     try:
-        os.stat('/data')
+        os.stat('data')
         print("load_config: /data exists")
     except OSError:
         print("load_config: Creating /data directory")
-        os.mkdir('/data')
+        os.mkdir('data')
     print("load_config: Checking for /data/com.example.wificonf directory")
     try:
-        os.stat('/data/com.example.wificonf')
+        os.stat('data/com.example.wificonf')
         print("load_config: /data/com.example.wificonf exists")
     except OSError:
         print("load_config: Creating /data/com.example.wificonf directory")
-        os.mkdir('/data/com.example.wificonf')
+        os.mkdir('data/com.example.wificonf')
     print("load_config: Loading config from conf.json")
     try:
-        with open('/data/com.example.wificonf/conf.json','r') as f:
+        with open('data/com.example.wificonf/conf.json','r') as f:
             global access_points
             access_points=ujson.load(f)
             print(f"load_config: Loaded access_points: {access_points}")
@@ -54,7 +59,7 @@ def load_config():
 def save_config():
     print("save_config: Saving access_points to conf.json")
     try:
-        with open('/data/com.example.wificonf/conf.json','w') as f:
+        with open('data/com.example.wificonf/conf.json','w') as f:
             ujson.dump(access_points,f)
         print(f"save_config: Saved access_points: {access_points}")
     except OSError:
@@ -74,12 +79,15 @@ def scan_done_callback():
 def scan_networks():
     print("scan_networks: Scanning for Wi-Fi networks")
     global ssids
-    if not wlan.isconnected(): # restart WiFi hardware in case it's in a bad state
+    if havenetwork and not wlan.isconnected(): # restart WiFi hardware in case it's in a bad state
         wlan.active(False)
         wlan.active(True)
     try:
-        networks = wlan.scan()
-        ssids = list(set(n[0].decode() for n in networks))
+        if havenetwork:
+            networks = wlan.scan()
+            ssids = list(set(n[0].decode() for n in networks))
+        else:
+            ssids = ["Dummy", "Test", "SSIDs"]
         print(f"scan_networks: Found networks: {ssids}")
     except Exception as e:
         print(f"scan_networks: Scan failed: {e}")
@@ -113,16 +121,19 @@ def attempt_connecting(ssid,password):
     print(f"attempt_connecting: Attempting to connect to SSID: {ssid}")
     result="connected"
     try:
-        wlan.disconnect()
-        wlan.connect(ssid,password)
-        for i in range(10):
-            if wlan.isconnected():
-                print(f"attempt_connecting: Connected to {ssid} after {i+1} seconds")
-                break
-            print(f"attempt_connecting: Waiting for connection, attempt {i+1}/10")
-            time.sleep(1)
-        if not wlan.isconnected():
-            result="timeout"
+        if havenetwork:
+            wlan.disconnect()
+            wlan.connect(ssid,password)
+            for i in range(10):
+                if wlan.isconnected():
+                    print(f"attempt_connecting: Connected to {ssid} after {i+1} seconds")
+                    break
+                print(f"attempt_connecting: Waiting for connection, attempt {i+1}/10")
+                time.sleep(1)
+            if not wlan.isconnected():
+                result="timeout"
+        else:
+            print("Warning: not trying to connect because not havenetwork")
     except Exception as e:
         print(f"attempt_connecting: Connection error: {e}")
         result=f"{e}"
@@ -161,7 +172,7 @@ def refresh_list(tried_ssid="", result=""):
         print(f"refresh_list: Adding SSID: {ssid}")
         button=aplist.add_button(None,ssid)
         button.add_event_cb(lambda e, s=ssid: select_ssid_cb(e,s),lv.EVENT.CLICKED,None)
-        if wlan.isconnected() and wlan.config('essid')==ssid:
+        if havenetwork and wlan.isconnected() and wlan.config('essid')==ssid:
             status="connected"
         elif tried_ssid==ssid: # implies not connected
             status=result
@@ -314,13 +325,11 @@ def create_ui():
     refresh_list()
 
 
-wlan=network.WLAN(network.STA_IF)
-wlan.active(True)
+if havenetwork:
+    wlan=network.WLAN(network.STA_IF)
+    wlan.active(True)
 
 load_config()
 create_ui()
 start_scan_networks()
 
-#import time
-#while appscreen == lv.screen_active() or password_page == lv.screen_active():
-#    time.sleep_ms(100) # not too long, otherwise touch events get lost
