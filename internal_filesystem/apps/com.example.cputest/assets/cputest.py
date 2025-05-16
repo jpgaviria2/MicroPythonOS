@@ -25,8 +25,7 @@ DATA = os.urandom(DATA_SIZE)  # Generate 1KB of random data for SHA-256
 def stress_test_busy_loop():
     print("\nStarting busy loop stress test...")
     global summary
-    summary += "Busy loop without yield:"
-    #status.set_text(summary)
+    summary += "Busy loop without yield: "
     iterations = 0
     start_time = time.ticks_ms()
     end_time = start_time + TEST_DURATION
@@ -35,16 +34,14 @@ def stress_test_busy_loop():
     duration_ms = time.ticks_diff(time.ticks_ms(), start_time)
     iterations_per_second = (iterations / duration_ms) * 1000
     print(f"Busy loop test ran duration: {duration_ms}, average: {iterations_per_second:.2f} iterations/second")
-    summary += f" {iterations_per_second:.2f}/s\n"
-    #status.set_text(summary)
+    summary += f"{iterations_per_second:.2f}/s\n"
     return iterations_per_second
 
 
 def stress_test_busy_loop_with_yield():
     print("\nStarting busy loop with yield (sleep_ms(0)) stress test...")
     global summary
-    summary += "Busy loop with yield:"
-    #status.set_text(summary)
+    summary += "Busy loop with yield: "
     iterations = 0
     start_time = time.ticks_ms()
     end_time = start_time + TEST_DURATION
@@ -54,17 +51,13 @@ def stress_test_busy_loop_with_yield():
     duration_ms = time.ticks_diff(time.ticks_ms(), start_time)
     iterations_per_second = (iterations / duration_ms) * 1000
     print(f"Busy loop with yield test completed: {iterations_per_second:.2f} iterations/second")
-    summary += f" {iterations_per_second:.2f}/s\n"
-    #status.set_text(summary)
+    summary += f"{iterations_per_second:.2f}/s\n"
     return iterations_per_second
 
-def stress_test_busy_loop_with_yield_thread(timer):
-    #_thread.stack_size(12*1024)
-    _thread.start_new_thread(stress_test_busy_loop_with_yield, ())
-
-def stress_test_sha256(timer):
+def stress_test_sha256():
     print("\nStarting SHA-256 stress test (1KB data)...")
-    global status, summary
+    global summary
+    summary += "Busy loop with SHA-256 (1KB): "
     iterations = 0
     start_time = time.ticks_ms()
     end_time = start_time + TEST_DURATION
@@ -74,9 +67,8 @@ def stress_test_sha256(timer):
     duration_ms = time.ticks_diff(time.ticks_ms(), start_time)
     iterations_per_second = (iterations / duration_ms) * 1000
     print(f"SHA-256 test completed: {iterations_per_second:.2f} iterations/second")
-    summary += f"SHA-256 (1KB): {iterations_per_second:.2f}/s\n"
+    summary += f" {iterations_per_second:.2f}/s\n"
     summary += "\nAll tests completed."
-    status.set_text(summary)
     return iterations_per_second
 
 
@@ -105,13 +97,11 @@ status.set_text(summary)
 _thread.stack_size(12*1024)
 _thread.start_new_thread(stress_test_busy_loop, ())
 
-#stress_test_busy_loop_timer = lv.timer_create(stress_test_busy_loop, START_SPACING, None)
-#stress_test_busy_loop_timer.set_repeat_count(1)
-
-stress_test_busy_loop_with_yield_timer = lv.timer_create(stress_test_busy_loop_with_yield_thread, TEST_DURATION * 2, None)
+stress_test_busy_loop_with_yield_timer = lv.timer_create(lambda timer: _thread.start_new_thread(stress_test_busy_loop_with_yield, ()), TEST_DURATION * 2, None)
 stress_test_busy_loop_with_yield_timer.set_repeat_count(1)
 stress_test_busy_loop_with_yield_timer.set_auto_delete(False)
 
-#sha256_timer = lv.timer_create(stress_test_sha256, START_SPACING + 2 * TEST_DURATION + 2 * TEST_SPACING, None)
-#sha256_timer.set_repeat_count(1)
+stress_test_busy_loop_with_yield_timer = lv.timer_create(lambda timer: _thread.start_new_thread(stress_test_sha256, ()), TEST_DURATION * 4, None)
+stress_test_busy_loop_with_yield_timer.set_repeat_count(1)
+stress_test_busy_loop_with_yield_timer.set_auto_delete(False)
 
