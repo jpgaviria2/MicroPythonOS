@@ -132,7 +132,7 @@ def try_capture(event, data):
     global current_cam_buffer, image_dsc, image, use_webcam, keepgoing
     if not keepgoing:
         print("try_capture called while keepgoing==False, aborting...")
-        return
+        return False # tell the task handler not to update (redraw)
     if use_webcam:
         current_cam_buffer = webcam.capture_frame(cam, "rgb565")
     elif cam.frame_available():
@@ -253,7 +253,7 @@ else:
     except Exception as e:
         print(f"camtest.py: webcam exception: {e}")
 
-if cam:
+if cam and keepgoing:
     status_label_text = ""
     qr_button.remove_flag(lv.obj.FLAG.HIDDEN)
     snap_button.remove_flag(lv.obj.FLAG.HIDDEN)

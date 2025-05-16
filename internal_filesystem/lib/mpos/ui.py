@@ -56,10 +56,9 @@ def open_bar():
     if not bar_open:
         print("not open so opening...")
         bar_open=True
-        hide_bar_animation.current_value = hide_bar_animation_end_value # stop the hide animation
-        show_bar_animation.current_value = hide_bar_animation_start_value
-        #show_bar_animation.start() # coming from the camera, this doesn't work?!
-        notification_bar.set_y(show_bar_animation_end_value) # workaround is fine
+        hide_bar_animation.current_value = hide_bar_animation_end_value
+        #show_bar_animation.current_value = hide_bar_animation_start_value
+        show_bar_animation.start()
     else:
         print("bar already open")
 
@@ -67,8 +66,8 @@ def close_bar():
     global bar_open, show_bar_animation, hide_bar_animation
     if bar_open:
         bar_open=False
-        show_bar_animation.current_value = show_bar_animation_end_value # stop the show animation
-        hide_bar_animation.current_value = hide_bar_animation_start_value
+        show_bar_animation.current_value = show_bar_animation_end_value
+        #hide_bar_animation.current_value = hide_bar_animation_start_value
         hide_bar_animation.start()
 
 def show_launcher():
