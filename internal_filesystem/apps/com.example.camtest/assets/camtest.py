@@ -133,16 +133,19 @@ def try_capture(event, data):
     if not keepgoing:
         print("try_capture called while keepgoing==False, aborting...")
         return False # tell the task handler not to update (redraw)
-    if use_webcam:
-        current_cam_buffer = webcam.capture_frame(cam, "rgb565")
-    elif cam.frame_available():
-        current_cam_buffer = cam.capture()
-    if current_cam_buffer and len(current_cam_buffer) and keepgoing:
-        image_dsc.data = current_cam_buffer
-        #image.invalidate() # does not work so do this:
-        image.set_src(image_dsc)
-        if not use_webcam:
-            cam.free_buffer()  # Free the old buffer
+    try:
+        if use_webcam:
+            current_cam_buffer = webcam.capture_frame(cam, "rgb565")
+        elif cam.frame_available():
+            current_cam_buffer = cam.capture()
+        if current_cam_buffer and len(current_cam_buffer) and keepgoing:
+            image_dsc.data = current_cam_buffer
+            #image.invalidate() # does not work so do this:
+            image.set_src(image_dsc)
+            if not use_webcam:
+                cam.free_buffer()  # Free the old buffer
+    except Exception as e:
+        print(f"Camera capture exception: {e}")
 
 
 def build_ui():
@@ -263,6 +266,12 @@ if cam and keepgoing:
 
 while appscreen == lv.screen_active() and keepgoing:
     time.sleep_ms(100)
+    if status_label.get_text() != status_label_text:
+        status_label.set_text(status_label_text)
+        if status_label_text:
+            status_label_cont.remove_flag(lv.obj.FLAG.HIDDEN)
+        else:
+            status_label_cont.add_flag(lv.obj.FLAG.HIDDEN)
 
 print("camtest.py: stopping...")
 if cam:
