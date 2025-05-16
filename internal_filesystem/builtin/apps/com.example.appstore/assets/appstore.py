@@ -241,11 +241,11 @@ def download_apps(json_url):
 
 def download_icons():
     for app in apps:
-        print("Downloading icon for app ")
+        print(f"Downloading icon for {app.name}")
         image_dsc = download_icon(app.icon_url)
         app.image_dsc = image_dsc # save it for the app detail page
-        lv.async_call(lambda l, id=app.image_dsc: app.image.set_src(id), None)
-        time.sleep_ms(50) # wait until image updated
+        lv.async_call(lambda l: app.image.set_src(image_dsc), None)
+        time.sleep_ms(round(th.duration*1.5)) # not waiting here will result in some async_calls() not being executed
     print("Finished downloading icons...")
 
 
