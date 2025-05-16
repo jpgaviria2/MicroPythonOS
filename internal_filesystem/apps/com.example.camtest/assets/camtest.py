@@ -259,7 +259,7 @@ if cam:
     snap_button.remove_flag(lv.obj.FLAG.HIDDEN)
 
 # Task handler needs to be updated from this app's thread, otherwise it causes concurrency issues
-th.disable()
+#th.disable()
 #time.sleep_ms(500)
 
 while appscreen == lv.screen_active() and keepgoing is True:
@@ -270,11 +270,13 @@ while appscreen == lv.screen_active() and keepgoing is True:
             status_label_cont.remove_flag(lv.obj.FLAG.HIDDEN)
         else:
             status_label_cont.add_flag(lv.obj.FLAG.HIDDEN)
-    lv.task_handler()
+    #lv.task_handler()
     time.sleep_ms(5)
-    lv.tick_inc(5)
+    #lv.tick_inc(5)
     if cam:
+        th.disable()
         try_capture()
+        th.enable()
 
 print("camtest.py: stopping...")
 
@@ -286,5 +288,5 @@ elif cam:
 
 print("camtest.py: showing launcher...")
 show_launcher()
-th.enable()
+#th.enable()
 
