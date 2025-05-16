@@ -10,11 +10,10 @@
 # Busy loop with yield: 15923 iterations/second
 # SHA-256 (1KB): 5269 iterations/second
 
-appscreen = lv.screen_active()
-
 import time
 import hashlib
 import os
+import _thread
 
 # Configuration
 START_SPACING = 2000 # Wait for task bar to go up
@@ -23,11 +22,11 @@ TEST_SPACING = 1000 # Wait between tests (ms)
 DATA_SIZE = 1024   # 1KB of data for SHA-256 test
 DATA = os.urandom(DATA_SIZE)  # Generate 1KB of random data for SHA-256
 
-def stress_test_busy_loop(timer):
+def stress_test_busy_loop():
     print("\nStarting busy loop stress test...")
-    global status, summary
+    global summary
     summary += "Busy loop without yield:"
-    status.set_text(summary)
+    #status.set_text(summary)
     iterations = 0
     start_time = time.ticks_ms()
     end_time = start_time + TEST_DURATION
@@ -35,17 +34,17 @@ def stress_test_busy_loop(timer):
         iterations += 1
     duration_ms = time.ticks_diff(time.ticks_ms(), start_time)
     iterations_per_second = (iterations / duration_ms) * 1000
-    print(f"Busy loop test completed: {iterations_per_second:.2f} iterations/second")
+    print(f"Busy loop test ran duration: {duration_ms}, average: {iterations_per_second:.2f} iterations/second")
     summary += f" {iterations_per_second:.2f}/s\n"
-    status.set_text(summary)
+    #status.set_text(summary)
     return iterations_per_second
 
 
-def stress_test_busy_loop_with_yield(timer):
+def stress_test_busy_loop_with_yield():
     print("\nStarting busy loop with yield (sleep_ms(0)) stress test...")
-    global status, summary
+    global summary
     summary += "Busy loop with yield:"
-    status.set_text(summary)
+    #status.set_text(summary)
     iterations = 0
     start_time = time.ticks_ms()
     end_time = start_time + TEST_DURATION
@@ -56,9 +55,12 @@ def stress_test_busy_loop_with_yield(timer):
     iterations_per_second = (iterations / duration_ms) * 1000
     print(f"Busy loop with yield test completed: {iterations_per_second:.2f} iterations/second")
     summary += f" {iterations_per_second:.2f}/s\n"
-    status.set_text(summary)
+    #status.set_text(summary)
     return iterations_per_second
 
+def stress_test_busy_loop_with_yield_thread(timer):
+    #_thread.stack_size(12*1024)
+    _thread.start_new_thread(stress_test_busy_loop_with_yield, ())
 
 def stress_test_sha256(timer):
     print("\nStarting SHA-256 stress test (1KB data)...")
@@ -78,15 +80,20 @@ def stress_test_sha256(timer):
     return iterations_per_second
 
 
+def update_status_cb(timer):
+    status.set_text(summary)
+
+
 def janitor_cb(timer):
     if lv.screen_active() != appscreen:
         print("cputest.py backgrounded, cleaning up...")
         janitor.delete()
-        #sock.close()
-        #get_price_timer.delete()
+        update_status_timer.delete()
+        stress_test_busy_loop_with_yield_timer.delete()
 
 appscreen = lv.screen_active()
 janitor = lv.timer_create(janitor_cb, 500, None)
+update_status_timer = lv.timer_create(update_status_cb, 200, None)
 
 status = lv.label(appscreen)
 status.align(lv.ALIGN.TOP_LEFT, 5, 10)
@@ -95,12 +102,16 @@ status.set_style_text_color(lv.color_hex(0xFFFFFF), 0)
 summary = "Running 3 CPU tests...\n\n"
 status.set_text(summary)
 
-stress_test_busy_loop_timer = lv.timer_create(stress_test_busy_loop, START_SPACING, None)
-stress_test_busy_loop_timer.set_repeat_count(1)
+_thread.stack_size(12*1024)
+_thread.start_new_thread(stress_test_busy_loop, ())
 
-stress_test_busy_loop_with_yield_timer = lv.timer_create(stress_test_busy_loop_with_yield, START_SPACING + TEST_DURATION + TEST_SPACING, None)
+#stress_test_busy_loop_timer = lv.timer_create(stress_test_busy_loop, START_SPACING, None)
+#stress_test_busy_loop_timer.set_repeat_count(1)
+
+stress_test_busy_loop_with_yield_timer = lv.timer_create(stress_test_busy_loop_with_yield_thread, TEST_DURATION * 2, None)
 stress_test_busy_loop_with_yield_timer.set_repeat_count(1)
+stress_test_busy_loop_with_yield_timer.set_auto_delete(False)
 
-sha256_timer = lv.timer_create(stress_test_sha256, START_SPACING + 2 * TEST_DURATION + 2 * TEST_SPACING, None)
-sha256_timer.set_repeat_count(1)
+#sha256_timer = lv.timer_create(stress_test_sha256, START_SPACING + 2 * TEST_DURATION + 2 * TEST_SPACING, None)
+#sha256_timer.set_repeat_count(1)
 
