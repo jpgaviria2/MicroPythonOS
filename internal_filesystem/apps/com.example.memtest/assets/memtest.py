@@ -25,6 +25,8 @@
 #           1048576 |                    1
 #           2097152 |                    0
 #=====================================
+#
+# On desktop, this hangs while outputting, for some reason...
 
 import gc
 import time
@@ -32,7 +34,7 @@ import _thread
 
 # Configuration
 ALLOCATION_TIMEOUT_MS = 100  # Timeout for a single allocation (in milliseconds)
-
+keep_running = True
 
 def test_allocation(buffer_size, n):
     """Test how many buffers of a given size can be allocated with a timeout."""
@@ -41,7 +43,7 @@ def test_allocation(buffer_size, n):
     count = 0
     
     try:
-        while appscreen == lv.screen_active():
+        while keep_running:
             # Measure time for allocation
             start_time = time.ticks_ms()
             # Allocate a new buffer
@@ -66,12 +68,9 @@ def test_allocation(buffer_size, n):
         print(f"\nStopped after allocating {count} buffers of {buffer_size} bytes: {e}")
     
     # Free allocated buffers
-    #buffers.clear()
+    buffers.clear()
     gc.collect()
     return count
-
-
-
 
 def stress_test_thread():
     summary = "Running RAM memory tests...\n\n"
@@ -80,7 +79,7 @@ def stress_test_thread():
     lv.async_call(lambda l: status.set_text(summary), None)
     # Test buffer sizes of 2^n, starting from n=1 (2 bytes)
     n = 1        
-    while appscreen == lv.screen_active():
+    while keep_running:
         buffer_size = 2 ** n
         summary += f"{buffer_size:>12} | "
         #lv.async_call(lambda l: status.set_text(summary), None)
@@ -105,6 +104,15 @@ def stress_test_thread():
     summary += "Test completed.\n"
     lv.async_call(lambda l: status.set_text(summary), None)
 
+
+
+def janitor_cb(timer):
+    global keep_running
+    if lv.screen_active() != appscreen:
+        print("memtest.py backgrounded, cleaning up...")
+        janitor.delete()
+        keep_running = False
+
 appscreen = lv.screen_active()
 status = lv.label(appscreen)
 status.align(lv.ALIGN.TOP_LEFT, 5, 10)
@@ -113,3 +121,5 @@ status.set_style_text_font(lv.font_unscii_8, 0)
 
 _thread.stack_size(12*1024)
 _thread.start_new_thread(stress_test_thread, ())
+
+janitor = lv.timer_create(janitor_cb, 400, None)

@@ -41,6 +41,6 @@ metrics_label.set_pos(10, 10)
 metrics_label.set_text("Spinners: 0")
 
 print("Starting LVGL spinner benchmark...")
-janitor = lv.timer_create(janitor_cb, 500, None)
+janitor = lv.timer_create(janitor_cb, 400, None)
 add_spinner_timer = lv.timer_create(add_spinner, 2000, None)
 
