@@ -301,7 +301,7 @@ def create_apps_list():
         desc_label.add_event_cb(lambda e, a=app: show_app_detail(a), lv.EVENT.CLICKED, None)
     print("create_apps_list app done")
     try:
-        _thread.stack_size(32*1024) # seems to need 32KB for urequests
+        _thread.stack_size(12*1024)
         _thread.start_new_thread(download_icons,())
     except Exception as e:
         print("Could not start thread to download icons: ", e)
