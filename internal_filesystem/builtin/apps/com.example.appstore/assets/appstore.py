@@ -6,7 +6,7 @@ import os
 import time
 import _thread
 
-mainscreen = lv.screen_active()
+import mpos.apps
 
 apps = []
 app_detail_screen = None
@@ -22,21 +22,6 @@ action_label_install = "Install"
 action_label_uninstall = "Uninstall"
 action_label_restore = "Restore Built-in"
 action_label_nothing = "Disable" # This doesn't do anything at the moment, but it could mark builtin apps as "Disabled" somehow and also allow for "Enable" then
-
-class App:
-    def __init__(self, name, publisher, short_description, long_description, icon_url, download_url, fullname, version, entrypoint, category):
-        self.name = name
-        self.publisher = publisher
-        self.short_description = short_description
-        self.long_description = long_description
-        self.icon_url = icon_url
-        self.download_url = download_url
-        self.fullname = fullname
-        self.version = version
-        self.entrypoint = entrypoint
-        self.category = category
-        self.image = None
-        self.image_dsc = None
 
 def compare_versions(ver1: str, ver2: str) -> bool:
     """Compare two version numbers (e.g., '1.2.3' vs '4.5.6').
@@ -60,14 +45,14 @@ def compare_versions(ver1: str, ver2: str) -> bool:
     return False
 
 def is_builtin_app(app_fullname):
-    return is_installed_by_path(f"/builtin/apps/{app_fullname}")
+    return is_installed_by_path(f"builtin/apps/{app_fullname}")
 
 def is_overridden_builtin_app(app_fullname):
-    return is_installed_by_path(f"/apps/{app_fullname}") and is_installed_by_path(f"/builtin/apps/{app_fullname}")
+    return is_installed_by_path(f"apps/{app_fullname}") and is_installed_by_path(f"builtin/apps/{app_fullname}")
 
 def is_update_available(app_fullname, new_version):
-    appdir = f"/apps/{app_fullname}"
-    builtinappdir = f"/builtin/apps/{app_fullname}"
+    appdir = f"apps/{app_fullname}"
+    builtinappdir = f"builtin/apps/{app_fullname}"
     installed_app=None
     if is_installed_by_path(appdir):
         print(f"{appdir} found, getting version...")
@@ -92,7 +77,7 @@ def is_installed_by_path(dir_path):
 
 def is_installed_by_name(app_fullname):
     print(f"Checking if app {app_fullname} is installed...")
-    return is_installed_by_path(f"/apps/{app_fullname}") or is_installed_by_path(f"/builtin/apps/{app_fullname}")
+    return is_installed_by_path(f"apps/{app_fullname}") or is_installed_by_path(f"builtin/apps/{app_fullname}")
 
 def set_install_label(app_fullname):
     global install_label
@@ -136,7 +121,7 @@ def download_icon(url):
             })
             return image_dsc
         else:
-            print("Failed to download image: Status code", response.status_code)
+           print("Failed to download image: Status code", response.status_code)
     except Exception as e:
         print(f"Exception during download of icon: {e}")
     return None
@@ -195,10 +180,10 @@ def download_and_unzip(zip_url, dest_folder, app_fullname):
         except Exception:
             pass
         try:
-            os.mkdir("/tmp")
+            os.mkdir("tmp")
         except Exception:
             pass
-        temp_zip_path = "/tmp/temp.mpk"
+        temp_zip_path = "tmp/temp.mpk"
         print(f"Writing to temporary mpk path: {temp_zip_path}")
         # TODO: check free available space first!
         with open(temp_zip_path, "wb") as f:
@@ -234,29 +219,28 @@ def download_and_unzip(zip_url, dest_folder, app_fullname):
 
 
 def download_apps(json_url):
-    global apps
+    global apps, please_wait_label
     try:
         response = urequests.get(json_url, timeout=10)
-        print("download_apps")
-        if response.status_code == 200:
-            print(f"Got response text: {response.text}")
-            apps = [App(**app) for app in json.loads(response.text)]
-            # Remove duplicates based on app.name
-            seen = set()
-            apps = [app for app in apps if not (app.name in seen or seen.add(app.name))]
-            # Sort apps by app.name
-            apps.sort(key=lambda x: x.name.lower())  # Use .lower() for case-insensitive sorting
-            response.close()
-            please_wait_label.add_flag(lv.obj.FLAG.HIDDEN)
-            create_apps_list()
     except Exception as e:
         print("Download failed:", e)
         please_wait_label.set_text(f"Error downloading app index: {e}")
-
+    if response and response.status_code == 200:
+        print(f"Got response text: {response.text}")
+        apps = [mpos.apps.App(**app) for app in json.loads(response.text)]
+        response.close()
+        # Remove duplicates based on app.name
+        seen = set()
+        apps = [app for app in apps if not (app.name in seen or seen.add(app.name))]
+        # Sort apps by app.name
+        apps.sort(key=lambda x: x.name.lower())  # Use .lower() for case-insensitive sorting
+        please_wait_label.add_flag(lv.obj.FLAG.HIDDEN)
+        create_apps_list()
 
 def download_icons():
     global apps
     for app in apps:
+        print("Downloading icon for app ")
         if not keepdownloadingicons:
             break
         image_dsc = download_icon(app.icon_url)
@@ -276,9 +260,9 @@ def load_icon(icon_path):
 
 def create_apps_list():
     global apps
-    default_icon_dsc = load_icon("/builtin/res/mipmap-mdpi/default_icon_64x64.png")
+    default_icon_dsc = load_icon("builtin/res/mipmap-mdpi/default_icon_64x64.png")
     print("create_apps_list")
-    apps_list = lv.list(mainscreen)
+    apps_list = lv.list(appscreen)
     apps_list.set_style_pad_all(0, 0)
     apps_list.set_size(lv.pct(100), lv.pct(100))
     print("create_apps_list iterating")
@@ -317,7 +301,7 @@ def create_apps_list():
     try:
         global keepdownloadingicons
         keepdownloadingicons = True
-        _thread.stack_size(12*1024)
+        _thread.stack_size(32*1024)
         _thread.start_new_thread(download_icons,())
     except Exception as e:
         print("Could not start thread to download icons: ", e)
@@ -409,14 +393,14 @@ def toggle_install(download_url, fullname):
     if label_text == action_label_install:
         try:
             _thread.stack_size(12*1024)
-            _thread.start_new_thread(download_and_unzip, (download_url, f"/apps/{fullname}", fullname))
+            _thread.start_new_thread(download_and_unzip, (download_url, f"apps/{fullname}", fullname))
         except Exception as e:
             print("Could not start download_and_unzip thread: ", e)
     elif label_text == action_label_uninstall or label_text == action_label_restore:
         print("Uninstalling app....")
         try:
             _thread.stack_size(12*1024)
-            _thread.start_new_thread(uninstall_app, (f"/apps/{fullname}", fullname))
+            _thread.start_new_thread(uninstall_app, (f"apps/{fullname}", fullname))
         except Exception as e:
             print("Could not start download_and_unzip thread: ", e)
 
@@ -427,7 +411,7 @@ def update_button_click(download_url, fullname):
     install_button.set_size(lv.pct(100), 40)
     try:
         _thread.stack_size(12*1024)
-        _thread.start_new_thread(download_and_unzip, (download_url, f"/apps/{fullname}", fullname))
+        _thread.start_new_thread(download_and_unzip, (download_url, f"apps/{fullname}", fullname))
     except Exception as e:
         print("Could not start download_and_unzip thread: ", e)
 
@@ -437,16 +421,24 @@ def back_to_main(event):
     if app_detail_screen:
         app_detail_screen.delete()
         app_detail_screen = None
-    lv.screen_load(mainscreen)
+    lv.screen_load(appscreen)
 
 
-print("appstore.py starting")
+def janitor_cb(timer):
+    global keeprunning
+    if lv.screen_active() != appscreen or app_detail_screen == lv.screen_active():
+        print("appstore.py backgrounded, cleaning up...")
+        janitor.delete()
+        appscreen.clean()
+        appscreen.delete()
+        restart_launcher() # refresh the launcher
+        print("appstore.py ending")
 
-please_wait_label = lv.label(mainscreen)
+
+appscreen = lv.screen_active()
+please_wait_label = lv.label(appscreen)
 please_wait_label.set_text("Downloading app index...")
 please_wait_label.center()
-
-import time
 
 can_check_network = True
 try:
@@ -456,14 +448,6 @@ except Exception as e:
 
 if can_check_network and not network.WLAN(network.STA_IF).isconnected():
     please_wait_label.set_text("Error: WiFi is not connected.")
-    time.sleep(10)
 else:
-    download_apps("http://demo.lnpiggy.com:2121/apps.json")
-    # Wait until the user stops the app
-    import time
-    while mainscreen == lv.screen_active() or app_detail_screen == lv.screen_active():
-        time.sleep_ms(100)
-    print("User navigated away from the appstore, restarting launcher to refresh...")
-    restart_launcher() # refresh the launcher
-
-print("appstore.py ending")
+    _thread.stack_size(12*1024)
+    _thread.start_new_thread(download_apps, ("http://demo.lnpiggy.com:2121/apps.json",))
