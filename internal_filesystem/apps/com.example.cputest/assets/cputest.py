@@ -14,6 +14,17 @@
 # Busy loop: 127801 iterations/second
 # Busy loop with yield: 38394 iterations/second
 # SHA-256 (1KB): 5012 iterations/second
+#
+# New way, but now with 10 in a loop and 10 second tests for more stability:
+# Busy loop: 127000 iterations/second
+# Busy loop with yield: 46000 iterations/second => this went up 25%
+# SHA-256 (1KB): 5100 iterations/second
+#
+# Results on desktop:
+# Busy loop: 15 997 000 => 125x faster
+# Busy loop with yield: 10 575 000 => 229x faster
+# SHA-256 (1KB): 291 000 => 57x faster
+
 
 import time
 import hashlib
@@ -25,7 +36,7 @@ summary = "Running 3 CPU tests...\n\n"
 
 # Configuration
 START_SPACING = 2000 # Wait for system to settle
-TEST_DURATION = 5000  # Duration of each test (ms)
+TEST_DURATION = 10000  # Duration of each test (ms)
 TEST_SPACING = 1000 # Wait between tests (ms)
 
 def stress_test_thread():
@@ -53,8 +64,9 @@ def stress_test_thread():
     start_time = time.ticks_ms()
     end_time = start_time + TEST_DURATION
     while time.ticks_ms() < end_time and keeprunning:
-        iterations += 1
-        time.sleep_ms(0)  # Yield to other tasks
+        for _ in range(10):
+            time.sleep_ms(0)  # Yield to other tasks
+        iterations += 10
     duration_ms = time.ticks_diff(time.ticks_ms(), start_time)
     iterations_per_second = (iterations / duration_ms) * 1000
     print(f"Busy loop with yield test completed: {iterations_per_second:.2f} iterations/second")
@@ -67,8 +79,9 @@ def stress_test_thread():
     start_time = time.ticks_ms()
     end_time = start_time + TEST_DURATION
     while time.ticks_ms() < end_time and keeprunning:
-        hashlib.sha256(DATA).digest()  # Compute SHA-256 on 1KB data
-        iterations += 1
+        for _ in range(10):
+            hashlib.sha256(DATA).digest()  # Compute SHA-256 on 1KB data
+        iterations += 10
     duration_ms = time.ticks_diff(time.ticks_ms(), start_time)
     iterations_per_second = (iterations / duration_ms) * 1000
     print(f"SHA-256 test completed: {iterations_per_second:.2f} iterations/second")
