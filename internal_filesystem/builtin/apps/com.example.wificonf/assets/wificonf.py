@@ -105,17 +105,8 @@ def start_scan_networks():
         _thread.start_new_thread(scan_networks, ())
 
 
-def attempt_connecting_done(ssid, result):
-    print(f"Connecting to {ssid} got result: {result}")
+def attempt_connecting_thread(ssid,password):
     global busy_connecting, scan_button_label, scan_button, last_tried_ssid, last_tried_result
-    last_tried_ssid = ssid
-    last_tried_result = result
-    busy_connecting=False
-    scan_button_label.set_text(scan_button_scan_text)
-    scan_button.add_flag(lv.obj.FLAG.CLICKABLE)
-
-
-def attempt_connecting(ssid,password):
     print(f"attempt_connecting: Attempting to connect to SSID: {ssid}")
     result="connected"
     try:
@@ -136,7 +127,14 @@ def attempt_connecting(ssid,password):
         print(f"attempt_connecting: Connection error: {e}")
         result=f"{e}"
         show_error("Connecting to {ssid} failed!")
-    attempt_connecting_done(ssid, result)
+    print(f"Connecting to {ssid} got result: {result}")
+    last_tried_ssid = ssid
+    last_tried_result = result
+    busy_connecting=False
+    # Schedule UI updates because different thread
+    lv.async_call(lambda l: scan_button_label.set_text(scan_button_scan_text), None)
+    lv.async_call(lambda l: scan_button.add_flag(lv.obj.FLAG.CLICKABLE), None)
+
 
 def start_attempt_connecting(ssid,password):
     print(f"start_attempt_connecting: Attempting to connect to SSID: {ssid}")
@@ -148,7 +146,7 @@ def start_attempt_connecting(ssid,password):
     else:
         busy_connecting = True
         _thread.stack_size(12*1024)
-        _thread.start_new_thread(attempt_connecting, (ssid,password))
+        _thread.start_new_thread(attempt_connecting_thread, (ssid,password))
 
 def show_error(message):
     print(f"show_error: Displaying error: {message}")
