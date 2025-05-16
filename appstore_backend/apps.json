@@ -39,17 +39,18 @@
 }
 
 ,{
-"name": "HelloWorld",
+"name": "Draw",
 "publisher": "ACME Inc",
-"short_description": "Minimal app",
-"long_description": "Demonstrates the simplest app.",
-"icon_url": "http://demo.lnpiggy.com:2121/apps/com.example.helloworld_0.0.1.mpk_icon_64x64.png",
-"download_url": "http://demo.lnpiggy.com:2121/apps/com.example.helloworld_0.0.1.mpk",
-"fullname": "com.example.memtest",
+"short_description": "Simple drawing app",
+"long_description": "Draw simple shapes on the screen.",
+"icon_url": "http://demo.lnpiggy.com:2121/apps/com.example.draw_0.0.1.mpk_icon_64x64.png",
+"download_url": "http://demo.lnpiggy.com:2121/apps/com.example.draw_0.0.1.mpk",
+"fullname": "com.example.draw",
 "version": "0.0.1",
-"entrypoint": "assets/hello.py",
-"category": "development"
+"entrypoint": "assets/draw.py",
+"category": "art"
 }
+
 ,{
 "name": "IMU Tester",
 "publisher": "ACME Inc",
