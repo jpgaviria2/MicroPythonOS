@@ -19,7 +19,7 @@ lv.screen_load(scr)
 
 def janitor_cb(timer):
     if lv.screen_active() != scr:
-        print("hello.py lost foreground, cleaning up...")
+        print("app backgrounded, cleaning up...")
         janitor.delete()
         # No cleanups to do, but in a real app, you might stop timers, deinitialize hardware devices you used, close network connections, etc.
 

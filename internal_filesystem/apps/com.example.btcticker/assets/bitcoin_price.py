@@ -1,5 +1,3 @@
-appscreen = lv.screen_active()
-
 import usocket
 import ssl
 import ubinascii
@@ -177,12 +175,33 @@ def get_price(json_str):
         print(f"Error: An unexpected error occurred - {str(e)}")
         return None
 
+def refresh_price(timer):
+    global summary, status
+    data = ws_read_frame(sock)
+    if data:
+        print(f"Response: {data}")
+        price = get_price(data)
+        if price:
+            print(f"Price: {price}")
+            summary += f"{price}\n"
+            status.set_text(summary)
+
+def janitor_cb(timer):
+    if lv.screen_active() != appscreen:
+        print("bitcoin_price.py backgrounded, cleaning up...")
+        janitor.delete()
+        sock.close()
+        get_price_timer.delete()
+
+appscreen = lv.screen_active()
+janitor = lv.timer_create(janitor_cb, 500, None)
+
 status = lv.label(appscreen)
 status.align(lv.ALIGN.TOP_LEFT, 5, 10)
 status.set_style_text_color(lv.color_hex(0xFFFFFF), 0)
-
 summary = "Bitcoin USD price\nfrom Coinbase's Websocket API:\n\n"
 status.set_text(summary)
+
 
 port = 443
 host = "ws-feed.exchange.coinbase.com"
@@ -199,22 +218,11 @@ try:
             break
     print("Subscribing to price updates...")
     ws_send_text(sock, ujson.dumps({"type": "subscribe","product_ids": ["BTC-USD"],"channels": ["ticker_batch"]}))
-    while appscreen == lv.screen_active():
-        time.sleep(1)            
-        data = ws_read_frame(sock)
-        if data:
-            print(f"Response: {data}")
-            price = get_price(data)
-            if price:
-                print(f"Price: {price}")
-                summary += f"{price}\n"
-                status.set_text(summary)
-    sock.close()
+    get_price_timer = lv.timer_create(refresh_price, 1000, None)
 except Exception as e:
     print(f"Error: {str(e)}")
     try:
         sock.close()
     except:
         pass
-
 

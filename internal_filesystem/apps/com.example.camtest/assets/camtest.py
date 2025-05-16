@@ -236,7 +236,7 @@ def init_cam():
 
 def check_running(timer):
     if lv.screen_active() != appscreen:
-        print("camtest.py lost foreground, cleaning up...")
+        print("camtest.py backgrounded, cleaning up...")
         check_running_timer.delete()
         if capture_timer:
             capture_timer.delete()

@@ -28,7 +28,7 @@ def add_spinner(timer):
 
 def janitor_cb(timer):
     if lv.screen_active() != appscreen:
-        print("lvgltest.py lost foreground, cleaning up...")
+        print("lvgltest.py backgrounded, cleaning up...")
         janitor.delete()
         add_spinner_timer.delete()
 
