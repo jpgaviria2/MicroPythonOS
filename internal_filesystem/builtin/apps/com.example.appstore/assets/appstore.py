@@ -248,7 +248,7 @@ def download_icons():
         image_dsc = download_icon(app.icon_url)
         app.image_dsc = image_dsc
     print("Finished downloading icons, scheduling stop of refresh timer...")
-    #lv.async_call(lambda l: refresh_icons.pause(), None)
+    lv.async_call(lambda l: refresh_icons.pause(), None)
 
 def load_icon(icon_path):
     with open(icon_path, 'rb') as f:
@@ -426,13 +426,11 @@ def refresh_icons_cb(timer):
     #print("Refreshing app icons...")
     for app in apps:
         #print("Refreshing icon for {app.name}")
-        #app.image.set_src(app.image_dsc)
-        pass
+        app.image.set_src(app.image_dsc)
 
 def janitor_cb(timer):
     global appscreen, app_detail_screen
-    print(f"foreground screen is {lv.screen_active()}")
-    if lv.screen_active() != appscreen or lv.screen_active() != app_detail_screen:
+    if lv.screen_active() != appscreen and lv.screen_active() != app_detail_screen:
         print("appstore.py backgrounded, cleaning up...")
         janitor.delete()
         refresh_icons.delete()
