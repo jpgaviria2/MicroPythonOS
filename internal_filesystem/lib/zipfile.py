@@ -1961,7 +1961,8 @@ class ZipFile:
 
         # Construct target path
         targetpath = self.path_join(targetpath, arcname)
-        targetpath = self.path_normpath(targetpath)
+        print(f"zipfile.py: skipping path_normpath because it adds a leading slash, while MicroPython on unix/desktop runs in a subfolder.")
+        #targetpath = self.path_normpath(targetpath)
 
         # Create all parent directories if necessary
         upperdirs = self.path_dirname(targetpath)
