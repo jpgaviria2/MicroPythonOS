@@ -260,8 +260,10 @@ if cam:
 
 # Task handler needs to be updated from this app's thread, otherwise it causes concurrency issues
 th.disable()
+#time.sleep_ms(500)
 
 while appscreen == lv.screen_active() and keepgoing is True:
+    #print("cam keeps going...")
     if status_label.get_text() != status_label_text:
         status_label.set_text(status_label_text)
         if status_label_text:
@@ -285,3 +287,4 @@ elif cam:
 print("camtest.py: showing launcher...")
 show_launcher()
 th.enable()
+

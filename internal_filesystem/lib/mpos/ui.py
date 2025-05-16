@@ -8,7 +8,7 @@ NOTIFICATION_BAR_HEIGHT=24
 CLOCK_UPDATE_INTERVAL = 1000 # 10 or even 1 ms doesn't seem to change the framerate but 100ms is enough
 WIFI_ICON_UPDATE_INTERVAL = 1500
 TEMPERATURE_UPDATE_INTERVAL = 2000
-MEMFREE_UPDATE_INTERVAL = 5000 # not too frequent because there's a forced gc.collect() to give it a reliable value
+#MEMFREE_UPDATE_INTERVAL = 5000 # not too frequent because there's a forced gc.collect() to give it a reliable value
 
 DRAWER_ANIM_DURATION=300
 
@@ -20,13 +20,19 @@ bar_open=True
 
 hide_bar_animation = None
 show_bar_animation = None
+show_bar_animation_start_value = -NOTIFICATION_BAR_HEIGHT
+show_bar_animation_end_value = 0
+hide_bar_animation_start_value = show_bar_animation_end_value
+hide_bar_animation_end_value = show_bar_animation_start_value
+
+notification_bar = None
 
 foreground_app_name=None
 
 def set_foreground_app(appname):
     global foreground_app_name
-    print(f"foreground app is: {foreground_app_name}")
     foreground_app_name = appname
+    print(f"foreground app is: {foreground_app_name}")
 
 def open_drawer():
     global drawer_open, drawer
@@ -41,18 +47,28 @@ def close_drawer(to_launcher=False):
         drawer_open=False
         drawer.add_flag(lv.obj.FLAG.HIDDEN)
         if not to_launcher and not mpos.apps.is_launcher(foreground_app_name):
+            print("close_drawer: also closing bar")
             close_bar()
 
 def open_bar():
-    global bar_open, show_bar_animation
+    print("opening bar...")
+    global bar_open, show_bar_animation, hide_bar_animation, notification_bar
     if not bar_open:
+        print("not open so opening...")
         bar_open=True
-        show_bar_animation.start()
+        hide_bar_animation.current_value = hide_bar_animation_end_value # stop the hide animation
+        show_bar_animation.current_value = hide_bar_animation_start_value
+        #show_bar_animation.start() # coming from the camera, this doesn't work?!
+        notification_bar.set_y(show_bar_animation_end_value) # workaround is fine
+    else:
+        print("bar already open")
 
 def close_bar():
-    global bar_open, hide_bar_animation
+    global bar_open, show_bar_animation, hide_bar_animation
     if bar_open:
         bar_open=False
+        show_bar_animation.current_value = show_bar_animation_end_value # stop the show animation
+        hide_bar_animation.current_value = hide_bar_animation_start_value
         hide_bar_animation.start()
 
 def show_launcher():
@@ -64,12 +80,27 @@ def show_launcher():
 def create_rootscreen():
     global rootscreen
     rootscreen = lv.screen_active()
+    # Create a style for the undecorated screen
+    style = lv.style_t()
+    style.init()
+    # Remove background (make it transparent or set no color)
+    style.set_bg_opa(lv.OPA.TRANSP)  # Transparent background
+    style.set_border_width(0)        # No border
+    style.set_outline_width(0)       # No outline
+    style.set_shadow_width(0)        # No shadow
+    style.set_pad_all(0)             # No padding
+    style.set_radius(0)              # No corner radius (sharp edges)
+    # Apply the style to the screen
+    rootscreen.add_style(style, 0)
+    rootscreen.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
+    #rootscreen.set_scroll_mode(lv.SCROLL_MODE.OFF)
     rootlabel = lv.label(rootscreen)
     rootlabel.set_text("Welcome!")
     rootlabel.align(lv.ALIGN.CENTER, 0, 0)
 
 
 def create_notification_bar():
+    global notification_bar
     # Create notification bar
     notification_bar = lv.obj(lv.layer_top())
     notification_bar.set_size(lv.pct(100), NOTIFICATION_BAR_HEIGHT)
@@ -85,9 +116,9 @@ def create_notification_bar():
     temp_label = lv.label(notification_bar)
     temp_label.set_text("00°C")
     temp_label.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, NOTIFICATION_BAR_HEIGHT	, 0)
-    memfree_label = lv.label(notification_bar)
-    memfree_label.set_text("")
-    memfree_label.align_to(temp_label, lv.ALIGN.OUT_RIGHT_MID, NOTIFICATION_BAR_HEIGHT, 0)
+    #memfree_label = lv.label(notification_bar)
+    #memfree_label.set_text("")
+    #memfree_label.align_to(temp_label, lv.ALIGN.OUT_RIGHT_MID, NOTIFICATION_BAR_HEIGHT, 0)
     #style = lv.style_t()
     #style.init()
     #style.set_text_font(lv.font_montserrat_8)  # tiny font
@@ -146,14 +177,14 @@ def create_notification_bar():
             temp_label.set_text("42°C")
     
     
-    import gc
-    def update_memfree(timer):
-        gc.collect()
-        memfree_label.set_text(f"{gc.mem_free()}")
+    #import gc
+    #def update_memfree(timer):
+    #    gc.collect()
+    #    memfree_label.set_text(f"{gc.mem_free()}")
     
     timer1 = lv.timer_create(update_time, CLOCK_UPDATE_INTERVAL, None)
     timer2 = lv.timer_create(update_temperature, TEMPERATURE_UPDATE_INTERVAL, None)
-    timer3 = lv.timer_create(update_memfree, MEMFREE_UPDATE_INTERVAL, None)
+    #timer3 = lv.timer_create(update_memfree, MEMFREE_UPDATE_INTERVAL, None)
     timer4 = lv.timer_create(update_wifi_icon, WIFI_ICON_UPDATE_INTERVAL, None)
     
     # hide bar animation
@@ -170,7 +201,7 @@ def create_notification_bar():
     show_bar_animation = lv.anim_t()
     show_bar_animation.init()
     show_bar_animation.set_var(notification_bar)
-    show_bar_animation.set_values(-NOTIFICATION_BAR_HEIGHT, 0)
+    show_bar_animation.set_values(show_bar_animation_start_value, show_bar_animation_end_value)
     show_bar_animation.set_time(1000)
     show_bar_animation.set_custom_exec_cb(lambda not_used, value : notification_bar.set_y(value))
     
