@@ -8,13 +8,15 @@ import _thread
 
 import mpos.apps
 
-apps = []
+# Screens:
 app_detail_screen = None
+
+apps = []
 update_button = None
 install_button = None
 install_label = None
 please_wait_label = None
-app_detail_screen = None
+
 progress_bar = None
 keepdownloadingicons = False
 
@@ -246,7 +248,7 @@ def download_icons():
         image_dsc = download_icon(app.icon_url)
         app.image_dsc = image_dsc
     print("Finished downloading icons, scheduling stop of refresh timer...")
-    lv.async_call(lambda l: refresh_icons.pause(), None)
+    #lv.async_call(lambda l: refresh_icons.pause(), None)
 
 def load_icon(icon_path):
     with open(icon_path, 'rb') as f:
@@ -424,11 +426,13 @@ def refresh_icons_cb(timer):
     #print("Refreshing app icons...")
     for app in apps:
         #print("Refreshing icon for {app.name}")
-        app.image.set_src(app.image_dsc)
+        #app.image.set_src(app.image_dsc)
+        pass
 
 def janitor_cb(timer):
-    global keeprunning
-    if lv.screen_active() != appscreen or app_detail_screen == lv.screen_active():
+    global appscreen, app_detail_screen
+    print(f"foreground screen is {lv.screen_active()}")
+    if lv.screen_active() != appscreen or lv.screen_active() != app_detail_screen:
         print("appstore.py backgrounded, cleaning up...")
         janitor.delete()
         refresh_icons.delete()
@@ -437,13 +441,14 @@ def janitor_cb(timer):
         restart_launcher() # refresh the launcher
         print("appstore.py ending")
 
-janitor = lv.timer_create(janitor_cb, 500, None)
+janitor = lv.timer_create(janitor_cb, 800, None)
 refresh_icons = lv.timer_create(refresh_icons_cb, 500, None)
 
-appscreen = lv.screen_active()
 please_wait_label = lv.label(appscreen)
 please_wait_label.set_text("Downloading app index...")
 please_wait_label.center()
+
+appscreen = lv.screen_active()
 
 can_check_network = True
 try:
@@ -454,7 +459,6 @@ except Exception as e:
 if can_check_network and not network.WLAN(network.STA_IF).isconnected():
     please_wait_label.set_text("Error: WiFi is not connected.")
 else:
-    _thread.stack_size(12*1024)
+    _thread.stack_size(32*1024)
     _thread.start_new_thread(download_apps, ("http://demo.lnpiggy.com:2121/apps.json",))
-
 
