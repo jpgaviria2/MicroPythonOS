@@ -1,4 +1,8 @@
-appscreen = lv.screen_active()
+import ujson
+import os
+import time
+import lvgl as lv
+import _thread
 
 havenetwork = True
 try:
@@ -6,25 +10,24 @@ try:
 except Exception as e:
     havenetwork = False
 
-import ujson
-import os
-import time
-import lvgl as lv
-import _thread
+# Screens:
+appscreen = lv.screen_active()
+password_page=None
 
 ssids=[]
 busy_scanning=False
 busy_connecting=False
-
 access_points={}
 selected_ssid=None
 aplist=None
 password_ta=None
-password_page=None
 keyboard=None
 error_label=None
 connect_button=None
 cancel_button=None
+
+last_tried_ssid = ""
+last_tried_result = ""
 
 scan_button=None
 scan_button_label=None
@@ -67,18 +70,9 @@ def save_config():
         print("save_config: Failed to save config")
 
 
-def scan_done_callback():
-    print("scan_done_callback called")
-    global busy_scanning, scan_button_label, scan_button
-    refresh_list()
-    scan_button_label.set_text(scan_button_scan_text)
-    scan_button.add_flag(lv.obj.FLAG.CLICKABLE)
-    busy_scanning = False
-
-
 def scan_networks():
     print("scan_networks: Scanning for Wi-Fi networks")
-    global ssids
+    global ssids, busy_scanning, scan_button_label, scan_button
     if havenetwork and not wlan.isconnected(): # restart WiFi hardware in case it's in a bad state
         wlan.active(False)
         wlan.active(True)
@@ -92,7 +86,10 @@ def scan_networks():
     except Exception as e:
         print(f"scan_networks: Scan failed: {e}")
         show_error("Wi-Fi scan failed")
-    scan_done_callback()
+    # scan done:
+    scan_button_label.set_text(scan_button_scan_text)
+    scan_button.add_flag(lv.obj.FLAG.CLICKABLE)
+    busy_scanning = False
 
 
 def start_scan_networks():
@@ -110,8 +107,9 @@ def start_scan_networks():
 
 def attempt_connecting_done(ssid, result):
     print(f"Connecting to {ssid} got result: {result}")
-    global busy_connecting, scan_button_label, scan_button
-    refresh_list(ssid, result)
+    global busy_connecting, scan_button_label, scan_button, last_tried_ssid, last_tried_result
+    last_tried_ssid = ssid
+    last_tried_result = result
     busy_connecting=False
     scan_button_label.set_text(scan_button_scan_text)
     scan_button.add_flag(lv.obj.FLAG.CLICKABLE)
@@ -160,28 +158,28 @@ def show_error(message):
     timer=lv.timer_create(lambda t: error_label.add_flag(lv.obj.FLAG.HIDDEN),3000,None)
     timer.set_repeat_count(1)
 
-def refresh_list(tried_ssid="", result=""):
+def refresh_list(timer):
     global ssids
-    print("refresh_list: Clearing current list")
-    aplist.clean()
-    print("refresh_list: Populating list with scanned networks")
+    #print("refresh_list: Clearing current list")
+    aplist.clean() # this causes an issue with lost taps if an ssid is clicked that has been removed
+    #print("refresh_list: Populating list with scanned networks")
     for ssid in ssids:
         if len(ssid) < 1 or len(ssid) > 32:
             print(f"Skipping too short or long SSID: {ssid}")
             continue
-        print(f"refresh_list: Adding SSID: {ssid}")
+        #print(f"refresh_list: Adding SSID: {ssid}")
         button=aplist.add_button(None,ssid)
         button.add_event_cb(lambda e, s=ssid: select_ssid_cb(e,s),lv.EVENT.CLICKED,None)
         if havenetwork and wlan.isconnected() and wlan.config('essid')==ssid:
             status="connected"
-        elif tried_ssid==ssid: # implies not connected
-            status=result
+        elif last_tried_ssid==ssid: # implies not connected
+            status=last_tried_result
         elif ssid in access_points:
             status="saved"
         else:
             status=""
         if status:
-            print(f"refresh_list: Setting status '{status}' for SSID: {ssid}")
+            #print(f"refresh_list: Setting status '{status}' for SSID: {ssid}")
             label=lv.label(button)
             label.set_text(status)
             label.align(lv.ALIGN.RIGHT_MID,-10,0)
@@ -321,15 +319,24 @@ def create_ui():
     scan_button_label.set_text(scan_button_scan_text)
     scan_button_label.center()
     scan_button.add_event_cb(scan_cb,lv.EVENT.CLICKED,None)
-    print("create_ui: Refreshing list with initial scan")
-    refresh_list()
 
+def janitor_cb(timer):
+    if lv.screen_active() != appscreen and lv.screen_active() != password_page:
+        print("wificonf.py backgrounded, cleaning up...")
+        janitor.delete()
+        refresh_list_timer.delete()
+        print("wificonf.py ending")
+
+janitor = lv.timer_create(janitor_cb, 400, None)
 
 if havenetwork:
     wlan=network.WLAN(network.STA_IF)
     wlan.active(True)
 
 load_config()
+
 create_ui()
 start_scan_networks()
 
+
+refresh_list_timer = lv.timer_create(refresh_list, 2000, None)
