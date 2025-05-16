@@ -54,7 +54,7 @@ def open_bar():
     print("opening bar...")
     global bar_open, show_bar_animation, hide_bar_animation, notification_bar
     if not bar_open:
-        print("not open so opening...")
+        #print("not open so opening...")
         bar_open=True
         hide_bar_animation.current_value = hide_bar_animation_end_value
         #show_bar_animation.current_value = hide_bar_animation_start_value
