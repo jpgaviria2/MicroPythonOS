@@ -48,30 +48,27 @@ def remove_bom(buffer):
         return buffer[3:]
     return buffer
 
-def qrdecode_live():
+def qrdecode_one():
     global status_label, status_label_text
-    while keepgoing and keepliveqrdecoding:
-        try:
-            import qrdecode
-            result = qrdecode.qrdecode_rgb565(current_cam_buffer, width, height)
-            if not result:
-                status_label_text = status_label_text_searching
-            else:
-                #raise ValueError('A very specific bad thing happened.')
-                result = remove_bom(result)
-                result = print_qr_buffer(result)
-                print(f"QR decoding found: {result}")
-                status_label_text = result
-                stop_qr_decoding()
-        except ValueError as e:
-            print("QR ValueError: ", e)
-            status_label_text = status_label_text_searching
-        except TypeError as e:
-            print("QR TypeError: ", e)
-            status_label_text = status_label_text_found
-        except Exception as e:
-            print("QR got other error: ", e)
-        time.sleep_ms(100)
+    try:
+        import qrdecode
+        result = qrdecode.qrdecode_rgb565(current_cam_buffer, width, height)
+        if not result:
+            status_label.set_text(status_label_text_searching)
+        else:
+            result = remove_bom(result)
+            result = print_qr_buffer(result)
+            print(f"QR decoding found: {result}")
+            status_label.set_text(result)
+            stop_qr_decoding()
+    except ValueError as e:
+        print("QR ValueError: ", e)
+        status_label.set_text(status_label_text_searching)
+    except TypeError as e:
+        print("QR TypeError: ", e)
+        status_label.set_text(status_label_text_found)
+    except Exception as e:
+        print("QR got other error: ", e)
 
 
 def close_button_click(e):
@@ -102,24 +99,22 @@ def snap_button_click(e):
 
 
 def start_qr_decoding():
-    global qr_label, keepliveqrdecoding
+    global qr_label, keepliveqrdecoding, status_label_cont, status_label
     print("Activating live QR decoding...")
     keepliveqrdecoding = True
     qr_label.set_text(lv.SYMBOL.EYE_CLOSE)
-    try:
-        import _thread
-        _thread.stack_size(12*1024) # 16KB is too much
-        _thread.start_new_thread(qrdecode_live, ())
-    except Exception as e:
-        print("Could not start live QR decoding thread: ", e)
+    status_label_cont.remove_flag(lv.obj.FLAG.HIDDEN)
+    status_label.set_text(status_label_text_searching)
 
 def stop_qr_decoding():
-    global qr_label, keepliveqrdecoding, status_label_text
+    global qr_label, keepliveqrdecoding
     print("Deactivating live QR decoding...")
     keepliveqrdecoding = False
     qr_label.set_text(lv.SYMBOL.EYE_OPEN)
+    status_label_text = status_label.get_text()
     if status_label_text == status_label_text_searching or status_label_text == status_label_text_found: # if it found a QR code, then leave it
-        status_label_text = ""
+        status_label_cont.add_flag(lv.obj.FLAG.HIDDEN)
+
 
 def qr_button_click(e):
     global keepliveqrdecoding
@@ -144,6 +139,8 @@ def try_capture(event, data):
             image.set_src(image_dsc)
             if not use_webcam:
                 cam.free_buffer()  # Free the old buffer
+            if keepliveqrdecoding:
+                qrdecode_one()
     except Exception as e:
         print(f"Camera capture exception: {e}")
 
@@ -202,7 +199,7 @@ def build_ui():
     status_label_cont.set_style_bg_opa(66, 0)
     status_label_cont.set_style_border_width(0, 0)
     status_label = lv.label(status_label_cont)
-    status_label.set_text(status_label_text)
+    status_label.set_text("No camera found.")
     status_label.set_long_mode(lv.label.LONG.WRAP)
     status_label.set_style_text_color(lv.color_white(), 0)
     status_label.set_width(lv.pct(100))
@@ -257,21 +254,15 @@ else:
         print(f"camtest.py: webcam exception: {e}")
 
 if cam and keepgoing:
-    status_label_text = ""
     qr_button.remove_flag(lv.obj.FLAG.HIDDEN)
     snap_button.remove_flag(lv.obj.FLAG.HIDDEN)
+    status_label_cont.add_flag(lv.obj.FLAG.HIDDEN)
     import task_handler
     th.add_event_cb(try_capture, task_handler.TASK_HANDLER_STARTED)
 
 
 while appscreen == lv.screen_active() and keepgoing:
     time.sleep_ms(100)
-    if status_label.get_text() != status_label_text:
-        status_label.set_text(status_label_text)
-        if status_label_text:
-            status_label_cont.remove_flag(lv.obj.FLAG.HIDDEN)
-        else:
-            status_label_cont.add_flag(lv.obj.FLAG.HIDDEN)
 
 print("camtest.py: stopping...")
 if cam:
