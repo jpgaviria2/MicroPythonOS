@@ -167,7 +167,7 @@ def refresh_list():
         button.add_event_cb(lambda e, s=ssid: select_ssid_cb(e,s),lv.EVENT.CLICKED,None)
         if havenetwork and wlan.isconnected() and wlan.config('essid')==ssid:
             status="connected"
-        elif last_tried_ssid==ssid: # implies not connected
+        elif last_tried_ssid==ssid: # implies not connected because not wlan.isconnected()
             status=last_tried_result
         elif ssid in access_points:
             status="saved"
