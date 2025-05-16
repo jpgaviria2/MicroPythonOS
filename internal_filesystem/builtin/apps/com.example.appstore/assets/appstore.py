@@ -194,6 +194,13 @@ def download_and_unzip(zip_url, dest_folder, app_fullname):
         time.sleep_ms(500)
         response.close()
         print("Downloaded .mpk file, size:", os.stat(temp_zip_path)[6], "bytes")
+    except Exception as e:
+        print("Download failed:", str(e))
+        # Would be good to show error message here if it fails...
+    finally:
+        if 'response' in locals():
+            response.close()
+    try:
         # Step 2: Unzip the file
         if zipfile is None:
             print("WARNING: zipfile module not available in this MicroPython build, unzip will fail!")
@@ -207,11 +214,9 @@ def download_and_unzip(zip_url, dest_folder, app_fullname):
         os.remove(temp_zip_path)
         print("Removed temporary .mpk file")
     except Exception as e:
-        print("Operation failed:", str(e))
-    finally:
-        if 'response' in locals():
-            response.close()
-            progress_bar.set_value(80, lv.ANIM.OFF)
+        print(f"Unzip and cleanup failed: {e}")
+        # Would be good to show error message here if it fails...
+    # Success:
     progress_bar.set_value(100, lv.ANIM.OFF)
     time.sleep(1)
     progress_bar.add_flag(lv.obj.FLAG.HIDDEN)
