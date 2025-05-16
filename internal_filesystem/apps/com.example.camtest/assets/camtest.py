@@ -258,7 +258,7 @@ else:
     print("camtest.py: no internal camera found, trying webcam on /dev/video0")
     try:
         import webcam
-        cam = webcam.init("/dev/video0")  # Initialize webcam with device path
+        cam = webcam.init("/dev/video0")
         use_webcam = True
     except Exception as e:
         print(f"camtest.py: webcam exception: {e}")
