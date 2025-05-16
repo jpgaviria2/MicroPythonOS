@@ -10,6 +10,7 @@ import mpos.apps
 
 # Screens:
 app_detail_screen = None
+appscreen = lv.screen_active()
 
 apps = []
 update_button = None
@@ -18,7 +19,8 @@ install_label = None
 please_wait_label = None
 
 progress_bar = None
-keepdownloadingicons = False
+
+refresh_icons_period = 300
 
 action_label_install = "Install"
 action_label_uninstall = "Uninstall"
@@ -240,15 +242,16 @@ def download_apps(json_url):
         create_apps_list()
 
 def download_icons():
-    global apps
     for app in apps:
         print("Downloading icon for app ")
-        if not keepdownloadingicons:
-            break
         image_dsc = download_icon(app.icon_url)
         app.image_dsc = image_dsc
     print("Finished downloading icons, scheduling stop of refresh timer...")
-    lv.async_call(lambda l: refresh_icons.pause(), None)
+    # One more fresh is needed, so this needs to be scheduled after the next icon refresh
+    refresh_icons_pause = lv.timer_create(lambda l: refresh_icons.pause(), refresh_icons_period, None)
+    refresh_icons_pause.set_repeat_count(1)
+    refresh_icons_pause.set_auto_delete(False)
+
 
 def load_icon(icon_path):
     with open(icon_path, 'rb') as f:
@@ -297,8 +300,6 @@ def create_apps_list():
         desc_label.add_event_cb(lambda e, a=app: show_app_detail(a), lv.EVENT.CLICKED, None)
     print("create_apps_list app done")
     try:
-        global keepdownloadingicons
-        keepdownloadingicons = True
         _thread.stack_size(32*1024) # seems to need 32KB for urequests
         _thread.start_new_thread(download_icons,())
     except Exception as e:
@@ -426,7 +427,8 @@ def refresh_icons_cb(timer):
     #print("Refreshing app icons...")
     for app in apps:
         #print("Refreshing icon for {app.name}")
-        app.image.set_src(app.image_dsc)
+        if app.image_dsc:
+            app.image.set_src(app.image_dsc)
 
 def janitor_cb(timer):
     global appscreen, app_detail_screen
@@ -434,19 +436,15 @@ def janitor_cb(timer):
         print("appstore.py backgrounded, cleaning up...")
         janitor.delete()
         refresh_icons.delete()
-        appscreen.clean()
-        appscreen.delete()
         restart_launcher() # refresh the launcher
         print("appstore.py ending")
 
-janitor = lv.timer_create(janitor_cb, 800, None)
-refresh_icons = lv.timer_create(refresh_icons_cb, 500, None)
+janitor = lv.timer_create(janitor_cb, 400, None)
+refresh_icons = lv.timer_create(refresh_icons_cb, refresh_icons_period, None)
 
 please_wait_label = lv.label(appscreen)
 please_wait_label.set_text("Downloading app index...")
 please_wait_label.center()
-
-appscreen = lv.screen_active()
 
 can_check_network = True
 try:
@@ -457,6 +455,6 @@ except Exception as e:
 if can_check_network and not network.WLAN(network.STA_IF).isconnected():
     please_wait_label.set_text("Error: WiFi is not connected.")
 else:
-    _thread.stack_size(32*1024)
+    _thread.stack_size(16*1024)
     _thread.start_new_thread(download_apps, ("http://demo.lnpiggy.com:2121/apps.json",))
 
