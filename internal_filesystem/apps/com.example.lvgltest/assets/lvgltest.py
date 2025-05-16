@@ -1,5 +1,3 @@
-appscreen = lv.screen_active()
-
 import time
 import random
 
@@ -10,7 +8,7 @@ SPINNER_SIZE = 40   # Size of each spinner in pixels
 spinner_count = 0
 metrics_label = None
 
-def add_spinner_and_update(timer):
+def add_spinner(timer):
     global spinner_count, metrics_label
     try:
         x = random.randint(0, appscreen.get_width() - SPINNER_SIZE)
@@ -27,27 +25,22 @@ def add_spinner_and_update(timer):
     metrics_label.set_text(f"Spinners: {spinner_count}")
     print(f"Finished adding spinner {spinner_count}")
 
-def run_benchmark():
-    global spinner_count, metrics_label
-    print("Starting LVGL spinner benchmark...")
-    metrics_label = lv.label(appscreen)
-    metrics_label.set_style_text_color(lv.color_white(), 0)
-    metrics_label.set_style_bg_color(lv.color_black(), 0)
-    metrics_label.set_style_bg_opa(lv.OPA.COVER, 0)
-    metrics_label.set_pos(10, 10)
-    metrics_label.set_text("Spinners: 0")
-    timer = lv.timer_create(add_spinner_and_update, 2000, None)
-    th.disable() # taskhandler control is necessary, otherwise there are concurrency issues
-    while appscreen == lv.screen_active():
-        lv.task_handler()
-        time.sleep_ms(10)
-        lv.tick_inc(10)
-    th.enable()
-    timer.delete()
 
-try:
-    run_benchmark()
-except Exception as e:
-    print(f"Error in benchmark: {e}")
+def janitor_cb(timer):
+    if lv.screen_active() != appscreen:
+        print("lvgltest.py lost foreground, cleaning up...")
+        janitor.delete()
+        add_spinner_timer.delete()
 
-print("lvgltest.py exiting")
+appscreen = lv.screen_active()
+metrics_label = lv.label(appscreen)
+metrics_label.set_style_text_color(lv.color_white(), 0)
+metrics_label.set_style_bg_color(lv.color_black(), 0)
+metrics_label.set_style_bg_opa(lv.OPA.COVER, 0)
+metrics_label.set_pos(10, 10)
+metrics_label.set_text("Spinners: 0")
+
+print("Starting LVGL spinner benchmark...")
+janitor = lv.timer_create(janitor_cb, 500, None)
+add_spinner_timer = lv.timer_create(add_spinner, 2000, None)
+

@@ -2,7 +2,7 @@
 
 # Initialize
 
-import display_driver
+import display_driver # not needed, but included because the LVGL simulator does it
 import lvgl as lv
 
 # Create a button with a label
@@ -17,17 +17,10 @@ lv.screen_load(scr)
 # END OF COPY-PASTE FROM https://sim.lvgl.io/v9.0/micropython/ports/webassembly/
 
 
-def check_running(timer):
-    if lv.screen_active() == scr:
-        print("hello.py is still foreground")
-    else:
+def janitor_cb(timer):
+    if lv.screen_active() != scr:
         print("hello.py lost foreground, cleaning up...")
-        timer1.delete()
+        janitor.delete()
+        # No cleanups to do, but in a real app, you might stop timers, deinitialize hardware devices you used, close network connections, etc.
 
-timer1 = lv.timer_create(check_running, 1000, None)
-
-# Added: wait until the user navigates away instead of stopping immediately.
-#while lv.screen_active() == scr:
-#    import time
-#    time.sleep_ms(100)
-#print("User navigated away from the HelloWorld app. Bye bye!")
+janitor = lv.timer_create(janitor_cb, 1000, None)
