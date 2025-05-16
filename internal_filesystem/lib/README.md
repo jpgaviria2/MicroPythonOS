@@ -7,3 +7,5 @@ This /lib folder contains:
 
 - maybe mip.install("aiohttp") # easy websockets
 - maybe mip.install("base64") # for nostr etc
+- mip.install("urequests") # otherwise not present on unix target (on esp32 it is present)
+

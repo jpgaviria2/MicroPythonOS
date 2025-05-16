@@ -16,7 +16,7 @@ lv.screen_load(scr)
 
 # END OF COPY-PASTE FROM https://sim.lvgl.io/v9.0/micropython/ports/webassembly/
 
-
+# Optional janitor that cleans up when the app is backgrounded:
 def janitor_cb(timer):
     if lv.screen_active() != scr:
         print("app backgrounded, cleaning up...")

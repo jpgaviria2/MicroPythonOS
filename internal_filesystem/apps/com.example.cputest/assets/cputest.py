@@ -9,6 +9,11 @@
 # Busy loop: 22289 iterations/second
 # Busy loop with yield: 15923 iterations/second
 # SHA-256 (1KB): 5269 iterations/second
+#
+# New way, with the tests in a thread, replacing appscreen == lv.screen_active() with keeprunning:
+# Busy loop: 127801 iterations/second
+# Busy loop with yield: 38394 iterations/second
+# SHA-256 (1KB): 5012 iterations/second
 
 import time
 import hashlib
@@ -19,14 +24,17 @@ keeprunning = True
 summary = "Running 3 CPU tests...\n\n"
 
 # Configuration
+START_SPACING = 2000 # Wait for system to settle
 TEST_DURATION = 5000  # Duration of each test (ms)
 TEST_SPACING = 1000 # Wait between tests (ms)
-DATA_SIZE = 1024   # 1KB of data for SHA-256 test
-DATA = os.urandom(DATA_SIZE)  # Generate 1KB of random data for SHA-256
 
 def stress_test_thread():
-    print("\nStarting busy loop stress test...")
+    DATA_SIZE = 1024   # 1KB of data for SHA-256 test
+    DATA = os.urandom(DATA_SIZE)  # Generate 1KB of random data for SHA-256
+    print("stress_test_thread running")
     global summary, keeprunning
+    summary += "Waiting for system to settle...\n\n"
+    time.sleep_ms(START_SPACING)
     summary += "Busy loop without yield: "
     iterations = 0
     start_time = time.ticks_ms()
@@ -77,8 +85,8 @@ def janitor_cb(timer):
         update_status_timer.delete()
 
 appscreen = lv.screen_active()
-janitor = lv.timer_create(janitor_cb, 500, None)
-update_status_timer = lv.timer_create(lambda timer: status.set_text(summary), 200, None)
+janitor = lv.timer_create(janitor_cb, 1000, None)
+update_status_timer = lv.timer_create(lambda timer: status.set_text(summary), 750, None)
 
 status = lv.label(appscreen)
 status.align(lv.ALIGN.TOP_LEFT, 5, 10)
