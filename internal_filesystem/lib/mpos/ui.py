@@ -273,5 +273,10 @@ def create_drawer(display):
     restart_label=lv.label(restart_btn)
     restart_label.set_text(lv.SYMBOL.POWER+" Reset")
     restart_label.center()
-    restart_btn.add_event_cb(lambda event: machine.reset(),lv.EVENT.CLICKED,None)
+    try:
+        import machine
+        restart_btn.add_event_cb(lambda event: machine.reset(),lv.EVENT.CLICKED,None)
+    except Exception as e:
+        print("Warning: not adding machine.reset() callback")
+    
     
