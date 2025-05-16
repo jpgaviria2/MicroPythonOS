@@ -148,8 +148,8 @@ def start_attempt_connecting(ssid,password):
 def show_error(message):
     print(f"show_error: Displaying error: {message}")
     global error_label
-    error_label.set_text(message)
-    error_label.remove_flag(lv.obj.FLAG.HIDDEN)
+    lv.async_call(lambda l: error_label.set_text(message), None)
+    lv.async_call(lambda l: error_label.remove_flag(lv.obj.FLAG.HIDDEN), None)
     timer=lv.timer_create(lambda t: error_label.add_flag(lv.obj.FLAG.HIDDEN),3000,None)
     timer.set_repeat_count(1)
 
