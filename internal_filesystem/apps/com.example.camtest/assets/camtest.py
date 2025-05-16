@@ -72,7 +72,6 @@ def qrdecode_one():
 
 def close_button_click(e):
     print("Close button clicked")
-    th.remove_event_cb(try_capture)
     show_launcher()
 
 
@@ -122,8 +121,8 @@ def qr_button_click(e):
     else:
         stop_qr_decoding()
 
-def try_capture(event, data):
-    print("capturing camera frame")
+def try_capture(event):
+    #print("capturing camera frame")
     global current_cam_buffer, image_dsc, image, use_webcam
     try:
         if use_webcam:
@@ -235,6 +234,20 @@ def init_cam():
 
 
 
+def check_running(timer):
+    if lv.screen_active() != appscreen:
+        print("camtest.py lost foreground, cleaning up...")
+        check_running_timer.delete()
+        if capture_timer:
+            capture_timer.delete()
+        if use_webcam:
+            webcam.deinit(cam)
+        elif cam:
+            cam.deinit()
+        print("camtest.py cleanup done.")
+
+
+
 appscreen = lv.screen_active()
 build_ui()
 
@@ -251,27 +264,11 @@ else:
         print(f"camtest.py: webcam exception: {e}")
 
 if cam:
-    print("Camera initialized, changing UI")
+    print("Camera initialized, continuing...")
+    check_running_timer = lv.timer_create(check_running, 500, None)
     qr_button.remove_flag(lv.obj.FLAG.HIDDEN)
     snap_button.remove_flag(lv.obj.FLAG.HIDDEN)
     status_label_cont.add_flag(lv.obj.FLAG.HIDDEN)
-    import task_handler
-    th.add_event_cb(try_capture, task_handler.TASK_HANDLER_STARTED)
-
-
-def check_running(timer):
-    if lv.screen_active() != appscreen:
-        print("camtest.py lost foreground, cleaning up...")
-        check_running_timer.delete()
-        if cam:
-            th.remove_event_cb(try_capture)
-        
-        if use_webcam:
-            webcam.deinit(cam)
-        elif cam:
-            cam.deinit()
-        print("camtest.py cleanup done.")
-
-check_running_timer = lv.timer_create(check_running, 1000, None)
-
-
+    capture_timer = lv.timer_create(try_capture, 100, None)
+else:
+   print("No camera found, stopping camtest.py")
