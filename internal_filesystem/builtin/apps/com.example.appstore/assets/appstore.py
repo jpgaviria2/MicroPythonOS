@@ -446,9 +446,15 @@ please_wait_label = lv.label(mainscreen)
 please_wait_label.set_text("Downloading app index...")
 please_wait_label.center()
 
-import network
 import time
-if not network.WLAN(network.STA_IF).isconnected():
+
+can_check_network = True
+try:
+    import network
+except Exception as e:
+    can_check_network = False
+
+if can_check_network and not network.WLAN(network.STA_IF).isconnected():
     please_wait_label.set_text("Error: WiFi is not connected.")
     time.sleep(10)
 else:
