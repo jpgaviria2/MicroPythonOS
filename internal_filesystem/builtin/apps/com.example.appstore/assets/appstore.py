@@ -20,8 +20,6 @@ please_wait_label = None
 
 progress_bar = None
 
-refresh_icons_period = 300
-
 action_label_install = "Install"
 action_label_uninstall = "Uninstall"
 action_label_restore = "Restore Built-in"
@@ -228,7 +226,7 @@ def download_apps(json_url):
         response = urequests.get(json_url, timeout=10)
     except Exception as e:
         print("Download failed:", e)
-        please_wait_label.set_text(f"Error downloading app index: {e}")
+        lv.async_call(lambda l: please_wait_label.set_text(f"Error downloading app index: {e}"), None)
     if response and response.status_code == 200:
         print(f"Got response text: {response.text}")
         apps = [mpos.apps.App(**app) for app in json.loads(response.text)]
@@ -239,18 +237,16 @@ def download_apps(json_url):
         # Sort apps by app.name
         apps.sort(key=lambda x: x.name.lower())  # Use .lower() for case-insensitive sorting
         please_wait_label.add_flag(lv.obj.FLAG.HIDDEN)
-        create_apps_list()
+        lv.async_call(lambda l: create_apps_list(), None)
 
 def download_icons():
     for app in apps:
         print("Downloading icon for app ")
         image_dsc = download_icon(app.icon_url)
-        app.image_dsc = image_dsc
-    print("Finished downloading icons, scheduling stop of refresh timer...")
-    # One more fresh is needed, so this needs to be scheduled after the next icon refresh
-    refresh_icons_pause = lv.timer_create(lambda l: refresh_icons.pause(), refresh_icons_period, None)
-    refresh_icons_pause.set_repeat_count(1)
-    refresh_icons_pause.set_auto_delete(False)
+        app.image_dsc = image_dsc # save it for the app detail page
+        lv.async_call(lambda l, id=app.image_dsc: app.image.set_src(id), None)
+        time.sleep_ms(50) # wait until image updated
+    print("Finished downloading icons...")
 
 
 def load_icon(icon_path):
@@ -423,24 +419,15 @@ def back_to_main(event):
     lv.screen_load(appscreen)
 
 
-def refresh_icons_cb(timer):
-    #print("Refreshing app icons...")
-    for app in apps:
-        #print("Refreshing icon for {app.name}")
-        if app.image_dsc:
-            app.image.set_src(app.image_dsc)
-
 def janitor_cb(timer):
     global appscreen, app_detail_screen
     if lv.screen_active() != appscreen and lv.screen_active() != app_detail_screen:
         print("appstore.py backgrounded, cleaning up...")
         janitor.delete()
-        refresh_icons.delete()
         restart_launcher() # refresh the launcher
         print("appstore.py ending")
 
 janitor = lv.timer_create(janitor_cb, 400, None)
-refresh_icons = lv.timer_create(refresh_icons_cb, refresh_icons_period, None)
 
 please_wait_label = lv.label(appscreen)
 please_wait_label.set_text("Downloading app index...")
