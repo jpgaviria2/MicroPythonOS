@@ -193,8 +193,8 @@ def build_ui():
     })
     image.set_src(image_dsc)
     status_label_cont = lv.obj(appscreen)
-    status_label_cont.set_size(lv.pct(60),lv.pct(50))
-    status_label_cont.center()
+    status_label_cont.set_size(width,height)
+    status_label_cont.align(lv.ALIGN.LEFT_MID, 0, 0)
     status_label_cont.set_style_bg_color(lv.color_white(), 0)
     status_label_cont.set_style_bg_opa(66, 0)
     status_label_cont.set_style_border_width(0, 0)
@@ -254,6 +254,7 @@ else:
         print(f"camtest.py: webcam exception: {e}")
 
 if cam and keepgoing:
+    print("Camera initialized, changing UI")
     qr_button.remove_flag(lv.obj.FLAG.HIDDEN)
     snap_button.remove_flag(lv.obj.FLAG.HIDDEN)
     status_label_cont.add_flag(lv.obj.FLAG.HIDDEN)
@@ -267,6 +268,7 @@ while appscreen == lv.screen_active() and keepgoing:
 print("camtest.py: stopping...")
 if cam:
     th.remove_event_cb(try_capture)
+
 if use_webcam:
     webcam.deinit(cam)
 elif cam:
