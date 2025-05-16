@@ -4,12 +4,6 @@ import time
 import lvgl as lv
 import _thread
 
-havenetwork = True
-try:
-    import network
-except Exception as e:
-    havenetwork = False
-
 # Screens:
 appscreen = lv.screen_active()
 password_page=None
@@ -70,7 +64,7 @@ def save_config():
         print("save_config: Failed to save config")
 
 
-def scan_networks():
+def scan_networks_thread():
     print("scan_networks: Scanning for Wi-Fi networks")
     global ssids, busy_scanning, scan_button_label, scan_button
     if havenetwork and not wlan.isconnected(): # restart WiFi hardware in case it's in a bad state
@@ -81,15 +75,17 @@ def scan_networks():
             networks = wlan.scan()
             ssids = list(set(n[0].decode() for n in networks))
         else:
+            time.sleep(2)
             ssids = ["Dummy", "Test", "SSIDs"]
         print(f"scan_networks: Found networks: {ssids}")
     except Exception as e:
         print(f"scan_networks: Scan failed: {e}")
         show_error("Wi-Fi scan failed")
     # scan done:
-    scan_button_label.set_text(scan_button_scan_text)
-    scan_button.add_flag(lv.obj.FLAG.CLICKABLE)
     busy_scanning = False
+    lv.async_call(lambda l: scan_button_label.set_text(scan_button_scan_text), None)
+    lv.async_call(lambda l: scan_button.add_flag(lv.obj.FLAG.CLICKABLE), None)
+    lv.async_call(lambda l: refresh_list(), None)
 
 
 def start_scan_networks():
@@ -102,7 +98,7 @@ def start_scan_networks():
         scan_button.remove_flag(lv.obj.FLAG.CLICKABLE)
         scan_button_label.set_text(scan_button_scanning_text)
         _thread.stack_size(12*1024)
-        _thread.start_new_thread(scan_networks, ())
+        _thread.start_new_thread(scan_networks_thread, ())
 
 
 def attempt_connecting_thread(ssid,password):
@@ -134,6 +130,7 @@ def attempt_connecting_thread(ssid,password):
     # Schedule UI updates because different thread
     lv.async_call(lambda l: scan_button_label.set_text(scan_button_scan_text), None)
     lv.async_call(lambda l: scan_button.add_flag(lv.obj.FLAG.CLICKABLE), None)
+    lv.async_call(lambda l: refresh_list(), None)
 
 
 def start_attempt_connecting(ssid,password):
@@ -156,16 +153,16 @@ def show_error(message):
     timer=lv.timer_create(lambda t: error_label.add_flag(lv.obj.FLAG.HIDDEN),3000,None)
     timer.set_repeat_count(1)
 
-def refresh_list(timer):
+def refresh_list():
     global ssids
-    #print("refresh_list: Clearing current list")
+    print("refresh_list: Clearing current list")
     aplist.clean() # this causes an issue with lost taps if an ssid is clicked that has been removed
-    #print("refresh_list: Populating list with scanned networks")
+    print("refresh_list: Populating list with scanned networks")
     for ssid in ssids:
         if len(ssid) < 1 or len(ssid) > 32:
             print(f"Skipping too short or long SSID: {ssid}")
             continue
-        #print(f"refresh_list: Adding SSID: {ssid}")
+        print(f"refresh_list: Adding SSID: {ssid}")
         button=aplist.add_button(None,ssid)
         button.add_event_cb(lambda e, s=ssid: select_ssid_cb(e,s),lv.EVENT.CLICKED,None)
         if havenetwork and wlan.isconnected() and wlan.config('essid')==ssid:
@@ -177,7 +174,7 @@ def refresh_list(timer):
         else:
             status=""
         if status:
-            #print(f"refresh_list: Setting status '{status}' for SSID: {ssid}")
+            print(f"refresh_list: Setting status '{status}' for SSID: {ssid}")
             label=lv.label(button)
             label.set_text(status)
             label.align(lv.ALIGN.RIGHT_MID,-10,0)
@@ -318,23 +315,17 @@ def create_ui():
     scan_button_label.center()
     scan_button.add_event_cb(scan_cb,lv.EVENT.CLICKED,None)
 
-def janitor_cb(timer):
-    if lv.screen_active() != appscreen and lv.screen_active() != password_page:
-        print("wificonf.py backgrounded, cleaning up...")
-        janitor.delete()
-        refresh_list_timer.delete()
-        print("wificonf.py ending")
 
-janitor = lv.timer_create(janitor_cb, 400, None)
 
-if havenetwork:
+havenetwork = True
+try:
+    import network
     wlan=network.WLAN(network.STA_IF)
     wlan.active(True)
+except Exception as e:
+    havenetwork = False
 
 load_config()
-
 create_ui()
 start_scan_networks()
 
-
-refresh_list_timer = lv.timer_create(refresh_list, 2000, None)
