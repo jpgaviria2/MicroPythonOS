@@ -1,27 +1,6 @@
-appscreen = lv.screen_active()
-
 from machine import Pin, I2C
 from qmi8658 import QMI8658
 import machine
-
-sensor = QMI8658(I2C(0, sda=machine.Pin(48), scl=machine.Pin(47)))
-
-templabel = lv.label(appscreen)
-templabel.align(lv.ALIGN.TOP_MID, 0, 10)
-
-sliderx = lv.slider(appscreen)
-sliderx.align(lv.ALIGN.CENTER, 0, -60)
-slidery = lv.slider(appscreen)
-slidery.align(lv.ALIGN.CENTER, 0, -30)
-sliderz = lv.slider(appscreen)
-sliderz.align(lv.ALIGN.CENTER, 0, 0)
-
-slidergx = lv.slider(appscreen)
-slidergx.align(lv.ALIGN.CENTER, 0, 30)
-slidergy = lv.slider(appscreen)
-slidergy.align(lv.ALIGN.CENTER, 0, 60)
-slidergz = lv.slider(appscreen)
-slidergz.align(lv.ALIGN.CENTER, 0, 90)
 
 def map_nonlinear(value: float) -> int:
     # Preserve sign and work with absolute value
@@ -36,8 +15,7 @@ def map_nonlinear(value: float) -> int:
     scaled = (sqrt_value / max_sqrt) * 50.0  # Scale to [0, 50]
     return int(50.0 + (sign * scaled))  # Shift to [0, 100]
 
-import time
-while appscreen == lv.screen_active():
+def refresh(timer):
     #print(f"""{sensor.temperature=} {sensor.acceleration=} {sensor.gyro=}""")
     templabel.set_text(f"IMU chip temperature: {sensor.temperature:.2f}°C")
     ax = sensor.acceleration[0]
@@ -53,5 +31,31 @@ while appscreen == lv.screen_active():
     slidergx.set_value(map_nonlinear(sensor.gyro[0]), lv.ANIM.OFF)
     slidergy.set_value(map_nonlinear(sensor.gyro[1]), lv.ANIM.OFF)
     slidergz.set_value(map_nonlinear(sensor.gyro[2]), lv.ANIM.OFF)
-    time.sleep_ms(100)
 
+
+def janitor_cb(timer):
+    if lv.screen_active() != appscreen:
+        print("imutest.py backgrounded, cleaning up...")
+        janitor.delete()
+        refresh_timer.delete()
+
+sensor = QMI8658(I2C(0, sda=machine.Pin(48), scl=machine.Pin(47)))
+
+appscreen = lv.screen_active()
+templabel = lv.label(appscreen)
+templabel.align(lv.ALIGN.TOP_MID, 0, 10)
+sliderx = lv.slider(appscreen)
+sliderx.align(lv.ALIGN.CENTER, 0, -60)
+slidery = lv.slider(appscreen)
+slidery.align(lv.ALIGN.CENTER, 0, -30)
+sliderz = lv.slider(appscreen)
+sliderz.align(lv.ALIGN.CENTER, 0, 0)
+slidergx = lv.slider(appscreen)
+slidergx.align(lv.ALIGN.CENTER, 0, 30)
+slidergy = lv.slider(appscreen)
+slidergy.align(lv.ALIGN.CENTER, 0, 60)
+slidergz = lv.slider(appscreen)
+slidergz.align(lv.ALIGN.CENTER, 0, 90)
+
+refresh_timer = lv.timer_create(refresh, 100, None)
+janitor = lv.timer_create(janitor_cb, 500, None)
