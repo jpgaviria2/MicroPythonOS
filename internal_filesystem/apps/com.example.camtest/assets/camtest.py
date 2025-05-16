@@ -128,21 +128,21 @@ def qr_button_click(e):
     else:
         stop_qr_decoding()
 
-def try_capture():
-    global current_cam_buffer, image_dsc, image, use_webcam
+def try_capture(event, data):
+    global current_cam_buffer, image_dsc, image, use_webcam, keepgoing
+    if not keepgoing:
+        print("try_capture called while keepgoing==False, aborting...")
+        return
     if use_webcam:
         current_cam_buffer = webcam.capture_frame(cam, "rgb565")
     elif cam.frame_available():
         current_cam_buffer = cam.capture()
-    if current_cam_buffer and len(current_cam_buffer):
+    if current_cam_buffer and len(current_cam_buffer) and keepgoing:
         image_dsc.data = current_cam_buffer
         #image.invalidate() # does not work so do this:
         image.set_src(image_dsc)
         if not use_webcam:
             cam.free_buffer()  # Free the old buffer
-    else:
-        print("No image received from camera, ignoring...")
-        return
 
 
 def build_ui():
@@ -257,36 +257,22 @@ if cam:
     status_label_text = ""
     qr_button.remove_flag(lv.obj.FLAG.HIDDEN)
     snap_button.remove_flag(lv.obj.FLAG.HIDDEN)
+    import task_handler
+    th.add_event_cb(try_capture, task_handler.TASK_HANDLER_STARTED)
 
-# Task handler needs to be updated from this app's thread, otherwise it causes concurrency issues
-#th.disable()
-#time.sleep_ms(500)
 
-while appscreen == lv.screen_active() and keepgoing is True:
-    #print("cam keeps going...")
-    if status_label.get_text() != status_label_text:
-        status_label.set_text(status_label_text)
-        if status_label_text:
-            status_label_cont.remove_flag(lv.obj.FLAG.HIDDEN)
-        else:
-            status_label_cont.add_flag(lv.obj.FLAG.HIDDEN)
-    #lv.task_handler()
-    time.sleep_ms(5)
-    #lv.tick_inc(5)
-    if cam:
-        th.disable()
-        try_capture()
-        th.enable()
+while appscreen == lv.screen_active() and keepgoing:
+    time.sleep_ms(100)
 
 print("camtest.py: stopping...")
-
+if cam:
+    th.remove_event_cb(try_capture)
 if use_webcam:
     webcam.deinit(cam)
 elif cam:
     cam.deinit()
 
-
 print("camtest.py: showing launcher...")
 show_launcher()
-#th.enable()
+
 
