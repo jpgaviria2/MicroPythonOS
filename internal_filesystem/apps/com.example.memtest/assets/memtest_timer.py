@@ -35,6 +35,7 @@ import _thread
 # Configuration
 ALLOCATION_TIMEOUT_MS = 100  # Timeout for a single allocation (in milliseconds)
 keep_running = True
+summary = ""
 
 def test_allocation(buffer_size, n):
     """Test how many buffers of a given size can be allocated with a timeout."""
@@ -72,13 +73,18 @@ def test_allocation(buffer_size, n):
     gc.collect()
     return count
 
+def update_status(timer):
+    global status, summary
+    status.set_text(summary)
+
 def stress_test_thread():
-    summary = "Running RAM memory tests...\n"
+    global summary    
+    summary += "Running RAM memory tests...\n"
     summary += "This might hang on desktop/unix.\n\n"
     summary += "Buffer Size (bytes) | Max Allocated\n"
     summary += "-----------------------------------\n"
-    lv.async_call(lambda l: status.set_text(summary), None)
-    time.sleep_ms(500)
+    time.sleep(1)
+    #lv.async_call(lambda l: update_status(), None)
     # Test buffer sizes of 2^n, starting from n=1 (2 bytes)
     n = 1        
     while keep_running:
@@ -98,13 +104,13 @@ def stress_test_thread():
         gc.collect()
         n += 1
         summary += f"{max_buffers:>14}\n"
-        lv.async_call(lambda l: status.set_text(summary), None)
+        #lv.async_call(lambda l: update_status(), None)
         time.sleep_ms(200)  # Brief delay to stabilize system
     # Print summary report
     summary += "\n"
     summary += "===================================\n"
     summary += "Test completed.\n"
-    lv.async_call(lambda l: status.set_text(summary), None)
+    #lv.async_call(lambda l: update_status(), None)
 
 
 
@@ -114,6 +120,7 @@ def janitor_cb(timer):
         print("memtest.py backgrounded, cleaning up...")
         janitor.delete()
         keep_running = False
+        update_status_timer.delete()
 
 appscreen = lv.screen_active()
 status = lv.label(appscreen)
@@ -124,4 +131,6 @@ status.set_style_text_font(lv.font_unscii_8, 0)
 _thread.stack_size(12*1024)
 _thread.start_new_thread(stress_test_thread, ())
 
+update_status_timer = lv.timer_create(update_status, 750, None)
 janitor = lv.timer_create(janitor_cb, 400, None)
+
