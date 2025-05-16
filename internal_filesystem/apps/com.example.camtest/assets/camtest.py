@@ -7,7 +7,6 @@
 
 import time
 
-keepgoing = True
 keepliveqrdecoding = False
 width = 240
 height = 240
@@ -72,9 +71,7 @@ def qrdecode_one():
 
 
 def close_button_click(e):
-    global keepgoing
     print("Close button clicked")
-    keepgoing = False
     th.remove_event_cb(try_capture)
     show_launcher()
 
@@ -127,16 +124,13 @@ def qr_button_click(e):
 
 def try_capture(event, data):
     print("capturing camera frame")
-    global current_cam_buffer, image_dsc, image, use_webcam, keepgoing
-    if not keepgoing:
-        print("try_capture called while keepgoing==False, aborting...")
-        return False # tell the task handler not to update (redraw)
+    global current_cam_buffer, image_dsc, image, use_webcam
     try:
         if use_webcam:
             current_cam_buffer = webcam.capture_frame(cam, "rgb565")
         elif cam.frame_available():
             current_cam_buffer = cam.capture()
-        if current_cam_buffer and len(current_cam_buffer) and keepgoing:
+        if current_cam_buffer and len(current_cam_buffer):
             image_dsc.data = current_cam_buffer
             #image.invalidate() # does not work so do this:
             image.set_src(image_dsc)
@@ -256,7 +250,7 @@ else:
     except Exception as e:
         print(f"camtest.py: webcam exception: {e}")
 
-if cam and keepgoing:
+if cam:
     print("Camera initialized, changing UI")
     qr_button.remove_flag(lv.obj.FLAG.HIDDEN)
     snap_button.remove_flag(lv.obj.FLAG.HIDDEN)
@@ -265,18 +259,10 @@ if cam and keepgoing:
     th.add_event_cb(try_capture, task_handler.TASK_HANDLER_STARTED)
 
 
-#while appscreen == lv.screen_active() and keepgoing:
-#    print("camera running")
-#    time.sleep_ms(100)
-#    lv.tick_inc(100)
-#    lv.task_handler()
-
 def check_running(timer):
-    if lv.screen_active() == appscreen:
-        print("camtest.py is still foreground")
-    else:
+    if lv.screen_active() != appscreen:
         print("camtest.py lost foreground, cleaning up...")
-        timer1.delete()
+        check_running_timer.delete()
         if cam:
             th.remove_event_cb(try_capture)
         
@@ -286,12 +272,6 @@ def check_running(timer):
             cam.deinit()
         print("camtest.py cleanup done.")
 
-timer1 = lv.timer_create(check_running, 1000, None)
-
-
-#print("camtest.py: stopping...")
-
-#print("camtest.py: showing launcher...")
-#show_launcher()
+check_running_timer = lv.timer_create(check_running, 1000, None)
 
 
