@@ -92,7 +92,8 @@ def start_app(app_dir, is_launcher=False):
     manifest_path = f"{app_dir}/META-INF/MANIFEST.JSON"
     app = parse_manifest(manifest_path)
     start_script_fullpath = f"{app_dir}/{app.entrypoint}"
-    execute_script_new_thread(start_script_fullpath, True, is_launcher, True)
+    #execute_script_new_thread(start_script_fullpath, True, is_launcher, True)
+    execute_script(start_script_fullpath, True, is_launcher, True)
     # Launchers have the bar, other apps don't have it
     if is_launcher:
         mpos.ui.open_bar()

@@ -75,6 +75,8 @@ def close_button_click(e):
     global keepgoing
     print("Close button clicked")
     keepgoing = False
+    th.remove_event_cb(try_capture)
+    show_launcher()
 
 
 def snap_button_click(e):
@@ -124,6 +126,7 @@ def qr_button_click(e):
         stop_qr_decoding()
 
 def try_capture(event, data):
+    print("capturing camera frame")
     global current_cam_buffer, image_dsc, image, use_webcam, keepgoing
     if not keepgoing:
         print("try_capture called while keepgoing==False, aborting...")
@@ -262,19 +265,33 @@ if cam and keepgoing:
     th.add_event_cb(try_capture, task_handler.TASK_HANDLER_STARTED)
 
 
-while appscreen == lv.screen_active() and keepgoing:
-    time.sleep_ms(100)
+#while appscreen == lv.screen_active() and keepgoing:
+#    print("camera running")
+#    time.sleep_ms(100)
+#    lv.tick_inc(100)
+#    lv.task_handler()
 
-print("camtest.py: stopping...")
-if cam:
-    th.remove_event_cb(try_capture)
+def check_running(timer):
+    if lv.screen_active() == appscreen:
+        print("camtest.py is still foreground")
+    else:
+        print("camtest.py lost foreground, cleaning up...")
+        timer1.delete()
+        if cam:
+            th.remove_event_cb(try_capture)
+        
+        if use_webcam:
+            webcam.deinit(cam)
+        elif cam:
+            cam.deinit()
+        print("camtest.py cleanup done.")
 
-if use_webcam:
-    webcam.deinit(cam)
-elif cam:
-    cam.deinit()
+timer1 = lv.timer_create(check_running, 1000, None)
 
-print("camtest.py: showing launcher...")
-show_launcher()
+
+#print("camtest.py: stopping...")
+
+#print("camtest.py: showing launcher...")
+#show_launcher()
 
 

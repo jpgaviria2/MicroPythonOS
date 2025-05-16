@@ -16,8 +16,18 @@ lv.screen_load(scr)
 
 # END OF COPY-PASTE FROM https://sim.lvgl.io/v9.0/micropython/ports/webassembly/
 
+
+def check_running(timer):
+    if lv.screen_active() == scr:
+        print("hello.py is still foreground")
+    else:
+        print("hello.py lost foreground, cleaning up...")
+        timer1.delete()
+
+timer1 = lv.timer_create(check_running, 1000, None)
+
 # Added: wait until the user navigates away instead of stopping immediately.
-while lv.screen_active() == scr:
-    import time
-    time.sleep_ms(100)
-print("User navigated away from the HelloWorld app. Bye bye!")
+#while lv.screen_active() == scr:
+#    import time
+#    time.sleep_ms(100)
+#print("User navigated away from the HelloWorld app. Bye bye!")
