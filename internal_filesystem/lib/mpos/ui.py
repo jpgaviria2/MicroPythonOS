@@ -8,7 +8,7 @@ NOTIFICATION_BAR_HEIGHT=24
 CLOCK_UPDATE_INTERVAL = 1000 # 10 or even 1 ms doesn't seem to change the framerate but 100ms is enough
 WIFI_ICON_UPDATE_INTERVAL = 1500
 TEMPERATURE_UPDATE_INTERVAL = 2000
-#MEMFREE_UPDATE_INTERVAL = 5000 # not too frequent because there's a forced gc.collect() to give it a reliable value
+MEMFREE_UPDATE_INTERVAL = 5000 # not too frequent because there's a forced gc.collect() to give it a reliable value
 
 DRAWER_ANIM_DURATION=300
 
@@ -28,6 +28,16 @@ hide_bar_animation_end_value = show_bar_animation_start_value
 notification_bar = None
 
 foreground_app_name=None
+
+
+# Shutdown function to run in main thread
+def shutdown():
+    print("Shutting down...")
+    lv.deinit()  # Deinitialize LVGL (if supported)
+    # Add driver cleanup here
+    import sys
+    sys.exit(0)
+
 
 def set_foreground_app(appname):
     global foreground_app_name
@@ -115,9 +125,9 @@ def create_notification_bar():
     temp_label = lv.label(notification_bar)
     temp_label.set_text("00°C")
     temp_label.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, NOTIFICATION_BAR_HEIGHT	, 0)
-    #memfree_label = lv.label(notification_bar)
-    #memfree_label.set_text("")
-    #memfree_label.align_to(temp_label, lv.ALIGN.OUT_RIGHT_MID, NOTIFICATION_BAR_HEIGHT, 0)
+    memfree_label = lv.label(notification_bar)
+    memfree_label.set_text("")
+    memfree_label.align_to(temp_label, lv.ALIGN.OUT_RIGHT_MID, NOTIFICATION_BAR_HEIGHT, 0)
     #style = lv.style_t()
     #style.init()
     #style.set_text_font(lv.font_montserrat_8)  # tiny font
@@ -175,15 +185,14 @@ def create_notification_bar():
         else:
             temp_label.set_text("42°C")
     
-    
-    #import gc
-    #def update_memfree(timer):
-    #    gc.collect()
-    #    memfree_label.set_text(f"{gc.mem_free()}")
+    import gc
+    def update_memfree(timer):
+        gc.collect()
+        memfree_label.set_text(f"{gc.mem_free()}")
     
     timer1 = lv.timer_create(update_time, CLOCK_UPDATE_INTERVAL, None)
     timer2 = lv.timer_create(update_temperature, TEMPERATURE_UPDATE_INTERVAL, None)
-    #timer3 = lv.timer_create(update_memfree, MEMFREE_UPDATE_INTERVAL, None)
+    timer3 = lv.timer_create(update_memfree, MEMFREE_UPDATE_INTERVAL, None)
     timer4 = lv.timer_create(update_wifi_icon, WIFI_ICON_UPDATE_INTERVAL, None)
     
     # hide bar animation
@@ -273,10 +282,32 @@ def create_drawer(display):
     restart_label=lv.label(restart_btn)
     restart_label.set_text(lv.SYMBOL.POWER+" Reset")
     restart_label.center()
-    try:
+    def reset_cb(e):
         import machine
-        restart_btn.add_event_cb(lambda event: machine.reset(),lv.EVENT.CLICKED,None)
+        if hasattr(machine, 'reset'):
+            machine.reset()
+        elif hasattr(machine, 'soft_reset'):
+            machine.soft_reset()
+        else:
+            print("Warning: machine has no reset or soft_reset method available")
+    
+    try:
+        restart_btn.add_event_cb(reset_cb,lv.EVENT.CLICKED,None)
     except Exception as e:
-        print("Warning: not adding machine.reset() callback")
+        print("Warning: could not import machine, not adding reset callback")
     
+    poweroff_btn=lv.button(drawer)
+    poweroff_btn.set_size(lv.pct(40),lv.SIZE_CONTENT)
+    poweroff_btn.align(lv.ALIGN.BOTTOM_RIGHT,0,0)
+    poweroff_label=lv.label(poweroff_btn)
+    poweroff_label.set_text(lv.SYMBOL.POWER+" Power Off")
+    poweroff_label.center()
+    def poweroff_cb(e):
+        lv.deinit()  # Deinitialize LVGL (if supported)
+        import sys
+        sys.exit(0)
     
+    poweroff_btn.add_event_cb(poweroff_cb,lv.EVENT.CLICKED,None)
+
+
+
