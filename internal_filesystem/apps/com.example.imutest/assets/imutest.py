@@ -1,7 +1,3 @@
-from machine import Pin, I2C
-from qmi8658 import QMI8658
-import machine
-
 def map_nonlinear(value: float) -> int:
     # Preserve sign and work with absolute value
     sign = 1 if value >= 0 else -1
@@ -16,21 +12,34 @@ def map_nonlinear(value: float) -> int:
     return int(50.0 + (sign * scaled))  # Shift to [0, 100]
 
 def refresh(timer):
-    #print(f"""{sensor.temperature=} {sensor.acceleration=} {sensor.gyro=}""")
-    templabel.set_text(f"IMU chip temperature: {sensor.temperature:.2f}°C")
-    ax = sensor.acceleration[0]
-    axp = int((ax * 100 + 100)/2)
-    ay = sensor.acceleration[1]
-    ayp = int((ay * 100 + 100)/2)
-    az = sensor.acceleration[2]
-    azp = int((az * 100 + 100)/2)
+    if have_imu:
+        #print(f"""{sensor.temperature=} {sensor.acceleration=} {sensor.gyro=}""")
+        temp = sensor.temperature
+        ax = sensor.acceleration[0]
+        axp = int((ax * 100 + 100)/2)
+        ay = sensor.acceleration[1]
+        ayp = int((ay * 100 + 100)/2)
+        az = sensor.acceleration[2]
+        azp = int((az * 100 + 100)/2)
+        # values between -200 and 200 => /4 becomes -50 and 50 => +50 becomes 0 and 100
+        gx = map_nonlinear(sensor.gyro[0])
+        gy = map_nonlinear(sensor.gyro[1])
+        gz = map_nonlinear(sensor.gyro[2])
+    else:
+        temp = 12.34
+        axp = 25
+        ayp = 50
+        azp = 75
+        gx = 45
+        gy = 50
+        gz = 55
+    templabel.set_text(f"IMU chip temperature: {temp:.2f}°C")
     sliderx.set_value(axp, lv.ANIM.OFF)
     slidery.set_value(ayp, lv.ANIM.OFF)
     sliderz.set_value(azp, lv.ANIM.OFF)
-    # values between -200 and 200 => /4 becomes -50 and 50 => +50 becomes 0 and 100
-    slidergx.set_value(map_nonlinear(sensor.gyro[0]), lv.ANIM.OFF)
-    slidergy.set_value(map_nonlinear(sensor.gyro[1]), lv.ANIM.OFF)
-    slidergz.set_value(map_nonlinear(sensor.gyro[2]), lv.ANIM.OFF)
+    slidergx.set_value(gx, lv.ANIM.OFF)
+    slidergy.set_value(gy, lv.ANIM.OFF)
+    slidergz.set_value(gz, lv.ANIM.OFF)
 
 
 def janitor_cb(timer):
@@ -39,7 +48,16 @@ def janitor_cb(timer):
         janitor.delete()
         refresh_timer.delete()
 
-sensor = QMI8658(I2C(0, sda=machine.Pin(48), scl=machine.Pin(47)))
+have_imu = True
+try:
+    from machine import Pin, I2C
+    from qmi8658 import QMI8658
+    import machine
+    sensor = QMI8658(I2C(0, sda=machine.Pin(48), scl=machine.Pin(47)))
+except Exception as e:
+    print(f"Warning: could not initialize IMU hardware: {e}")
+    have_imu=False
+
 
 appscreen = lv.screen_active()
 templabel = lv.label(appscreen)
