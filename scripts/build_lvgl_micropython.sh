@@ -8,7 +8,8 @@ if [ -z "$target" -o -z "$buildtype" ]; then
 	echo "Example: $0"
 	echo "Example: $0 devbuild"
 	echo
-	echo "Adding 'devbuild' will build without any preinstalled files or builtin/ filsystem, so it will just start with a black screen and you'll have to do: ./scripts/install.sh to install the User Interface."
+	echo "A 'dev' build is without any preinstalled files or builtin/ filsystem, so it will just start with a black screen and you'll have to do: ./scripts/install.sh to install the User Interface."
+	echo "A 'prod' build has the files from manifest*.py frozen in."
 	exit 1
 fi
 
