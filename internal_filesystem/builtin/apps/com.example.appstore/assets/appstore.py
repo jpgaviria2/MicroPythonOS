@@ -250,7 +250,7 @@ def download_icons():
         image_dsc = download_icon(app.icon_url)
         app.image_dsc = image_dsc # save it for the app detail page
         lv.async_call(lambda l: app.image.set_src(image_dsc), None)
-        time.sleep_ms(round(th.duration*2)) # not waiting here will result in some async_calls() not being executed
+        time.sleep_ms(50) # not waiting here will result in some async_calls() not being executed
     print("Finished downloading icons...")
 
 
