@@ -1,6 +1,6 @@
 import lvgl as lv
 import json
-import urequests
+import requests
 import gc
 import os
 import time
@@ -113,7 +113,7 @@ def set_install_label(app_fullname):
 def download_icon(url):
     print(f"Downloading icon from {url}")
     try:
-        response = urequests.get(url, timeout=5)
+        response = requests.get(url, timeout=5)
         if response.status_code == 200:
             image_data = response.content
             print("Downloaded image, size:", len(image_data), "bytes")
@@ -169,7 +169,7 @@ def download_and_unzip(zip_url, dest_folder, app_fullname):
     try:
         # Step 1: Download the .mpk file
         print(f"Downloading .mpk file from: {zip_url}")
-        response = urequests.get(zip_url, timeout=10)
+        response = requests.get(zip_url, timeout=10)
         if response.status_code != 200:
             print("Download failed: Status code", response.status_code)
             response.close()
@@ -228,7 +228,7 @@ def download_and_unzip(zip_url, dest_folder, app_fullname):
 def download_apps(json_url):
     global apps, please_wait_label
     try:
-        response = urequests.get(json_url, timeout=10)
+        response = requests.get(json_url, timeout=10)
     except Exception as e:
         print("Download failed:", e)
         lv.async_call(lambda l: please_wait_label.set_text(f"Error downloading app index: {e}"), None)
@@ -250,7 +250,7 @@ def download_icons():
         image_dsc = download_icon(app.icon_url)
         app.image_dsc = image_dsc # save it for the app detail page
         lv.async_call(lambda l: app.image.set_src(image_dsc), None)
-        time.sleep_ms(round(th.duration*1.5)) # not waiting here will result in some async_calls() not being executed
+        time.sleep_ms(round(th.duration*2)) # not waiting here will result in some async_calls() not being executed
     print("Finished downloading icons...")
 
 

@@ -2,7 +2,7 @@ appscreen = lv.screen_active()
 appscreen.clean()
 
 import lvgl as lv
-import urequests
+import requests
 import ujson
 import time
 import _thread
@@ -59,7 +59,7 @@ def update_with_lvgl(url):
         progress_bar.set_value(int(percent), lv.ANIM.ON)
     current = Partition(Partition.RUNNING)
     next_partition = current.get_next_update()
-    response = urequests.get(url, stream=True)
+    response = requests.get(url, stream=True)
     total_size = int(response.headers.get('Content-Length', 0))
     bytes_written = 0
     chunk_size = 4096
@@ -113,9 +113,9 @@ def show_update_info():
     url = "http://demo.lnpiggy.com:2121/osupdate.json"  # Adjust if the actual JSON URL differs
     print(f"osudpate.py: fetching {url}")
     try:
-        print("doing urequests.get()")
+        print("doing requests.get()")
         # Download the JSON
-        response = urequests.get(url)
+        response = requests.get(url)
         # Check if request was successful
         if response.status_code == 200:
             # Parse JSON
