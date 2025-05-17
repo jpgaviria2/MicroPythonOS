@@ -84,7 +84,7 @@ def stress_test_thread():
     while keep_running:
         buffer_size = 2 ** n
         summary += f"{buffer_size:>12} | "
-        #lv.async_call(lambda l: status.set_text(summary), None)
+        lv.async_call(lambda l: status.set_text(summary), None)
         # Run allocation test
         gc.collect()
         max_buffers = test_allocation(buffer_size, n)
@@ -92,7 +92,7 @@ def stress_test_thread():
         if max_buffers == 0:
             print(f"Cannot allocate buffers of size {buffer_size} bytes. Stopping test.")
             summary += f"{max_buffers:>14}\n"
-            #lv.async_call(lambda l: status.set_text(summary), None)
+            lv.async_call(lambda l: status.set_text(summary), None)
             break
         # Clean up memory before next test
         gc.collect()
