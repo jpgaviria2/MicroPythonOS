@@ -1,7 +1,7 @@
 import sdl2
 import sdl2.ext
 import sdl2.sdlttf
-import ctypes
+import ctypes  # Added missing import
 
 # Initialize SDL2 and TTF
 sdl2.ext.init()
@@ -22,6 +22,7 @@ if not font:
 last_key = "No key pressed"
 text_surface = None
 text_texture = None
+fullscreen = False  # Track fullscreen state
 
 def render_text(text):
     global text_surface, text_texture
@@ -41,8 +42,18 @@ while running:
         if event.type == sdl2.SDL_QUIT:
             running = False
         elif event.type == sdl2.SDL_KEYDOWN:
-            # Update text with pressed key
-            last_key = f"Key pressed: {sdl2.SDL_GetKeyName(event.key.keysym.sym).decode()}"
+            key_name = sdl2.SDL_GetKeyName(event.key.keysym.sym).decode()
+            if key_name == "F":  # Toggle fullscreen on 'F' key
+                fullscreen = not fullscreen
+                if fullscreen:
+                    sdl2.SDL_SetWindowFullscreen(window.window, sdl2.SDL_WINDOW_FULLSCREEN)
+                    sdl2.SDL_SetWindowSize(window.window, 800, 600)
+                else:
+                    sdl2.SDL_SetWindowFullscreen(window.window, 0)
+                    sdl2.SDL_SetWindowSize(window.window, 800, 600)
+                last_key = "Toggled fullscreen"
+            else:
+                last_key = f"Key pressed: {key_name}"
             render_text(last_key)
     
     # Clear screen
