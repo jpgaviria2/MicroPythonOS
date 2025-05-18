@@ -13,7 +13,7 @@ if False:
     print('Connected:', wlan.ifconfig())
 
 # Resolve hostname
-host = 'echo.websocket.events'  # Replace with your WSS server
+host = 'echo.websocket.events'
 port = 443
 try:
     addr_info = socket.getaddrinfo(host, port)[0][-1]
@@ -63,23 +63,26 @@ except Exception as e:
     ssl_sock.close()
     raise
 
-# Read response in chunks with debugging
+# Read HTTP response until \r\n\r\n
 response_bytes = bytearray()
 max_read = 1024  # Maximum bytes to read
-read_timeout = 10  # Timeout in seconds (adjust as needed)
+read_timeout = 2  # Reduced timeout (seconds)
 import time
 
 start_time = time.time()
 while len(response_bytes) < max_read:
     try:
-        # Read a small chunk to avoid blocking too long
         chunk = ssl_sock.read(128)
-        if not chunk:  # EOF or connection closed
+        if not chunk:
             print('No more data received (EOF)')
             break
         print('Received chunk, length:', len(chunk), 'bytes:', chunk)
         response_bytes.extend(chunk)
         print('Total bytes received:', len(response_bytes))
+        # Check for end of HTTP headers (\r\n\r\n)
+        if b'\r\n\r\n' in response_bytes:
+            print('End of HTTP headers detected')
+            break
     except Exception as e:
         print('Error reading chunk:', e)
         break
@@ -91,26 +94,27 @@ while len(response_bytes) < max_read:
 print('Raw response bytes:', response_bytes)
 print('Raw response hex:', response_bytes.hex())
 
-# Attempt to decode response
+# Split HTTP response from any subsequent data
+http_end = response_bytes.find(b'\r\n\r\n') + 4
+if http_end < 4:
+    ssl_sock.close()
+    raise Exception('Invalid HTTP response: no headers found')
+http_response_bytes = response_bytes[:http_end]
+extra_bytes = response_bytes[http_end:] if http_end < len(response_bytes) else b''
+print('HTTP response bytes:', http_response_bytes)
+print('Extra bytes (if any):', extra_bytes)
+
+# Decode HTTP response
 try:
-    response = response_bytes.decode('utf-8')
-    print('Decoded response:', response)
+    response = http_response_bytes.decode('utf-8')
+    print('Decoded HTTP response:', response)
 except UnicodeError as e:
     print('UnicodeError during decode:', e)
-    # Try decoding with 'ignore' to see partial response
-    response = response_bytes.decode('utf-8', errors='ignore')
-    print('Decoded with errors ignored:', response)
-    # Try alternative encoding (e.g., latin-1)
-    try:
-        response = response_bytes.decode('latin-1')
-        print('Decoded as latin-1:', response)
-    except Exception as e:
-        print('Latin-1 decode failed:', e)
-    # Dump printable characters
-    printable = ''.join(c if 32 <= ord(c) < 127 else '.' for c in response_bytes.decode('latin-1'))
+    # Dump printable characters as fallback
+    printable = ''.join(c if 32 <= ord(c) < 127 else '.' for c in http_response_bytes.decode('latin-1'))
     print('Printable characters:', printable)
     ssl_sock.close()
-    raise Exception('Failed to decode response')
+    raise Exception('Failed to decode HTTP response')
 
 # Check for valid WebSocket handshake
 if '101 Switching Protocols' not in response:
@@ -118,13 +122,19 @@ if '101 Switching Protocols' not in response:
     ssl_sock.close()
     raise Exception('Handshake failed')
 
+# Push back extra bytes (WebSocket frame) to the socket
+if extra_bytes:
+    print('Note: Extra bytes detected, will be handled by websocket module')
+
 # Create WebSocket object
 ws = websocket(ssl_sock, True)
 
 # Send and receive data
 ws.write('Hello, Secure WebSocket!')
-data = ws.read(1024)
-print('Received:', data)
+for _ in range(50):
+    data = ws.read(1024)
+    print('Received:', data)
+    time.sleep_ms(100)
 
 # Close connection
 ws.close()
