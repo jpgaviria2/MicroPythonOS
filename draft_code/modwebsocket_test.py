@@ -9,8 +9,8 @@ host = 'ws.postman-echo.com'
 port = 443
 handshake_path = '/raw'
 # Option: echo.websocket.events (unreliable)
-# host = 'echo.websocket.events'
-# handshake_path = '/'
+#host = 'echo.websocket.events'
+#handshake_path = '/'
 
 try:
     addr_info = socket.getaddrinfo(host, port)[0][-1]

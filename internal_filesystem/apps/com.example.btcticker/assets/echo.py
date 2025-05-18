@@ -15,7 +15,8 @@ import asyncio
 try:
     URL = sys.argv[1]  # expects a websocket echo server
 except Exception:
-    URL = "ws://echo.websocket.events"
+    # URL = "ws://echo.websocket.events" # also works
+    URL = "wss://echo.websocket.events"
 
 
 sslctx = False
@@ -24,6 +25,7 @@ if URL.startswith("wss:"):
     try:
         sslctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         sslctx.verify_mode = ssl.CERT_NONE
+        #sslctx.verify_mode = ssl.CERT_REQUIRED # doesn't work because OSError: (-30336, 'MBEDTLS_ERR_SSL_CA_CHAIN_REQUIRED') 
     except Exception:
         pass
 
