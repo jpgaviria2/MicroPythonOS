@@ -1,21 +1,37 @@
 import _thread
 
 class Thread:
-    def __init__(self, group=None, target=None, name=None, args=(), kwargs=None):
+    def __init__(self, group=None, target=None, name=None, args=(), kwargs=None, daemon=None):
         self.target = target
         self.args = args
         self.kwargs = {} if kwargs is None else kwargs
+        self.name = name
+        self.daemon = daemon  # Store daemon attribute (True, False, or None)
 
     def start(self):
+        # In MicroPython, _thread.start_new_thread doesn't support daemon threads directly
+        # We store the daemon attribute for compatibility, but it may not affect termination
         _thread.start_new_thread(self.run, ())
 
     def run(self):
-        self.target(*self.args, **self.kwargs)
+        try:
+            self.target(*self.args, **self.kwargs)
+        except Exception as e:
+            # Basic error handling to prevent silent failures
+            print(f"Thread {self.name or ''} failed: {e}")
+
+    @property
+    def daemon(self):
+        return self._daemon
+
+    @daemon.setter
+    def daemon(self, value):
+        self._daemon = value if value is not None else False
 
 
 class Lock:
     def __init__(self):
-        self._lock = _thread.allocate_lock() 
+        self._lock = _thread.allocate_lock()
 
     def __enter__(self):
         if self._lock:
