@@ -2,9 +2,7 @@ import os
 import hashlib
 import binascii
 
-#from ._libsecp256k1 import ffi, lib
 from secp256k1_compat import ffi, lib  # Use compatibility layer
-
 
 EC_COMPRESSED = lib.SECP256K1_EC_COMPRESSED
 EC_UNCOMPRESSED = lib.SECP256K1_EC_UNCOMPRESSED
@@ -273,7 +271,7 @@ class PrivateKey(ECDSA):
         else:
             if raw:
                 if not isinstance(privkey, bytes) or len(privkey) != 32:
-                    raise TypeError('privkey must be composed of 32 bytes')
+                    raise TypeError(f'privkey must be composed of 32 bytes: {privkey} and {self.private_key} and {len(privkey)}')
                 self.set_raw_privkey(privkey)
             else:
                 self.deserialize(privkey)

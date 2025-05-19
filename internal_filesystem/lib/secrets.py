@@ -1,5 +1,3 @@
-# By PiggyOS
-
 # secrets.py: Compatibility layer for CPython's secrets module in MicroPython
 # Uses urandom for cryptographically secure randomness
 # Implements SystemRandom, choice, randbelow, randbits, token_bytes, token_hex,
@@ -38,7 +36,8 @@ class SystemRandom:
     
     def _getrandbytes(self, n):
         """Return n random bytes."""
-        return bytearray(urandom.getrandbits(8) for _ in range(n))
+        # Use bytes directly for compatibility with CPython secrets
+        return bytes(urandom.getrandbits(8) for _ in range(n))
     
     def choice(self, seq):
         """Return a randomly chosen element from a non-empty sequence."""
@@ -86,17 +85,12 @@ def token_urlsafe(nbytes=None):
         nbytes = 32
     if nbytes < 0:
         raise ValueError("number of bytes must be non-negative")
-    # Base64 encoding: 4 chars per 3 bytes, so we need ceil(nbytes * 4/3) chars
-    # Generate enough bytes to ensure we have at least nbytes after encoding
     raw_bytes = token_bytes(nbytes)
-    # Use URL-safe base64 encoding (replaces '+' with '-', '/' with '_')
     encoded = ubinascii.b2a_base64(raw_bytes).decode().rstrip('\n=')
-    # Ensure length corresponds to nbytes (truncate if needed)
     return encoded[:int(nbytes * 4 / 3)]
 
 def compare_digest(a, b):
     """Return True if a and b are equal in constant time, else False."""
-    # Convert to bytes if strings
     if isinstance(a, str):
         a = a.encode()
     if isinstance(b, str):
@@ -105,10 +99,7 @@ def compare_digest(a, b):
         raise TypeError("both inputs must be bytes-like or strings")
     if len(a) != len(b):
         return False
-    # Constant-time comparison to prevent timing attacks
     result = 0
     for x, y in zip(a, b):
         result |= x ^ y
     return result == 0
-
-
