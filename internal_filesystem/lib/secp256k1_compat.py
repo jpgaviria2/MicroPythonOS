@@ -19,12 +19,23 @@ class FFI:
     NULL = None  # Mimic cffi's NULL pointer
     CData = CData  # Expose CData class
 
-    def new(self, type_str):
+    def __init__(self):
+        # Cache type strings for identity comparison
+        self._types = {
+            'secp256k1_pubkey *': 'secp256k1_pubkey *',
+            'secp256k1_ecdsa_signature *': 'secp256k1_ecdsa_signature *',
+            'secp256k1_ecdsa_recoverable_signature *': 'secp256k1_ecdsa_recoverable_signature *',
+            'secp256k1_xonly_pubkey *': 'secp256k1_xonly_pubkey *',
+            'secp256k1_keypair *': 'secp256k1_keypair *',
+        }
+
+    def new(self, type_str, init=None):
         if 'char' in type_str:
             size = int(type_str.split('[')[1].rstrip(']'))
             return CData(bytearray(size), type_str)
         elif 'size_t *' in type_str:
-            return CData([0], type_str)
+            data = [init if init is not None else 0]
+            return CData(data, type_str)
         elif type_str == 'secp256k1_pubkey *':
             return CData(bytearray(64), type_str)
         elif type_str == 'secp256k1_ecdsa_signature *':
@@ -60,8 +71,10 @@ class FFI:
 
     def typeof(self, obj):
         if isinstance(obj, CData):
-            return obj._type
-        raise TypeError("Object is not a CData instance")
+            return self._types.get(obj._type, obj._type)
+        if isinstance(obj, str):
+            return self._types.get(obj, obj)
+        raise TypeError("Object is not a CData instance or type string")
 
 # Dummy lib class to map to usecp256k1 functions
 class Lib:
@@ -263,6 +276,8 @@ class Lib:
         try:
             if isinstance(pubkey, FFI.CData):
                 pubkey = pubkey._data
+            if isinstance(outlen, FFI.CData):
+                outlen = outlen._data
             result = usecp256k1.ec_pubkey_serialize(pubkey, flags)
             if result is None:
                 return 0
@@ -338,6 +353,8 @@ class Lib:
                 xonly_pubkey = xonly_pubkey._data
             if isinstance(pubkey, FFI.CData):
                 pubkey = pubkey._data
+            if isinstance(pk_parity, FFI.CData):
+                pk_parity = pk_parity._data
             result, parity = usecp256k1.xonly_pubkey_from_pubkey(pubkey)
             if result is None:
                 return 0
