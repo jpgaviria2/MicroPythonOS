@@ -25,10 +25,12 @@ class Queue:
             with self._lock:
                 if not self._queue:
                     raise RuntimeError("Queue is empty")
+                print("queue not empty, returning one object!!!")
                 return self._queue.pop(0)
         else:
             if not self._queue:
                 raise RuntimeError("Queue is empty")
+            print("queue not empty, returning one object!!!")
             return self._queue.pop(0)
 
     def qsize(self):

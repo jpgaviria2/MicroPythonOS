@@ -11,6 +11,7 @@ class Thread:
     def start(self):
         # In MicroPython, _thread.start_new_thread doesn't support daemon threads directly
         # We store the daemon attribute for compatibility, but it may not affect termination
+        #_thread.stack_size(32*1024)
         _thread.start_new_thread(self.run, ())
 
     def run(self):
