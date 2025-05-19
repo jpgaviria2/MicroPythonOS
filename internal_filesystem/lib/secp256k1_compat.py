@@ -96,6 +96,10 @@ class Lib:
         try:
             if isinstance(raw_sig, FFI.CData):
                 raw_sig = raw_sig._data
+            if isinstance(output, FFI.CData):
+                output = output._data
+            if isinstance(outputlen, FFI.CData):
+                outputlen = outputlen._data
             result = usecp256k1.ecdsa_signature_serialize_der(raw_sig)
             if result is None:
                 return 0
@@ -121,6 +125,8 @@ class Lib:
         try:
             if isinstance(raw_sig, FFI.CData):
                 raw_sig = raw_sig._data
+            if isinstance(output, FFI.CData):
+                output = output._data
             result = usecp256k1.ecdsa_signature_serialize_compact(raw_sig)
             if result is None:
                 return 0
@@ -181,6 +187,10 @@ class Lib:
         try:
             if isinstance(recover_sig, FFI.CData):
                 recover_sig = recover_sig._data
+            if isinstance(output, FFI.CData):
+                output = output._data
+            if isinstance(recid, FFI.CData):
+                recid = recid._data
             result, rec_id = usecp256k1.ecdsa_sign_recoverable(recover_sig)
             if result is None:
                 return 0
@@ -246,6 +256,8 @@ class Lib:
         try:
             if isinstance(keypair, FFI.CData):
                 keypair = keypair._data
+            if isinstance(sig64, FFI.CData):
+                sig64 = sig64._data
             result = usecp256k1.schnorrsig_sign(msg, keypair)
             if result is None:
                 return 0
@@ -264,6 +276,8 @@ class Lib:
 
     def secp256k1_tagged_sha256(self, ctx, hash32, tag, tag_len, msg, msg_len):
         try:
+            if isinstance(hash32, FFI.CData):
+                hash32 = hash32._data
             result = usecp256k1.tagged_sha256(tag, msg)
             if result is None:
                 return 0
@@ -276,12 +290,15 @@ class Lib:
         try:
             if isinstance(pubkey, FFI.CData):
                 pubkey = pubkey._data
+            if isinstance(output, FFI.CData):
+                output = output._data
             if isinstance(outlen, FFI.CData):
                 outlen = outlen._data
             result = usecp256k1.ec_pubkey_serialize(pubkey, flags)
             if result is None:
                 return 0
-            output[:outlen[0]] = result
+            output[:len(result)] = result
+            outlen[0] = len(result)
             return 1
         except (ValueError, AttributeError):
             return 0
@@ -405,6 +422,8 @@ class Lib:
         try:
             if isinstance(pubkey, FFI.CData):
                 pubkey = pubkey._data
+            if isinstance(output, FFI.CData):
+                output = output._data
             result = usecp256k1.ecdh(pubkey, seckey)
             if result is None:
                 return 0
