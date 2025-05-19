@@ -1,16 +1,23 @@
-from websocket import WebSocketApp
+import json 
+import ssl
+import time
+from nostr.event import Event
+from nostr.relay_manager import RelayManager
+from nostr.message_type import ClientMessageType
+from nostr.key import PrivateKey
 
-def on_message(ws, message):
-    print(f"Received: {message}")
+relay_manager = RelayManager()
+relay_manager.add_relay("wss://nostr-pub.wellorder.net")
+relay_manager.add_relay("wss://relay.damus.io")
+relay_manager.open_connections({"cert_reqs": ssl.CERT_NONE}) # NOTE: This disables ssl certificate verification
+time.sleep(5) # allow the connections to open
 
-def on_open(ws):
-    ws.send_text("Hello, Nostr!")
+private_key = PrivateKey()
 
-ws = WebSocketApp(
-    url="wss://relay.damus.io",
-    on_open=on_open,
-    on_message=on_message,
-    on_error=lambda ws, e: print(f"Error: {e}"),
-    on_close=lambda ws, code, reason: print("Closed")
-)
-ws.run_forever(ping_interval=30, ping_timeout=10)
+event = Event("Hello Nostr")
+private_key.sign_event(event)
+
+relay_manager.publish_event(event)
+time.sleep(1) # allow the messages to send
+
+relay_manager.close_connections()

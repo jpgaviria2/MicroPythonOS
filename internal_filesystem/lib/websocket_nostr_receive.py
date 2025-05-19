@@ -1,0 +1,51 @@
+import json
+import ssl
+import time
+from nostr.filter import Filter, Filters
+from nostr.event import Event, EventKind
+from nostr.relay_manager import RelayManager
+from nostr.message_type import ClientMessageType
+
+#filters = Filters([Filter(authors=[<a nostr pubkey in hex>], kinds=[EventKind.TEXT_NOTE])])
+#filters = Filters([Filter(authors="04c915daefee38317fa734444acee390a8269fe5810b2241e5e6dd343dfbecc9", kinds=[EventKind.TEXT_NOTE])])
+timestamp = round(time.time()-1000)
+#filters = Filters([Filter(authors="04c915daefee38317fa734444acee390a8269fe5810b2241e5e6dd343dfbecc9", kinds=[9735], since=timestamp)])
+filters = Filters([Filter(kinds=[9735], since=timestamp)])
+
+subscription_id = "ihopethisworks2" + str(time.time())
+request = [ClientMessageType.REQUEST, subscription_id]
+json.dumps(request)
+request.extend(filters.to_json_array())
+message = json.dumps(request)
+# ["REQ", "ihopethisworks3", {"kinds": [1], "authors": "04c915daefee38317fa734444acee390a8269fe5810b2241e5e6dd343dfbecc9"}]
+print(f"sending this: {message}")
+
+
+relay_manager = RelayManager()
+#relay_manager.add_relay("wss://nostr-pub.wellorder.net")
+relay_manager.add_relay("wss://relay.damus.io")
+relay_manager.add_subscription(subscription_id, filters)
+time.sleep(2) # allow the connections to open
+
+print("opening connections")
+relay_manager.open_connections({"cert_reqs": ssl.CERT_NONE}) # NOTE: This disables ssl certificate verification
+time.sleep(2) # allow the connections to open
+
+print("publishing:")
+relay_manager.publish_message(message)
+time.sleep(1) # allow the messages to send
+
+print("printing events:")
+#while relay_manager.message_pool.has_events():
+for _ in range(60):
+    time.sleep(1)
+    print(".")
+    try:
+        event_msg = relay_manager.message_pool.get_event()
+        print(event_msg.event.content)
+    except Exception as e:
+        print(f"pool.get_event() got error: {e}")
+    
+
+print("closing:")
+relay_manager.close_connections()

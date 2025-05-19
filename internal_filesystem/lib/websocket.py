@@ -147,8 +147,9 @@ class WebSocketApp:
         while self.running and self.ping_interval:
             self.last_ping_tm = time.time()
             try:
-                await self.ws.send_bytes(self.ping_payload.encode() if isinstance(self.ping_payload, str) else self.ping_payload)
-                _log_debug("Sending ping")
+                
+                #await self.ws.send_bytes(self.ping_payload.encode() if isinstance(self.ping_payload, str) else self.ping_payload)
+                _log_debug("NOT Sending ping because it seems corrupt")
             except Exception as e:
                 _log_debug(f"Failed to send ping: {e}")
             await asyncio.sleep(self.ping_interval)
@@ -219,6 +220,8 @@ class WebSocketApp:
             reconnect = reconnect
 
         while self.running:
+            print("self.running")
+            time.sleep(1)
             try:
                 await self._connect_and_run()
             except Exception as e:
@@ -253,6 +256,7 @@ class WebSocketApp:
             self._start_ping_thread()
 
             async for msg in ws:
+                print(f"received msg: {msg.type} - {msg.data}")
                 if not self.running:
                     break
 
