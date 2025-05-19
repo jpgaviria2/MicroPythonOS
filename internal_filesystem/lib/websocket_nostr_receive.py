@@ -1,6 +1,8 @@
 import json
 import ssl
 import time
+import _thread
+
 from nostr.filter import Filter, Filters
 from nostr.event import Event, EventKind
 from nostr.relay_manager import RelayManager
@@ -8,8 +10,10 @@ from nostr.message_type import ClientMessageType
 
 #filters = Filters([Filter(authors=[<a nostr pubkey in hex>], kinds=[EventKind.TEXT_NOTE])])
 #filters = Filters([Filter(authors="04c915daefee38317fa734444acee390a8269fe5810b2241e5e6dd343dfbecc9", kinds=[EventKind.TEXT_NOTE])])
+#timestamp = round(time.time()-10)
+timestamp = round(time.time()-100)
 #timestamp = round(time.time()-1000)
-timestamp = round(time.time()-5000)
+#timestamp = round(time.time()-5000)
 #filters = Filters([Filter(authors="04c915daefee38317fa734444acee390a8269fe5810b2241e5e6dd343dfbecc9", kinds=[9735], since=timestamp)])
 filters = Filters([Filter(kinds=[9735], since=timestamp)])
 
@@ -36,17 +40,21 @@ print("publishing:")
 relay_manager.publish_message(message)
 time.sleep(1) # allow the messages to send
 
-print("printing events:")
-#while relay_manager.message_pool.has_events():
-for _ in range(60):
-    time.sleep(1)
-    print(".")
-    try:
-        event_msg = relay_manager.message_pool.get_event()
-        print(event_msg.event.content)
-    except Exception as e:
-        print(f"pool.get_event() got error: {e}")
-    
+def printevents():
+    print("printing events:")
+    #while relay_manager.message_pool.has_events():
+    for _ in range(60):
+        time.sleep(1)
+        print(".")
+        try:
+            event_msg = relay_manager.message_pool.get_event()
+            print(event_msg.event.content)
+        except Exception as e:
+            print(f"pool.get_event() got error: {e}")
+    print("60 seconds passed, closing:")
+    relay_manager.close_connections()
 
-print("closing:")
-relay_manager.close_connections()
+#_thread.stack_size(32*1024)
+#_thread.start_new_thread(printevents, ())
+printevents()
+

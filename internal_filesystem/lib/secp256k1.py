@@ -8,7 +8,8 @@ EC_COMPRESSED = lib.SECP256K1_EC_COMPRESSED
 EC_UNCOMPRESSED = lib.SECP256K1_EC_UNCOMPRESSED
 
 HAS_RECOVERABLE = hasattr(lib, 'secp256k1_ecdsa_sign_recoverable')
-HAS_SCHNORR = hasattr(lib, 'secp256k1_schnorrsig_sign')
+#HAS_SCHNORR = hasattr(lib, 'secp256k1_schnorrsig_sign')
+HAS_SCHNORR = hasattr(lib, 'secp256k1_schnorrsig_sign_custom') # forgot why it's called custom
 HAS_ECDH = hasattr(lib, 'secp256k1_ecdh')
 HAS_EXTRAKEYS = hasattr(lib, 'secp256k1_keypair_create')
 
@@ -231,16 +232,17 @@ class PublicKey(ECDSA):
         return bool(verified)
 
     def schnorr_verify(self, msg, schnorr_sig, bip340tag, raw=False):
+        print("schnorr_verify 0")
         assert self.public_key, "No public key defined"
         if not HAS_SCHNORR:
             raise Exception("secp256k1_schnorr not enabled")
-
+        print("schnorr_verify 1")
         msg_to_sign = _bip340_tag(msg, raw, bip340tag)
-
+        print("schnorr_verify 2")
         verified = lib.secp256k1_schnorrsig_verify(
             secp256k1_ctx, schnorr_sig, msg_to_sign, len(msg_to_sign),
             self.xonly_pubkey)
-
+        print("schnorr_verify 3")
         return bool(verified)
 
     def ecdh(self, scalar, hashfn=ffi.NULL, hasharg=ffi.NULL):

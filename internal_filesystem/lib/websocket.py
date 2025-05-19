@@ -40,7 +40,7 @@ def _run_callback(callback, *args):
     """Add callback to queue for execution."""
     try:
         _callback_queue.append((callback, args))
-        _log_debug(f"Queued callback {callback}, queue size: {len(_callback_queue)}")
+        _log_debug(f"Queued callback {callback}, args={args}, queue size: {len(_callback_queue)}")
     except IndexError:
         _log_error("Callback queue full, dropping callback")
 
@@ -52,7 +52,9 @@ async def _process_callbacks_async():
             try:
                 callback, args = _callback_queue.popleft()
                 if callback is not None:
-                    _log_debug(f"Executing callback {callback} with args {args}")
+                    _log_debug(f"Executing callback {callback} with {len(args)} args")
+                    for i, arg in enumerate(args):
+                        _log_debug(f"Arg {i}: {arg}")
                     try:
                         callback(*args)
                     except Exception as e:
@@ -294,7 +296,7 @@ class WebSocketApp:
             self._start_ping_task()
 
             async for msg in ws:
-                _log_debug(f"Received msg: type={msg.type}, data={str(msg.data)[:30]}...")
+                _log_debug(f"Received msg: type={msg.type}, data={str(msg.data)[:20]}...")
                 if not self.running:
                     _log_debug("Not running, breaking message loop")
                     break
@@ -309,11 +311,11 @@ class WebSocketApp:
                 if msg.type == WSMsgType.TEXT:
                     data = msg.data
                     _run_callback(self.on_data, self, data, ABNF.OPCODE_TEXT, True)
-                    _run_callback(self.on_message, self, data)
+                    _run_callback(self.on_message, self, data)  # Standard websocket-client
                 elif msg.type == WSMsgType.BINARY:
                     data = msg.data
                     _run_callback(self.on_data, self, data, ABNF.OPCODE_BINARY, True)
-                    _run_callback(self.on_message, self, data)
+                    _run_callback(self.on_message, self, data)  # Standard websocket-client
                 elif msg.type == WSMsgType.ERROR or ws.ws.closed:
                     _log_error("WebSocket error or closed")
                     raise WebSocketConnectionClosedException("WebSocket closed")
