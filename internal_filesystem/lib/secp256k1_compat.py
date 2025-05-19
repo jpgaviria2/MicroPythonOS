@@ -8,34 +8,47 @@ SECP256K1_CONTEXT_VERIFY = 1 << 9  # 512
 SECP256K1_EC_COMPRESSED = 1 << 1  # 2
 SECP256K1_EC_UNCOMPRESSED = 0
 
+# Dummy CData class to mimic cffi's CData
+class CData:
+    def __init__(self, data, type_str):
+        self._data = data
+        self._type = type_str
+
 # Dummy ffi class to mimic cffi
 class FFI:
     NULL = None  # Mimic cffi's NULL pointer
+    CData = CData  # Expose CData class
 
     def new(self, type_str):
         if 'char' in type_str:
             size = int(type_str.split('[')[1].rstrip(']'))
-            return bytearray(size)
+            return CData(bytearray(size), type_str)
         elif 'size_t *' in type_str:
-            return [0]
+            return CData([0], type_str)
         elif type_str == 'secp256k1_pubkey *':
-            return bytearray(64)
+            return CData(bytearray(64), type_str)
         elif type_str == 'secp256k1_ecdsa_signature *':
-            return bytearray(64)
+            return CData(bytearray(64), type_str)
         elif type_str == 'secp256k1_ecdsa_recoverable_signature *':
-            return bytearray(65)
+            return CData(bytearray(65), type_str)
         elif type_str == 'secp256k1_xonly_pubkey *':
-            return bytearray(32)
+            return CData(bytearray(32), type_str)
         elif type_str == 'secp256k1_keypair *':
-            return bytearray(96)
+            return CData(bytearray(96), type_str)
         raise ValueError(f"Unsupported ffi type: {type_str}")
 
     def buffer(self, obj, size=None):
+        if isinstance(obj, CData):
+            obj = obj._data
         if isinstance(obj, list):
             return bytes(obj)
         return bytes(obj[:size] if size is not None else obj)
 
     def memmove(self, dst, src, n):
+        if isinstance(dst, CData):
+            dst = dst._data
+        if isinstance(src, CData):
+            src = src._data
         if isinstance(src, bytes):
             src = bytearray(src)
         dst[:n] = src[:n]
@@ -44,6 +57,11 @@ class FFI:
         def decorator(func):
             return func
         return decorator
+
+    def typeof(self, obj):
+        if isinstance(obj, CData):
+            return obj._type
+        raise TypeError("Object is not a CData instance")
 
 # Dummy lib class to map to usecp256k1 functions
 class Lib:
@@ -63,6 +81,8 @@ class Lib:
 
     def secp256k1_ecdsa_signature_serialize_der(self, ctx, output, outputlen, raw_sig):
         try:
+            if isinstance(raw_sig, FFI.CData):
+                raw_sig = raw_sig._data
             result = usecp256k1.ecdsa_signature_serialize_der(raw_sig)
             if result is None:
                 return 0
@@ -74,6 +94,8 @@ class Lib:
 
     def secp256k1_ecdsa_signature_parse_der(self, ctx, raw_sig, ser_sig, ser_len):
         try:
+            if isinstance(raw_sig, FFI.CData):
+                raw_sig = raw_sig._data
             result = usecp256k1.ecdsa_signature_parse_der(ser_sig)
             if result is None:
                 return 0
@@ -84,6 +106,8 @@ class Lib:
 
     def secp256k1_ecdsa_signature_serialize_compact(self, ctx, output, raw_sig):
         try:
+            if isinstance(raw_sig, FFI.CData):
+                raw_sig = raw_sig._data
             result = usecp256k1.ecdsa_signature_serialize_compact(raw_sig)
             if result is None:
                 return 0
@@ -94,6 +118,8 @@ class Lib:
 
     def secp256k1_ecdsa_signature_parse_compact(self, ctx, raw_sig, ser_sig):
         try:
+            if isinstance(raw_sig, FFI.CData):
+                raw_sig = raw_sig._data
             result = usecp256k1.ecdsa_signature_parse_compact(ser_sig)
             if result is None:
                 return 0
@@ -104,6 +130,11 @@ class Lib:
 
     def secp256k1_ecdsa_signature_normalize(self, ctx, sigout, raw_sig):
         try:
+            if isinstance(raw_sig, FFI.CData):
+                raw_sig = raw_sig._data
+            if sigout != FFI.NULL:
+                if isinstance(sigout, FFI.CData):
+                    sigout = sigout._data
             is_normalized = usecp256k1.ecdsa_signature_normalize(raw_sig)
             if sigout != FFI.NULL:
                 sigout[:] = is_normalized[1] if is_normalized[1] else raw_sig
@@ -113,6 +144,8 @@ class Lib:
 
     def secp256k1_ecdsa_sign(self, ctx, raw_sig, msg32, privkey, nonce_fn, nonce_data):
         try:
+            if isinstance(raw_sig, FFI.CData):
+                raw_sig = raw_sig._data
             result = usecp256k1.ecdsa_sign(msg32, privkey)
             if result is None:
                 return 0
@@ -123,12 +156,18 @@ class Lib:
 
     def secp256k1_ecdsa_verify(self, ctx, raw_sig, msg32, pubkey):
         try:
+            if isinstance(raw_sig, FFI.CData):
+                raw_sig = raw_sig._data
+            if isinstance(pubkey, FFI.CData):
+                pubkey = pubkey._data
             return usecp256k1.ecdsa_verify(raw_sig, msg32, pubkey)
         except (ValueError, AttributeError):
             return 0
 
     def secp256k1_ecdsa_recoverable_signature_serialize_compact(self, ctx, output, recid, recover_sig):
         try:
+            if isinstance(recover_sig, FFI.CData):
+                recover_sig = recover_sig._data
             result, rec_id = usecp256k1.ecdsa_sign_recoverable(recover_sig)
             if result is None:
                 return 0
@@ -140,6 +179,8 @@ class Lib:
 
     def secp256k1_ecdsa_recoverable_signature_parse_compact(self, ctx, recover_sig, ser_sig, rec_id):
         try:
+            if isinstance(recover_sig, FFI.CData):
+                recover_sig = recover_sig._data
             result = usecp256k1.ecdsa_sign_recoverable(ser_sig, rec_id)
             if result is None:
                 return 0
@@ -150,6 +191,10 @@ class Lib:
 
     def secp256k1_ecdsa_recoverable_signature_convert(self, ctx, normal_sig, recover_sig):
         try:
+            if isinstance(normal_sig, FFI.CData):
+                normal_sig = normal_sig._data
+            if isinstance(recover_sig, FFI.CData):
+                recover_sig = recover_sig._data
             result = usecp256k1.ecdsa_sign_recoverable(recover_sig)
             if result is None:
                 return 0
@@ -160,6 +205,8 @@ class Lib:
 
     def secp256k1_ecdsa_sign_recoverable(self, ctx, raw_sig, msg32, privkey, nonce_fn, nonce_data):
         try:
+            if isinstance(raw_sig, FFI.CData):
+                raw_sig = raw_sig._data
             result = usecp256k1.ecdsa_sign_recoverable(msg32, privkey)
             if result is None:
                 return 0
@@ -170,6 +217,10 @@ class Lib:
 
     def secp256k1_ecdsa_recover(self, ctx, pubkey, recover_sig, msg32):
         try:
+            if isinstance(pubkey, FFI.CData):
+                pubkey = pubkey._data
+            if isinstance(recover_sig, FFI.CData):
+                recover_sig = recover_sig._data
             result = usecp256k1.ecdsa_sign_recoverable(recover_sig, msg32)
             if result is None:
                 return 0
@@ -180,6 +231,8 @@ class Lib:
 
     def secp256k1_schnorrsig_sign_custom(self, ctx, sig64, msg, msg_len, keypair, aux_rand32):
         try:
+            if isinstance(keypair, FFI.CData):
+                keypair = keypair._data
             result = usecp256k1.schnorrsig_sign(msg, keypair)
             if result is None:
                 return 0
@@ -190,6 +243,8 @@ class Lib:
 
     def secp256k1_schnorrsig_verify(self, ctx, schnorr_sig, msg, msg_len, xonly_pubkey):
         try:
+            if isinstance(xonly_pubkey, FFI.CData):
+                xonly_pubkey = xonly_pubkey._data
             return usecp256k1.schnorrsig_verify(schnorr_sig, msg, xonly_pubkey)
         except (ValueError, AttributeError):
             return 0
@@ -206,6 +261,8 @@ class Lib:
 
     def secp256k1_ec_pubkey_serialize(self, ctx, output, outlen, pubkey, flags):
         try:
+            if isinstance(pubkey, FFI.CData):
+                pubkey = pubkey._data
             result = usecp256k1.ec_pubkey_serialize(pubkey, flags)
             if result is None:
                 return 0
@@ -216,6 +273,8 @@ class Lib:
 
     def secp256k1_ec_pubkey_parse(self, ctx, pubkey, pubkey_ser, ser_len):
         try:
+            if isinstance(pubkey, FFI.CData):
+                pubkey = pubkey._data
             result = usecp256k1.ec_pubkey_parse(pubkey_ser)
             if result is None:
                 return 0
@@ -226,7 +285,10 @@ class Lib:
 
     def secp256k1_ec_pubkey_combine(self, ctx, outpub, pubkeys, n_pubkeys):
         try:
-            result = usecp256k1.ec_pubkey_combine(pubkeys)
+            if isinstance(outpub, FFI.CData):
+                outpub = outpub._data
+            pubkeys_data = [pk._data if isinstance(pk, FFI.CData) else pk for pk in pubkeys]
+            result = usecp256k1.ec_pubkey_combine(pubkeys_data)
             if result is None:
                 return 0
             outpub[:] = result
@@ -236,6 +298,8 @@ class Lib:
 
     def secp256k1_ec_pubkey_tweak_add(self, ctx, pubkey, scalar):
         try:
+            if isinstance(pubkey, FFI.CData):
+                pubkey = pubkey._data
             result = usecp256k1.ec_pubkey_tweak_add(pubkey, scalar)
             if result is None:
                 return 0
@@ -246,6 +310,8 @@ class Lib:
 
     def secp256k1_ec_pubkey_tweak_mul(self, ctx, pubkey, scalar):
         try:
+            if isinstance(pubkey, FFI.CData):
+                pubkey = pubkey._data
             result = usecp256k1.ec_pubkey_tweak_mul(pubkey, scalar)
             if result is None:
                 return 0
@@ -256,6 +322,8 @@ class Lib:
 
     def secp256k1_ec_pubkey_create(self, ctx, pubkey, privkey):
         try:
+            if isinstance(pubkey, FFI.CData):
+                pubkey = pubkey._data
             result = usecp256k1.ec_pubkey_create(privkey)
             if result is None:
                 return 0
@@ -266,6 +334,10 @@ class Lib:
 
     def secp256k1_xonly_pubkey_from_pubkey(self, ctx, xonly_pubkey, pk_parity, pubkey):
         try:
+            if isinstance(xonly_pubkey, FFI.CData):
+                xonly_pubkey = xonly_pubkey._data
+            if isinstance(pubkey, FFI.CData):
+                pubkey = pubkey._data
             result, parity = usecp256k1.xonly_pubkey_from_pubkey(pubkey)
             if result is None:
                 return 0
@@ -278,6 +350,8 @@ class Lib:
 
     def secp256k1_ec_privkey_tweak_add(self, ctx, privkey, scalar):
         try:
+            if isinstance(privkey, FFI.CData):
+                privkey = privkey._data
             result = usecp256k1.ec_privkey_tweak_add(privkey, scalar)
             if result is None:
                 return 0
@@ -288,6 +362,8 @@ class Lib:
 
     def secp256k1_ec_privkey_tweak_mul(self, ctx, privkey, scalar):
         try:
+            if isinstance(privkey, FFI.CData):
+                privkey = privkey._data
             result = usecp256k1.ec_privkey_tweak_mul(privkey, scalar)
             if result is None:
                 return 0
@@ -298,6 +374,8 @@ class Lib:
 
     def secp256k1_keypair_create(self, ctx, keypair, privkey):
         try:
+            if isinstance(keypair, FFI.CData):
+                keypair = keypair._data
             result = usecp256k1.keypair_create(privkey)
             if result is None:
                 return 0
@@ -308,6 +386,8 @@ class Lib:
 
     def secp256k1_ecdh(self, ctx, output, pubkey, seckey, hashfn=FFI.NULL, hasharg=FFI.NULL):
         try:
+            if isinstance(pubkey, FFI.CData):
+                pubkey = pubkey._data
             result = usecp256k1.ecdh(pubkey, seckey)
             if result is None:
                 return 0
