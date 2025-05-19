@@ -25,25 +25,25 @@ message = json.dumps(request)
 # ["REQ", "ihopethisworks3", {"kinds": [1], "authors": "04c915daefee38317fa734444acee390a8269fe5810b2241e5e6dd343dfbecc9"}]
 print(f"sending this: {message}")
 
-
-relay_manager = RelayManager()
-#relay_manager.add_relay("wss://nostr-pub.wellorder.net")
-relay_manager.add_relay("wss://relay.damus.io")
-relay_manager.add_subscription(subscription_id, filters)
-time.sleep(2) # allow the connections to open
-
-print("opening connections")
-relay_manager.open_connections({"cert_reqs": ssl.CERT_NONE}) # NOTE: This disables ssl certificate verification
-time.sleep(2) # allow the connections to open
-
-print("publishing:")
-relay_manager.publish_message(message)
-time.sleep(1) # allow the messages to send
-
 def printevents():
+
+    relay_manager = RelayManager()
+    #relay_manager.add_relay("wss://nostr-pub.wellorder.net")
+    relay_manager.add_relay("wss://relay.damus.io")
+    relay_manager.add_subscription(subscription_id, filters)
+    time.sleep(2) # allow the connections to open
+    
+    print("opening connections") # after this, CPU usage goes high and stays there
+    relay_manager.open_connections({"cert_reqs": ssl.CERT_NONE}) # NOTE: This disables ssl certificate verification
+    time.sleep(2) # allow the connections to open
+    
+    print("publishing:")
+    relay_manager.publish_message(message)
+    time.sleep(2) # allow the messages to send
+    
     print("printing events:")
     #while relay_manager.message_pool.has_events():
-    for _ in range(60):
+    for _ in range(10):
         time.sleep(1)
         print(".")
         try:
@@ -54,7 +54,8 @@ def printevents():
     print("60 seconds passed, closing:")
     relay_manager.close_connections()
 
-#_thread.stack_size(32*1024)
-#_thread.start_new_thread(printevents, ())
-printevents()
+# new thread so REPL stays available
+_thread.stack_size(32*1024)
+_thread.start_new_thread(printevents, ())
+#printevents()
 
