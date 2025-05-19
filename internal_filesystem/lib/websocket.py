@@ -46,6 +46,7 @@ def _run_callback(callback, *args):
 def _process_callbacks():
     """Process queued callbacks."""
     while _callback_queue:
+        print("processing callbacks queue...")
         try:
             callback, args = _callback_queue.popleft()
             if callback is not None:
@@ -252,11 +253,13 @@ class WebSocketApp:
         self.session = aiohttp.ClientSession(headers=self.header)
         async with self.session.ws_connect(self.url, ssl=ssl_context) as ws:
             self.ws = ws
+            print("running on_open callback...")
             _run_callback(self.on_open, self)
+            print("done running on_open callback.")
             self._start_ping_thread()
 
             async for msg in ws:
-                print(f"received msg: {msg.type} - {msg.data}")
+                print(f"websocket.py received msg: type {msg.type} - {msg.data[0:20]}")
                 if not self.running:
                     break
 

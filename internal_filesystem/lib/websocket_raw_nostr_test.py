@@ -3,8 +3,11 @@ import websocket
 import _thread
 import time
 
+def on_open(wsapp):
+    print(f"on_open works here")
+
 def on_message(wsapp, message):
-    print(f"got message: {message}")
+    print(f"got message: {message[0:20]}")
 
 def on_ping(wsapp, message):
     print("Got a ping! A pong reply has already been automatically sent.")
@@ -21,7 +24,7 @@ def on_error(wsapp, message):
 
 #wsapp = websocket.WebSocketApp("wss://echo.websocket.events", on_message=on_message, on_ping=on_ping, on_pong=on_pong, on_error=on_error)
 
-wsapp = websocket.WebSocketApp("wss://relay.damus.io", on_message=on_message, on_ping=on_ping, on_pong=on_pong, on_error=on_error)
+wsapp = websocket.WebSocketApp("wss://relay.damus.io", on_message=on_message, on_ping=on_ping, on_pong=on_pong, on_error=on_error, on_open=on_open)
 
 #wsapp = websocket.WebSocketApp("wss://relay.primal.net", on_message=on_message, on_ping=on_ping, on_pong=on_pong, on_error=on_error)
 
@@ -45,7 +48,9 @@ print("sending it")
 #wsapp.send_text('["REQ","index3",{"kinds":[9735]}]')
 #wsapp.send_text('["REQ","index3",{"kinds":[9735], "since": 1745086888}]')
 tosend = '["REQ","index3",{"kinds":[9735], "since": '
-tosend += str(round(time.time()-1000))
+tosend += str(round(time.time()-500))
+#tosend += str(round(time.time()-2000))
+#tosend += str(round(time.time()-10000))
 tosend += '}]'
 print(f"sending: {tosend}")
 wsapp.send_text(tosend)

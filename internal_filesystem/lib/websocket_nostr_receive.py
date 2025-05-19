@@ -8,11 +8,12 @@ from nostr.message_type import ClientMessageType
 
 #filters = Filters([Filter(authors=[<a nostr pubkey in hex>], kinds=[EventKind.TEXT_NOTE])])
 #filters = Filters([Filter(authors="04c915daefee38317fa734444acee390a8269fe5810b2241e5e6dd343dfbecc9", kinds=[EventKind.TEXT_NOTE])])
-timestamp = round(time.time()-1000)
+#timestamp = round(time.time()-1000)
+timestamp = round(time.time()-5000)
 #filters = Filters([Filter(authors="04c915daefee38317fa734444acee390a8269fe5810b2241e5e6dd343dfbecc9", kinds=[9735], since=timestamp)])
 filters = Filters([Filter(kinds=[9735], since=timestamp)])
 
-subscription_id = "ihopethisworks2" + str(time.time())
+subscription_id = "test" + str(round(time.time()))
 request = [ClientMessageType.REQUEST, subscription_id]
 json.dumps(request)
 request.extend(filters.to_json_array())
