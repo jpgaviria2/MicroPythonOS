@@ -1,4 +1,4 @@
-import secp256k1
+import secp256k1_embedded
 import hashlib
 from binascii import hexlify
 

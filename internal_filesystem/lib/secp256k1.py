@@ -3,6 +3,7 @@ import hashlib
 import binascii
 
 #from ._libsecp256k1 import ffi, lib
+from secp256k1_compat import ffi, lib  # Use compatibility layer
 
 
 EC_COMPRESSED = lib.SECP256K1_EC_COMPRESSED
