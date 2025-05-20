@@ -71,14 +71,17 @@ def execute_script_new_thread(scriptname, is_file, is_launcher, is_graphical):
         # 16KB allows for 10 threads in the apps, but seems too tight for urequests on unix (desktop) targets
         # 32KB seems better for the camera, but it forced me to lower other app threads from 16 to 12KB
         #_thread.stack_size(24576) # causes camera issue...
-        
+        # NOTE: This doesn't do anything if apps are started in the same thread!
         if "camtest" in scriptname:
-            print("Starting camera with extra stack size!")
+            print("Starting camtest with extra stack size!")
             stack=32*1024
+        elif "appstore"in scriptname:
+            print("Starting appstore with extra stack size!")
+            stack=24*1024
         else:
-            stack=16*1024
+            stack=16*1024 # 16KB doesn't seem to be enough for the AppStore app on desktop
+        print(f"app.py: setting stack size for script to {stack}")
         _thread.stack_size(stack)
-        print(f"app.py set stack size for script to {stack}")
         _thread.start_new_thread(execute_script, (scriptname, is_file, is_launcher, is_graphical))
     except Exception as e:
         print("main.py: execute_script_new_thread(): error starting new thread thread: ", e)
