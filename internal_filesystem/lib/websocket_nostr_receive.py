@@ -37,15 +37,12 @@ def printevents():
     print("relaymanager subscribing")
     relay_manager.add_subscription(subscription_id, filters)
     time.sleep(3) # allow the connections to open
-    
     print("opening connections") # after this, CPU usage goes high and stays there
     relay_manager.open_connections({"cert_reqs": ssl.CERT_NONE}) # NOTE: This disables ssl certificate verification
     time.sleep(10) # allow the connections to open
-    
     print("publishing:")
     relay_manager.publish_message(message)
     time.sleep(10) # allow the messages to send
-    
     print("printing events:")
     #while relay_manager.message_pool.has_events():
     for _ in range(10):
@@ -70,13 +67,15 @@ def printevents():
 # [DEBUG 408724546] Connecting to wss://relay.damus.io
 # [DEBUG 408724547] Using SSL with no certificate verification
 # 24KB is fine
-_thread.stack_size(18*1024)
-_thread.start_new_thread(printevents, ())
-#printevents()
+# somehow, if I run this in a thread, I get: can't create thread" at File "/lib/nostr/relay_manager.py", line 48, in open_connections
+# tried stack sizes from 18KB up to 32KB
+#_thread.stack_size(48*1024)
+#_thread.start_new_thread(printevents, ())
+printevents()
 
 
-import gc
-for _ in range(50):
-    collect = gc.collect()
-    print(f"MEMFREE: {gc.mem_free()}")
-    time.sleep(1)
+#import gc
+#for _ in range(50):
+#    collect = gc.collect()
+#    print(f"MEMFREE: {gc.mem_free()}")
+#    time.sleep(1)
