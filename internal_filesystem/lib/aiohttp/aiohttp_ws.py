@@ -190,7 +190,73 @@ class WebSocketClient:
             self.closed = True
             await self.send(b"", self.CLOSE)
 
+    # this fixes the partial self.reader.read()s by requesting the remaining bytes
     async def _read_frame(self):
+        import micropython
+        import struct
+        print(f"aiohttp_ws.py thread stack used: {micropython.stack_use()}")
+        
+        # Read the 2-byte header
+        header = await self.reader.read(2)
+        if len(header) != 2:  # pragma: no cover
+            print("aiohttp_ws.py got len header not 2")
+            opcode = self.CLOSE
+            payload = b""
+            return opcode, payload
+        
+        # Parse the frame header
+        fin, opcode, has_mask, length = self._parse_frame_header(header)
+        print(f"aiohttp_ws.py _read_frame got {fin} {opcode} {has_mask} {length}")
+        
+        # Handle extended length headers
+        if length == 126:  # Magic number, length header is 2 bytes
+            print("aiohttp_ws.py Magic number, length header is 2 bytes")
+            length_data = await self.reader.read(2)
+            if len(length_data) != 2:
+                print("aiohttp_ws.py failed to read 2-byte length header")
+                return self.CLOSE, b""
+            (length,) = struct.unpack("!H", length_data)
+        elif length == 127:  # Magic number, length header is 8 bytes
+            print("aiohttp_ws.py Magic number, length header is 8 bytes")
+            length_data = await self.reader.read(8)
+            if len(length_data) != 8:
+                print("aiohttp_ws.py failed to read 8-byte length header")
+                return self.CLOSE, b""
+            (length,) = struct.unpack("!Q", length_data)
+        
+        print(f"actual length is {length}")
+        
+        # Read mask if present
+        if has_mask:  # pragma: no cover
+            mask = await self.reader.read(4)
+            if len(mask) != 4:
+                print("aiohttp_ws.py failed to read mask")
+                return self.CLOSE, b""
+            print(f"mask is {mask}")
+        
+        # Read payload in chunks until the full length is received
+        payload = b""
+        remaining_length = length
+        while remaining_length > 0:
+            chunk = await self.reader.read(remaining_length)
+            if not chunk:  # Connection closed or error
+                print(f"aiohttp_ws.py connection closed while reading payload, got {len(payload)}/{length} bytes")
+                return self.CLOSE, b""
+            payload += chunk
+            remaining_length -= len(chunk)
+            print(f"aiohttp_ws.py read chunk of {len(chunk)} bytes, {remaining_length} bytes remaining")
+        
+        print(f"payload is {payload} with actual length {len(payload)}")
+        if len(payload) != length:
+            print(f"\n\n\nwrong payload length: expected {length}, got {len(payload)}\n\n\n")
+        
+        # Unmask payload if necessary
+        if has_mask:  # pragma: no cover
+            payload = bytes(x ^ mask[i % 4] for i, x in enumerate(payload))
+        
+        return opcode, payload
+
+    async def _read_frame_original(self):
         import micropython
         print(f"aiohttp_ws.py thread stack used: {micropython.stack_use()}")
         header = await self.reader.read(2)
@@ -215,7 +281,7 @@ class WebSocketClient:
         payload = await self.reader.read(length)
         print(f"payload is {payload} with actual length {len(payload)}")
         if len(payload) != length:
-            print("wrong payload length, this should be ignored!")
+            print("\n\n\nwrong payload length, this should be ignored!\n\n\n")
         if has_mask:  # pragma: no cover
             payload = bytes(x ^ mask[i % 4] for i, x in enumerate(payload))
         return opcode, payload
