@@ -43,7 +43,8 @@ def printevents():
     time.sleep(3)
     #relay_manager.add_relay("wss://nostr-pub.wellorder.net")
     print("relaymanager adding")
-    relay_manager.add_relay("wss://relay.damus.io")
+    #relay_manager.add_relay("wss://relay.damus.io")
+    relay_manager.add_relay("wss://relay.primal.net")
     time.sleep(3)
     print("relaymanager subscribing")
     relay_manager.add_subscription(subscription_id, filters)
@@ -82,9 +83,10 @@ def printevents():
 # 24KB is fine
 # somehow, if I run this in a thread, I get: can't create thread" at File "/lib/nostr/relay_manager.py", line 48, in open_connections
 # tried stack sizes from 18KB up to 32KB
-#_thread.stack_size(16*1024)
-#_thread.start_new_thread(printevents, ())
-printevents()
+# on unix/desktop, 24KB crashes, 26KB is fine
+_thread.stack_size(26*1024)
+_thread.start_new_thread(printevents, ())
+#printevents()
 
 
 #import gc

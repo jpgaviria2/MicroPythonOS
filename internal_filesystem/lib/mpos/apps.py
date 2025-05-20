@@ -76,13 +76,9 @@ def execute_script_new_thread(scriptname, is_file, is_launcher, is_graphical):
             print("Starting camera with extra stack size!")
             stack=32*1024
         else:
-            print("\n\n\nWHAAAAAAAAAAAAAAAAAA\n\n\n")
-            #stack=16*1024 # somehow, on desktop, this causes a segfault... but the code isn't executed even!!!
-            # [DEBUG 471155623] Connecting to wss://relay.damus.io
-            # [DEBUG 471155623] Using SSL with no certificate verification
-            stack=32*1024
+            stack=16*1024
         _thread.stack_size(stack)
-        print(f"app.py set stack size to {stack}")
+        print(f"app.py set stack size for script to {stack}")
         _thread.start_new_thread(execute_script, (scriptname, is_file, is_launcher, is_graphical))
     except Exception as e:
         print("main.py: execute_script_new_thread(): error starting new thread thread: ", e)
