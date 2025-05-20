@@ -46,7 +46,9 @@ def _run_callback(callback, *args):
 
 async def _process_callbacks_async():
     """Process queued callbacks asynchronously."""
+    import _thread
     while True:
+        print(f"thread {_thread.get_ident()}: _process_callbacks_async")
         while _callback_queue:
             _log_debug("Processing callbacks queue...")
             try:
@@ -64,7 +66,7 @@ async def _process_callbacks_async():
             except IndexError:
                 _log_debug("Callback queue empty")
                 break
-        await asyncio.sleep(0.01)  # Yield to other tasks
+        await asyncio.sleep(0.5)  # Yield to other tasks
 
 class WebSocketApp:
     def __init__(

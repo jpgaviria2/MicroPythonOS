@@ -63,7 +63,8 @@ def printevents():
         print("checking pool....")
         try:
             event_msg = relay_manager.message_pool.get_event()
-            print(f"event_msg: pubkey: {event_msg.event.public_key} created_at {event_msg.event.created_at}")
+            #print(f"main code got event_msg: pubkey: {event_msg.event.public_key} created_at {event_msg.event.created_at}")
+            print(f"main code got event_msg: pubkey: {event_msg.event.public_key} created_at {event_msg.event.created_at} with content '{event_msg.event.content}' and kind {event_msg.event.kind} and tags {event_msg.event.tags}")
         except Exception as e:
             #print(f"pool.get_event() got error: {e}")
             pass
