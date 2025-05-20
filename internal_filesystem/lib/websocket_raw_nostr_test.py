@@ -14,11 +14,11 @@ def on_ping(wsapp, message):
 
 def on_pong(wsapp, message):
     print("Got a pong! No need to respond")
-    
+
 
 def on_error(wsapp, message):
     print(f"Got error: {message}")
-    
+
 
 #wsapp = websocket.WebSocketApp("wss://testnet.binance.vision/ws/btcusdt@trade", on_message=on_message, on_ping=on_ping, on_pong=on_pong, on_error=on_error)
 
@@ -36,8 +36,10 @@ def stress_test_thread():
     wsapp.run_forever()
     print("after run_forever")
 
+
 _thread.stack_size(32*1024)
 _thread.start_new_thread(stress_test_thread, ())
+
 
 time.sleep(5)
 print("sending it")

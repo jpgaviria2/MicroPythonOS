@@ -11,8 +11,13 @@ class Thread:
     def start(self):
         # In MicroPython, _thread.start_new_thread doesn't support daemon threads directly
         # We store the daemon attribute for compatibility, but it may not affect termination
-        #_thread.stack_size(32*1024)
-        _thread.stack_size(12*1024)
+        # 18KB or more causes "can't create thread" when starting relay.queue_worker thread
+        # 16KB still too much
+        # _thread.stack_size(32*1024)
+        #_thread.stack_size(10*1024) # might not be enough
+        stacksize = 12*1024
+        print(f"starting thread with stacksize {stacksize}")
+        _thread.stack_size(stacksize)
         _thread.start_new_thread(self.run, ())
 
     def run(self):

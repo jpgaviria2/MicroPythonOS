@@ -40,9 +40,9 @@ def _run_callback(callback, *args):
     """Add callback to queue for execution."""
     try:
         _callback_queue.append((callback, args))
-        _log_debug(f"Queued callback {callback}, args={args}, queue size: {len(_callback_queue)}")
+        #_log_debug(f"Queued callback {callback}, args={args}, queue size: {len(_callback_queue)}")
     except IndexError:
-        _log_error("Callback queue full, dropping callback")
+        _log_error("ERROR: websocket.py callback queue full, dropping callback")
 
 async def _process_callbacks_async():
     """Process queued callbacks asynchronously."""
@@ -52,9 +52,9 @@ async def _process_callbacks_async():
             try:
                 callback, args = _callback_queue.popleft()
                 if callback is not None:
-                    _log_debug(f"Executing callback {callback} with {len(args)} args")
-                    for i, arg in enumerate(args):
-                        _log_debug(f"Arg {i}: {arg}")
+                    #_log_debug(f"Executing callback {callback} with {len(args)} args")
+                    #for i, arg in enumerate(args):
+                    #    _log_debug(f"Arg {i}: {arg}")
                     try:
                         callback(*args)
                     except Exception as e:
@@ -155,7 +155,7 @@ class WebSocketApp:
         """Start ping task."""
         if self.ping_interval:
             _log_debug(f"NOT Starting ping task with interval {self.ping_interval}s")
-            #asyncio.create_task(self._send_ping_async())
+            asyncio.create_task(self._send_ping_async())
 
     def _stop_ping_thread(self):
         """No-op, ping handled in async task."""
@@ -167,6 +167,7 @@ class WebSocketApp:
             self.last_ping_tm = time.time()
             try:
                 if self.ws and not self.ws.ws.closed:
+                    self.ping_payload = "ping"
                     _log_debug(f"Sending ping with payload: {self.ping_payload}")
                     await self.ws.send_bytes(self.ping_payload.encode() if isinstance(self.ping_payload, str) else self.ping_payload)
                 else:
@@ -293,10 +294,10 @@ class WebSocketApp:
             self.ws = ws
             _log_debug("WebSocket connected, running on_open callback")
             _run_callback(self.on_open, self)
-            self._start_ping_task()
+            #self._start_ping_task() this ping task isn't part of the protocol, pings are sent by the server
 
             async for msg in ws:
-                _log_debug(f"Received msg: type={msg.type}, data={str(msg.data)[:20]}...")
+                _log_debug(f"websocket.py _connect_and_run received msg: type={msg.type}, length: {len(msg.data)} and data={str(msg.data)[:50]}...")
                 if not self.running:
                     _log_debug("Not running, breaking message loop")
                     break

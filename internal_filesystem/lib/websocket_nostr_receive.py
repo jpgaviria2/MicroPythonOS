@@ -10,9 +10,13 @@ from nostr.message_type import ClientMessageType
 
 #filters = Filters([Filter(authors=[<a nostr pubkey in hex>], kinds=[EventKind.TEXT_NOTE])])
 #filters = Filters([Filter(authors="04c915daefee38317fa734444acee390a8269fe5810b2241e5e6dd343dfbecc9", kinds=[EventKind.TEXT_NOTE])])
-timestamp = round(time.time()-10)
+#timestamp = round(time.time()-50)
 #timestamp = round(time.time()) # going for zero events to check memory use
-#timestamp = round(time.time()-100)
+
+# on esp32, it needs this correction:
+#timestamp = time.time() + 946684800 - 1000
+
+timestamp = round(time.time()-100)
 #timestamp = round(time.time()-1000)
 #timestamp = round(time.time()-5000)
 #filters = Filters([Filter(authors="04c915daefee38317fa734444acee390a8269fe5810b2241e5e6dd343dfbecc9", kinds=[9735], since=timestamp)])
