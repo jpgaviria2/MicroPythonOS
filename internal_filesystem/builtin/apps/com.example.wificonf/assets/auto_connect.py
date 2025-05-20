@@ -53,6 +53,17 @@ def auto_connect():
     print("auto_connect: no known networks connected")
     return False
 
+def sync_time():
+    import ntptime
+    print("Synchronizing clock...")
+    # Set the NTP server and sync time
+    ntptime.host = 'pool.ntp.org'  # Set NTP server
+    try:
+        print('Syncing time with', ntptime.host)
+        ntptime.settime()  # Fetch and set time (in UTC)
+        print('Time synced successfully')
+    except Exception as e:
+        print('Failed to sync time:', e)
 
 def attempt_connecting(ssid,password):
     print(f"auto_connect.py attempt_connecting: Attempting to connect to SSID: {ssid}")
@@ -61,6 +72,7 @@ def attempt_connecting(ssid,password):
         for i in range(10):
             if wlan.isconnected():
                 print(f"auto_connect.py attempt_connecting: Connected to {ssid} after {i+1} seconds")
+                sync_time()
                 return True
             elif not wlan.active(): # wificonf app or others might stop the wifi, no point in continuing then
                 print("auto_connect.py attempt_connecting: Someone disabled wifi, bailing out...")

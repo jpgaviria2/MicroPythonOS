@@ -152,11 +152,9 @@ def create_notification_bar():
     # Update time
     import time
     def update_time(timer):
-        ticks = time.ticks_ms()
-        hours = (ticks // 3600000) % 24
-        minutes = (ticks // 60000) % 60
-        seconds = (ticks // 1000) % 60
-        #milliseconds = ticks % 1000
+        hours = time.localtime()[3]
+        minutes = time.localtime()[4]
+        seconds = time.localtime()[5]
         time_label.set_text(f"{hours:02d}:{minutes:02d}:{seconds:02d}")
     
     can_check_network = False
