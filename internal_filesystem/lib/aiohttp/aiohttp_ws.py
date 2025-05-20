@@ -191,6 +191,8 @@ class WebSocketClient:
             await self.send(b"", self.CLOSE)
 
     async def _read_frame(self):
+        import micropython
+        print(f"aiohttp_ws.py thread stack used: {micropython.stack_use()}")
         header = await self.reader.read(2)
         if len(header) != 2:  # pragma: no cover
             # raise OSError(32, "Websocket connection closed")
@@ -211,7 +213,9 @@ class WebSocketClient:
             mask = await self.reader.read(4)
             print(f"mask is {mask}")
         payload = await self.reader.read(length)
-        print(f"payload is {payload}")
+        print(f"payload is {payload} with actual length {len(payload)}")
+        if len(payload) != length:
+            print("wrong payload length, this should be ignored!")
         if has_mask:  # pragma: no cover
             payload = bytes(x ^ mask[i % 4] for i, x in enumerate(payload))
         return opcode, payload

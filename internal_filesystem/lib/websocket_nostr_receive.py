@@ -13,12 +13,15 @@ from nostr.message_type import ClientMessageType
 #timestamp = round(time.time()-50)
 #timestamp = round(time.time()) # going for zero events to check memory use
 
-# on esp32, it needs this correction:
-#timestamp = time.time() + 946684800 - 1000
+import sys
+if sys.platform == "esp32":
+    # on esp32, it needs this correction:
+    timestamp = time.time() + 946684800 - 1000
+else:
+    timestamp = round(time.time()-1000)
+    #timestamp = round(time.time()-1000)
+    #timestamp = round(time.time()-5000)
 
-timestamp = round(time.time()-100)
-#timestamp = round(time.time()-1000)
-#timestamp = round(time.time()-5000)
 #filters = Filters([Filter(authors="04c915daefee38317fa734444acee390a8269fe5810b2241e5e6dd343dfbecc9", kinds=[9735], since=timestamp)])
 filters = Filters([Filter(kinds=[9735], since=timestamp)])
 
@@ -31,6 +34,8 @@ message = json.dumps(request)
 print(f"sending this: {message}")
 
 def printevents():
+    import micropython
+    print(f"at the start, thread stack used: {micropython.stack_use()}")
     print("relaymanager")
     relay_manager = RelayManager()
     time.sleep(3)
@@ -43,21 +48,22 @@ def printevents():
     time.sleep(3) # allow the connections to open
     print("opening connections") # after this, CPU usage goes high and stays there
     relay_manager.open_connections({"cert_reqs": ssl.CERT_NONE}) # NOTE: This disables ssl certificate verification
-    time.sleep(10) # allow the connections to open
+    time.sleep(2) # allow the connections to open
     print("publishing:")
     relay_manager.publish_message(message)
-    time.sleep(10) # allow the messages to send
+    time.sleep(2) # allow the messages to send
     print("printing events:")
     #while relay_manager.message_pool.has_events():
-    for _ in range(10):
+    # allowing 30 seconds for stuff to come in...
+    for _ in range(30):
         time.sleep(1)
         print(".")
         try:
             event_msg = relay_manager.message_pool.get_event()
-            print(event_msg.event.content)
+            print(f"event_msg: pubkey: {event_msg.event.public_key} created_at {event_msg.event.created_at}")
         except Exception as e:
             print(f"pool.get_event() got error: {e}")
-    print("60 seconds passed, closing:")
+    print("30 seconds passed, closing:")
     relay_manager.close_connections()
 
 # new thread so REPL stays available

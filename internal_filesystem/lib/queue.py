@@ -7,6 +7,7 @@ class Queue:
     def __init__(self, maxsize=0):
         self._queue = []
         self.maxsize = maxsize  # 0 means unlimited
+        #self.maxsize = 4  # limit to avoid stack overflow
         self._lock = _thread.allocate_lock() if _thread else None
 
     def put(self, item):
