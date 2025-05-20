@@ -59,12 +59,13 @@ def printevents():
     # allowing 30 seconds for stuff to come in...
     for _ in range(30):
         time.sleep(1)
-        print(".")
+        print("checking pool....")
         try:
             event_msg = relay_manager.message_pool.get_event()
             print(f"event_msg: pubkey: {event_msg.event.public_key} created_at {event_msg.event.created_at}")
         except Exception as e:
-            print(f"pool.get_event() got error: {e}")
+            #print(f"pool.get_event() got error: {e}")
+            pass
     print("30 seconds passed, closing:")
     relay_manager.close_connections()
 

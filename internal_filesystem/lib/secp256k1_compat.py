@@ -252,7 +252,7 @@ class Lib:
         except (ValueError, AttributeError):
             return 0
 
-    def secp256k1_schnorrsig_sign_custom(self, ctx, sig64, msg, msg_len, keypair, aux_rand32):
+    def secp256k1_schnorrsig_sign(self, ctx, sig64, msg, msg_len, keypair, aux_rand32):
         try:
             if isinstance(keypair, FFI.CData):
                 keypair = keypair._data
