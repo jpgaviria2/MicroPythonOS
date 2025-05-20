@@ -267,15 +267,12 @@ class Lib:
             return 0
 
     def secp256k1_schnorrsig_verify(self, ctx, schnorr_sig, msg, msg_len, xonly_pubkey):
-        print("compat.py secp256k1_schnorrsig_verify 1")
         try:
-            print("compat.py secp256k1_schnorrsig_verify 2")
             if isinstance(xonly_pubkey, FFI.CData):
                 xonly_pubkey = xonly_pubkey._data
-            print("compat.py secp256k1_schnorrsig_verify 3")
             return usecp256k1.schnorrsig_verify(schnorr_sig, msg, xonly_pubkey)
         except (ValueError, AttributeError):
-            print("compat.py secp256k1_schnorrsig_verify error")
+            print("WARNING: secp256k1_compat.py secp256k1_schnorrsig_verify error, returning 0")
             return 0
 
     def secp256k1_tagged_sha256(self, ctx, hash32, tag, tag_len, msg, msg_len):

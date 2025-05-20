@@ -7,7 +7,6 @@ class Queue:
     def __init__(self, maxsize=0):
         self._queue = []
         self.maxsize = maxsize  # 0 means unlimited
-        #self.maxsize = 4  # limit to avoid stack overflow
         self._lock = _thread.allocate_lock() if _thread else None
 
     def put(self, item):
@@ -26,12 +25,10 @@ class Queue:
             with self._lock:
                 if not self._queue:
                     raise RuntimeError("Queue is empty")
-                print("queue not empty, returning one object!!!")
                 return self._queue.pop(0)
         else:
             if not self._queue:
                 raise RuntimeError("Queue is empty")
-            print("queue not empty, returning one object!!!")
             return self._queue.pop(0)
 
     def qsize(self):

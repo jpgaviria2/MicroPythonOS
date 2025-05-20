@@ -13,12 +13,14 @@ from nostr.message_type import ClientMessageType
 #timestamp = round(time.time()-50)
 #timestamp = round(time.time()) # going for zero events to check memory use
 
+timetogoback = 100
+
 import sys
 if sys.platform == "esp32":
     # on esp32, it needs this correction:
-    timestamp = time.time() + 946684800 - 1000
+    timestamp = time.time() + 946684800 - timetogoback
 else:
-    timestamp = round(time.time()-1000)
+    timestamp = round(time.time()-timetogoback)
     #timestamp = round(time.time()-1000)
     #timestamp = round(time.time()-5000)
 
