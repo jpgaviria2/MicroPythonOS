@@ -22,3 +22,6 @@ internal_filesystem/SDLPointer_2
 
 # config files etc:
 internal_filesystem/data
+
+# private info
+draft_code/nostr_publish.py

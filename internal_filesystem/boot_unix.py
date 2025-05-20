@@ -6,8 +6,10 @@ import sdl_display
 
 import mpos.ui
 
-TFT_HOR_RES=640
-TFT_VER_RES=480
+#TFT_HOR_RES=640
+#TFT_VER_RES=480
+TFT_HOR_RES=320
+TFT_VER_RES=240
 
 bus = lcd_bus.SDLBus(flags=0)
 

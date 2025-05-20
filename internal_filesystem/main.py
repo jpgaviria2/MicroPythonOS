@@ -14,6 +14,17 @@ except Exception as e:
 
 from mpos import apps
 apps.execute_script("builtin/system/button.py", True, False, False) # Install button handler through IRQ
+
+import sys
+if sys.platform == "esp32":
+    apps.auto_connect()
+else:
+    pass
+    #import _thread
+    #import  time
+
+#_thread.stack_size(32*1024)
+#time.sleep(1)
 apps.auto_connect()
 apps.restart_launcher()
 

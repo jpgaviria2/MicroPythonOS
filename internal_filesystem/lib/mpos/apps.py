@@ -62,6 +62,7 @@ def execute_script(script_source, is_file, is_launcher, is_graphical):
         traceback.print_exception(type(e), e, tb)
 
 # Run the script in a new thread:
+# TODO: check if the script exists here instead of launching a new thread?
 def execute_script_new_thread(scriptname, is_file, is_launcher, is_graphical):
     print(f"main.py: execute_script_new_thread({scriptname},{is_file},{is_launcher})")
     try:
@@ -70,8 +71,18 @@ def execute_script_new_thread(scriptname, is_file, is_launcher, is_graphical):
         # 16KB allows for 10 threads in the apps, but seems too tight for urequests on unix (desktop) targets
         # 32KB seems better for the camera, but it forced me to lower other app threads from 16 to 12KB
         #_thread.stack_size(24576) # causes camera issue...
-        #_thread.stack_size(16384)
-        _thread.stack_size(32*1024)
+        
+        if "camtest" in scriptname:
+            print("Starting camera with extra stack size!")
+            stack=32*1024
+        else:
+            print("\n\n\nWHAAAAAAAAAAAAAAAAAA\n\n\n")
+            #stack=16*1024 # somehow, on desktop, this causes a segfault... but the code isn't executed even!!!
+            # [DEBUG 471155623] Connecting to wss://relay.damus.io
+            # [DEBUG 471155623] Using SSL with no certificate verification
+            stack=32*1024
+        _thread.stack_size(stack)
+        print(f"app.py set stack size to {stack}")
         _thread.start_new_thread(execute_script, (scriptname, is_file, is_launcher, is_graphical))
     except Exception as e:
         print("main.py: execute_script_new_thread(): error starting new thread thread: ", e)
@@ -169,11 +180,11 @@ def auto_connect():
     try:
         stat = uos.stat(custom_auto_connect)
         execute_script_new_thread(custom_auto_connect, True, False, False)
-    except OSError:
+    except Exception as e:
         try:
-            print(f"Couldn't execute {custom_auto_connect}, trying {builtin_auto_connect}...")
+            print(f"Couldn't execute {custom_auto_connect} because exception {e}, trying {builtin_auto_connect}...")
             stat = uos.stat(builtin_auto_connect)
             execute_script_new_thread(builtin_auto_connect, True, False, False)
-        except OSError:
-            print("Couldn't execute {builtin_auto_connect}, continuing...")
+        except Exception as e:
+            print("Couldn't execute {builtin_auto_connect} because exception {e}, continuing...")
     
