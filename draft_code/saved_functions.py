@@ -656,3 +656,11 @@ buf.data[1000000] = 0xFF  # Write way beyond buffer size
 # this works to crash it:
 from machine import mem32
 mem32[0] = 0xDEADBEEF 
+
+
+
+# testing stack size: recursion depth * 256 
+#normally I get ~16KB
+
+import _thread
+_thread.stack_size(0)

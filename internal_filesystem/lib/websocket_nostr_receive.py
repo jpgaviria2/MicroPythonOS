@@ -82,9 +82,9 @@ def printevents():
 # 24KB is fine
 # somehow, if I run this in a thread, I get: can't create thread" at File "/lib/nostr/relay_manager.py", line 48, in open_connections
 # tried stack sizes from 18KB up to 32KB
-#_thread.stack_size(48*1024)
-#_thread.start_new_thread(printevents, ())
-printevents()
+_thread.stack_size(16*1024)
+_thread.start_new_thread(printevents, ())
+#printevents()
 
 
 #import gc

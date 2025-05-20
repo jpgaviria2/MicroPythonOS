@@ -299,7 +299,7 @@ class WebSocketApp:
             async for msg in ws:
                 import micropython
                 print(f"websocket.py _connect_and_run thread stack used: {micropython.stack_use()}")
-                _log_debug(f"websocket.py _connect_and_run received msg: type={msg.type}, length: {len(msg.data)} and data={str(msg.data)[:50]}...")
+                _log_debug(f"websocket.py _connect_and_run received msg: type={msg.type}, length: {len(msg.data)} and data={str(msg.data)[:70]}...")
                 if not self.running:
                     _log_debug("Not running, breaking message loop")
                     break
@@ -325,7 +325,7 @@ class WebSocketApp:
 
     async def _send_async(self, data, opcode):
         """Async send implementation."""
-        _log_debug(f"Sending: opcode={opcode}, data={str(data)[:20]}...")
+        _log_debug(f"Sending: opcode={opcode}, data={str(data)[:90]}...")
         try:
             if opcode == ABNF.OPCODE_TEXT:
                 await self.ws.send_str(data)

@@ -20,6 +20,11 @@
 # Busy loop with yield: 46000 iterations/second => this went up 25%
 # SHA-256 (1KB): 5100 iterations/second
 #
+# When the nostr thing is hanging:
+# Busy loop: 102000 iterations/second
+# Busy loop with yield: 12000 iterations/second => this went down 70%!
+# SHA-256 (1KB): 5100 iterations/second
+#
 # Results on desktop:
 # Busy loop: 15 997 000 => 125x faster
 # Busy loop with yield: 10 575 000 => 229x faster
