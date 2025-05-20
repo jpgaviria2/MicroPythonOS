@@ -48,7 +48,7 @@ print("sending it")
 #wsapp.send_text('["REQ","index3",{"kinds":[9735]}]')
 #wsapp.send_text('["REQ","index3",{"kinds":[9735], "since": 1745086888}]')
 tosend = '["REQ","index3",{"kinds":[9735], "since": '
-tosend += str(round(time.time()-500))
+tosend += str(round(time.time()-100))
 #tosend += str(round(time.time()-2000))
 #tosend += str(round(time.time()-10000))
 tosend += '}]'

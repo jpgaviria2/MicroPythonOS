@@ -10,8 +10,9 @@ from nostr.message_type import ClientMessageType
 
 #filters = Filters([Filter(authors=[<a nostr pubkey in hex>], kinds=[EventKind.TEXT_NOTE])])
 #filters = Filters([Filter(authors="04c915daefee38317fa734444acee390a8269fe5810b2241e5e6dd343dfbecc9", kinds=[EventKind.TEXT_NOTE])])
-#timestamp = round(time.time()-10)
-timestamp = round(time.time()-100)
+timestamp = round(time.time()-10)
+#timestamp = round(time.time()) # going for zero events to check memory use
+#timestamp = round(time.time()-100)
 #timestamp = round(time.time()-1000)
 #timestamp = round(time.time()-5000)
 #filters = Filters([Filter(authors="04c915daefee38317fa734444acee390a8269fe5810b2241e5e6dd343dfbecc9", kinds=[9735], since=timestamp)])
@@ -26,20 +27,24 @@ message = json.dumps(request)
 print(f"sending this: {message}")
 
 def printevents():
-
+    print("relaymanager")
     relay_manager = RelayManager()
+    time.sleep(3)
     #relay_manager.add_relay("wss://nostr-pub.wellorder.net")
+    print("relaymanager adding")
     relay_manager.add_relay("wss://relay.damus.io")
+    time.sleep(3)
+    print("relaymanager subscribing")
     relay_manager.add_subscription(subscription_id, filters)
-    time.sleep(2) # allow the connections to open
+    time.sleep(3) # allow the connections to open
     
     print("opening connections") # after this, CPU usage goes high and stays there
     relay_manager.open_connections({"cert_reqs": ssl.CERT_NONE}) # NOTE: This disables ssl certificate verification
-    time.sleep(2) # allow the connections to open
+    time.sleep(10) # allow the connections to open
     
     print("publishing:")
     relay_manager.publish_message(message)
-    time.sleep(2) # allow the messages to send
+    time.sleep(10) # allow the messages to send
     
     print("printing events:")
     #while relay_manager.message_pool.has_events():
@@ -55,7 +60,23 @@ def printevents():
     relay_manager.close_connections()
 
 # new thread so REPL stays available
-_thread.stack_size(32*1024)
+# 12KB crashes here:
+# opening connections
+# [DEBUG 408724546] Starting run_forever
+# [DEBUG 408724546] Starting _async_main
+# [DEBUG 408724546] Reconnect interval set to 0s
+# [DEBUG 408724546] Started callback processing task
+# [DEBUG 408724546] Main loop iteration: self.running=True
+# [DEBUG 408724546] Connecting to wss://relay.damus.io
+# [DEBUG 408724547] Using SSL with no certificate verification
+# 24KB is fine
+_thread.stack_size(18*1024)
 _thread.start_new_thread(printevents, ())
 #printevents()
 
+
+import gc
+for _ in range(50):
+    collect = gc.collect()
+    print(f"MEMFREE: {gc.mem_free()}")
+    time.sleep(1)
