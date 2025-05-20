@@ -1,6 +1,12 @@
 # Automatically connect to the WiFi, based on the saved networks
 
-import network
+have_network=True
+try:
+    import network
+except Exception as e:
+    have_network=False
+    print("auto_connect.py could not import network, have_network=False")
+
 import ujson
 import os
 import time
@@ -12,21 +18,21 @@ access_points={}
 def load_config():
     print("load_config: Checking for /data directory")
     try:
-        os.stat('/data')
+        os.stat('data')
         print("load_config: /data exists")
     except OSError:
         print("load_config: Creating /data directory")
-        os.mkdir('/data')
+        os.mkdir('data')
     print("load_config: Checking for /data/com.example.wificonf directory")
     try:
-        os.stat('/data/com.example.wificonf')
+        os.stat('data/com.example.wificonf')
         print("load_config: /data/com.example.wificonf exists")
     except OSError:
         print("load_config: Creating /data/com.example.wificonf directory")
-        os.mkdir('/data/com.example.wificonf')
+        os.mkdir('data/com.example.wificonf')
     print("load_config: Loading config from conf.json")
     try:
-        with open('/data/com.example.wificonf/conf.json','r') as f:
+        with open('data/com.example.wificonf/conf.json','r') as f:
             global access_points
             access_points=ujson.load(f)
             print(f"load_config: Loaded access_points: {access_points}")
@@ -85,10 +91,13 @@ def attempt_connecting(ssid,password):
         print(f"auto_connect.py attempt_connecting: Connection error: {e}")
         return False
 
-print("auto_connect.py running...")
+
+print("auto_connect.py running")
 load_config()
 
-if len(access_points):
+if not have_network:
+    print("auto_connect.py: no network module found, exiting...")
+elif len(access_points):
     wlan=network.WLAN(network.STA_IF)
     wlan.active(False) # restart WiFi hardware in case it's in a bad state
     wlan.active(True)
