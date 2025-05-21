@@ -17,6 +17,7 @@ class Thread:
         #_thread.stack_size(10*1024) # might not be enough
         #stacksize = 12*1024
         # small stack sizes 8KB gives segfault directly
+        # 22KB or less is too tight on desktop, 23KB and more is fine
         stacksize = 24*1024
         print(f"starting thread with stacksize {stacksize}")
         _thread.stack_size(stacksize)

@@ -230,9 +230,10 @@ class WebSocketApp:
             self.close()
             return False
         except Exception as e:
-            _log_error(f"run_forever got general exception: {e}")
+            _log_error(f"run_forever's _loop.run_until_complete() got general exception: {e}")
             self.has_errored = True
-            return True
+            self.running = False
+            #return True
         _log_debug("run_forever completed")
         return self.has_errored
 
@@ -250,8 +251,11 @@ class WebSocketApp:
         _log_debug(f"Reconnect interval set to {reconnect}s")
 
         # Start callback processing task
-        callback_task = asyncio.create_task(_process_callbacks_async())
-        _log_debug("Started callback processing task")
+        try:
+            callback_task = asyncio.create_task(_process_callbacks_async())
+            _log_debug("Started callback processing task")
+        except Exception as e:
+            print(f"websocket.py: create_ask(_process_callbacks_async()) had exception {e}")
 
         while self.running:
             _log_debug("Main loop iteration: self.running=True")
