@@ -40,15 +40,12 @@ def printevents():
     print(f"at the start, thread stack used: {micropython.stack_use()}")
     print("relaymanager")
     relay_manager = RelayManager()
-    time.sleep(3)
     #relay_manager.add_relay("wss://nostr-pub.wellorder.net")
     print("relaymanager adding")
-    #relay_manager.add_relay("wss://relay.damus.io")
+    relay_manager.add_relay("wss://relay.damus.io")
     relay_manager.add_relay("wss://relay.primal.net")
-    time.sleep(3)
     print("relaymanager subscribing")
     relay_manager.add_subscription(subscription_id, filters)
-    time.sleep(3) # allow the connections to open
     print("opening connections") # after this, CPU usage goes high and stays there
     relay_manager.open_connections({"cert_reqs": ssl.CERT_NONE}) # NOTE: This disables ssl certificate verification
     time.sleep(2) # allow the connections to open

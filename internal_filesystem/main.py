@@ -23,9 +23,10 @@ if sys.platform == "esp32":
     apps.auto_connect()
 else:
     # On unix/desktop, at least 24KB of stack size is needed in the REPL to make nostr work there
-    import _thread
-    _thread.stack_size(24*1024) # on unix/desktop, at least 24KB is needed for doing nostr connections from the REPL
-    _thread.start_new_thread(dummy, ()) # not just setting the stack_size but actually starting a thread to apply this globally
+    #import _thread
+    #_thread.stack_size(24*1024) # on unix/desktop, at least 24KB is needed for doing nostr connections from the REPL
+    #_thread.start_new_thread(dummy, ()) # not just setting the stack_size but actually starting a thread to apply this globally
+    pass
 
 apps.restart_launcher()
 
