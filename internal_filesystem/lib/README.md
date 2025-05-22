@@ -6,4 +6,5 @@ This /lib folder contains:
 - mip.install("shutil") for shutil.rmtree('/apps/com.example.files') # for rmtree()
 - mip.install("aiohttp") # easy websockets
 - mip.install("base64") # for nostr etc
+- mip.install("collections") # used by aiohttp
 
