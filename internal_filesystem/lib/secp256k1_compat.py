@@ -14,6 +14,18 @@ class CData:
         self._data = data
         self._type = type_str
 
+    def __str__(self):
+        # Return a readable string with type and hex data
+        if isinstance(self._data, (bytes, bytearray)):
+            return f"{self._type}: {self._data.hex()}"
+        elif isinstance(self._data, list):
+            return f"{self._type}: {bytes(self._data).hex()}"
+        return f"{self._type}: {self._data}"
+
+    def __repr__(self):
+        # More detailed representation, similar to __str__ but with memory address
+        return f"<CData {self._type} at {hex(id(self))}, data={self._data.hex() if isinstance(self._data, (bytes, bytearray)) else self._data}>"
+
 # Dummy ffi class to mimic cffi
 class FFI:
     NULL = None  # Mimic cffi's NULL pointer
@@ -430,7 +442,8 @@ class Lib:
                 return 0
             output[:32] = result
             return 1
-        except ValueError:
+        except ValueError as e:
+            print(f"secp256k1_compat.py secp256k1_ecdh got ValueError: {e}")
             return 0
 
 # Instantiate ffi and lib
