@@ -19,9 +19,9 @@ class PKCS7PaddingContext:
         if len(self._buffer) >= block_size:
             to_return = self._buffer[:len(self._buffer) - (len(self._buffer) % block_size)]
             self._buffer = self._buffer[len(to_return):]
-            print(f"PKCS7PaddingContext.update returning: {to_return.hex()}")
+            #print(f"PKCS7PaddingContext.update returning: {to_return.hex()}")
             return to_return
-        print(f"PKCS7PaddingContext.update buffer: {self._buffer.hex()}")
+        #print(f"PKCS7PaddingContext.update buffer: {self._buffer.hex()}")
         return b''
 
     def finalize(self):
@@ -29,7 +29,7 @@ class PKCS7PaddingContext:
         padding = bytes([pad_length] * pad_length)
         self._buffer.extend(padding)
         result = bytes(self._buffer)
-        print(f"PKCS7PaddingContext.finalize pad_length: {pad_length}, padding: {padding.hex()}, result: {result.hex()}")
+        #print(f"PKCS7PaddingContext.finalize pad_length: {pad_length}, padding: {padding.hex()}, result: {result.hex()}")
         self._buffer = bytearray()
         return result
 
@@ -41,30 +41,30 @@ class PKCS7UnpaddingContext:
 
     def update(self, data):
         self._buffer.extend(data)
-        print(f"unpadder self._buffer is {self._buffer.hex()}")
+        #print(f"unpadder self._buffer is {self._buffer.hex()}")
         block_size = self.block_size
         # Return all complete blocks except the last one
         if len(self._buffer) >= block_size * 2:  # At least two blocks
             to_return = self._buffer[:len(self._buffer) - block_size]
             self._buffer = self._buffer[len(to_return):]
-            print(f"unpadder self._buffer is now {self._buffer.hex()} and returning {to_return.hex()}")
+            #print(f"unpadder self._buffer is now {self._buffer.hex()} and returning {to_return.hex()}")
             return to_return
-        print(f"unpadder self._buffer retained: {self._buffer.hex()}")
+        #print(f"unpadder self._buffer retained: {self._buffer.hex()}")
         return b''
 
     def finalize(self):
-        print(f"unpadder finalize self._buffer: {self._buffer.hex()}")
+        #print(f"unpadder finalize self._buffer: {self._buffer.hex()}")
         if not self._buffer or len(self._buffer) % self.block_size != 0:
             raise ValueError(f"Invalid padding A: buffer {self._buffer.hex()}, length {len(self._buffer)}, remainder {len(self._buffer) % self.block_size}")
         pad_length = self._buffer[-1]
-        print(f"unpadder finalize pad_length: {pad_length}, last {pad_length} bytes: {self._buffer[-pad_length:].hex()}")
+        #print(f"unpadder finalize pad_length: {pad_length}, last {pad_length} bytes: {self._buffer[-pad_length:].hex()}")
         if pad_length > self.block_size or pad_length == 0:
             raise ValueError(f"Invalid padding B: pad_length {pad_length}")
         if self._buffer[-pad_length:] != bytes([pad_length] * pad_length):
             raise ValueError(f"Invalid padding C: expected {pad_length} bytes of {pad_length:02x}, got {self._buffer[-pad_length:].hex()}")
         result = bytes(self._buffer[:-pad_length])
         self._buffer = bytearray()
-        print(f"unpadder finalize result: {result.hex()}")
+        #print(f"unpadder finalize result: {result.hex()}")
         return result
 
 class PKCS7:
