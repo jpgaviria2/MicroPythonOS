@@ -52,8 +52,9 @@ def dataclass(cls):
         # Positional arguments
         init_fields = [name for name, f in fields.items() if f.init]
         for i, value in enumerate(args):
+            print(f"dataclasses.py: {i} {value}")
             if i >= len(init_fields):
-                raise TypeError(f"Too many positional arguments")
+                raise TypeError(f"dataclasses.py: too many positional arguments")
             setattr(self, init_fields[i], value)
 
         # Keyword arguments, defaults, and default_factory
