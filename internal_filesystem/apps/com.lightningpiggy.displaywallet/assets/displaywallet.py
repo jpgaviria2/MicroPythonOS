@@ -8,7 +8,6 @@ appscreen = lv.screen_active()
 settings_screen = None
 
 
-
 # Settings screen implementation
 class SettingsScreen(lv.obj):
     def __init__(self):
@@ -20,9 +19,9 @@ class SettingsScreen(lv.obj):
             {"title": "LNBits Read/Invoice Key", "key": "lnbits_readkey", "value_label": None},
             {"title": "NWC URL", "key": "nwc_url", "value_label": None},
         ]
-        self.keyboard = None  # Global reference for keyboard
-        self.textarea = None  # Global reference for textarea
-        self.msgbox = None    # Global reference for msgbox
+        self.keyboard = None
+        self.textarea = None
+        self.msgbox = None
         self.create_ui()
 
     def create_ui(self):
@@ -39,7 +38,7 @@ class SettingsScreen(lv.obj):
             setting_cont.set_width(lv.pct(100))
             setting_cont.set_height(lv.SIZE_CONTENT)
             setting_cont.set_style_border_width(1, 0)
-            setting_cont.set_style_border_color(lv.color_hex(0xCCCCCC), 0)
+            #setting_cont.set_style_border_color(lv.color_hex(0xCCCCCC), 0)
             setting_cont.set_style_border_side(lv.BORDER_SIDE.BOTTOM, 0)
             setting_cont.set_style_pad_all(8, 0)
             setting_cont.add_flag(lv.obj.FLAG.CLICKABLE)
@@ -48,8 +47,8 @@ class SettingsScreen(lv.obj):
             title = lv.label(setting_cont)
             title.set_text(setting["title"])
             title.set_style_text_font(lv.font_montserrat_16, 0)
-            title.set_style_text_color(lv.color_hex(0x000000), 0)
-            title.set_style_text_decor(lv.TEXT_DECOR.NONE, 0)
+            #title.set_style_text_color(lv.color_hex(0x000000), 0)
+            #title.set_style_text_decor(lv.TEXT_DECOR.NONE, 0)
             title.set_pos(0, 0)
 
             # Value label (smaller, below title)
@@ -75,17 +74,17 @@ class SettingsScreen(lv.obj):
         #self.keyboard.add_event_cb(self.keyboard_value_changed_cb,lv.EVENT.VALUE_CHANGED,None)
 
 
-    def hide_keyboard(self):
+    def hide_keyboard(self, event=None):
         print("hide_keyboard: hiding keyboard")
         self.keyboard.add_flag(lv.obj.FLAG.HIDDEN)
 
-    def show_keyboard(self):
+    def show_keyboard(self, event):
         # Show keyboard:
         print("showing keyboard")
         self.keyboard.remove_flag(lv.obj.FLAG.HIDDEN)
         self.keyboard.set_textarea(self.textarea)
 
-    def keyboard_cb(self, event):
+    def keyboard_cb(self, event=None):
         print("keyboard_cb: Keyboard event triggered")
         code=event.get_code()
         if code==lv.EVENT.READY or code==lv.EVENT.CANCEL:
@@ -126,10 +125,9 @@ class SettingsScreen(lv.obj):
         self.textarea.set_width(lv.pct(100))
         self.textarea.set_height(lv.SIZE_CONTENT)
         self.textarea.set_text(self.prefs.get_string(setting["key"], ""))
-        #self.textarea.add_event_cb(self.show_keyboard, lv.EVENT.CLICKED, None)
-        #self.textarea.add_event_cb(self.show_keyboard, lv.EVENT.FOCUSED, None)
-        #self.textarea.add_event_cb(self.hide_keyboard, lv.EVENT.DEFOCUSED, None)
-        self.textarea.add_event_cb(self.textarea_cb, lv.EVENT.ALL, None)
+        self.textarea.add_event_cb(self.show_keyboard, lv.EVENT.CLICKED, None)
+        self.textarea.add_event_cb(self.show_keyboard, lv.EVENT.FOCUSED, None)
+        self.textarea.add_event_cb(self.hide_keyboard, lv.EVENT.DEFOCUSED, None)
 
         # Button container
         btn_cont = lv.obj(content)
@@ -156,15 +154,6 @@ class SettingsScreen(lv.obj):
         cancel_label.set_text("Cancel")
         cancel_label.center()
         cancel_btn.add_event_cb(self.close_popup, lv.EVENT.CLICKED, None)
-
-    def textarea_cb(self, event):
-        code = event.get_code()
-        event_name = mpos.ui.get_event_name(code)
-        print(f"textarea cb code {code} has event_name {event_name}")
-        if code == lv.EVENT.CLICKED or code == lv.EVENT.FOCUSED:
-            self.show_keyboard()
-        elif code == lv.EVENT.DEFOCUSED:
-            self.hide_keyboard()
 
     def save_setting(self, setting):
         if self.textarea:
@@ -216,8 +205,9 @@ def janitor_cb(timer):
     if lv.screen_active() != appscreen and lv.screen_active() != settings_screen:
         print("app backgrounded, cleaning up...")
         janitor.delete()
-        # No cleanups to do, but in a real app, you might stop timers, deinitialize hardware devices you used, close network connections, etc.
-
+        if settings_screen:
+            settings_screen.delete()
+        
 janitor = lv.timer_create(janitor_cb, 1000, None)
 
 build_main_ui()
