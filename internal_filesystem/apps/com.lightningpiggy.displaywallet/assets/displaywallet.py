@@ -1,11 +1,11 @@
 import time
 
 import mpos.config
+import mpos.ui
 
 # screens:
 appscreen = lv.screen_active()
 settings_screen = None
-
 
 
 
@@ -66,12 +66,41 @@ class SettingsScreen(lv.obj):
             )
 
         # Initialize keyboard (hidden initially)
-        self.keyboard = lv.keyboard(lv.screen_active())
+        self.keyboard = lv.keyboard(lv.layer_sys())
         self.keyboard.set_size(lv.pct(100), lv.pct(40))
         self.keyboard.align(lv.ALIGN.BOTTOM_MID, 0, 0)
         self.keyboard.add_flag(lv.obj.FLAG.HIDDEN)
-        
+        self.keyboard.add_event_cb(self.keyboard_cb,lv.EVENT.READY,None)
+        self.keyboard.add_event_cb(self.keyboard_cb,lv.EVENT.CANCEL,None)
+        #self.keyboard.add_event_cb(self.keyboard_value_changed_cb,lv.EVENT.VALUE_CHANGED,None)
 
+
+    def hide_keyboard(self):
+        print("hide_keyboard: hiding keyboard")
+        self.keyboard.add_flag(lv.obj.FLAG.HIDDEN)
+
+    def show_keyboard(self):
+        # Show keyboard:
+        print("showing keyboard")
+        self.keyboard.remove_flag(lv.obj.FLAG.HIDDEN)
+        self.keyboard.set_textarea(self.textarea)
+
+    def keyboard_cb(self, event):
+        print("keyboard_cb: Keyboard event triggered")
+        code=event.get_code()
+        if code==lv.EVENT.READY or code==lv.EVENT.CANCEL:
+            print("keyboard_cb: READY or CANCEL or RETURN clicked, hiding keyboard")
+            self.hide_keyboard()
+    
+    def keyboard_value_changed_cb_unused(self, event):
+        print("keyboard value changed!")
+        print(f"event: code={event.get_code()}, target={event.get_target()}, user_data={event.get_user_data()}, param={event.get_param()}") # event: code=32, target=<Blob>, user_data=<Blob>, param=<Blob>
+        button = self.keyboard.get_selected_button()
+        text = self.keyboard.get_button_text(button)
+        #print(f"button {button} and text {text}")
+        if text == lv.SYMBOL.NEW_LINE:
+            print("Newline key pressed, hiding keyboard...")
+            self.hide_keyboard()
 
     def open_edit_popup(self, setting):
         # Close existing msgbox and keyboard if open
@@ -82,7 +111,7 @@ class SettingsScreen(lv.obj):
             self.keyboard.add_flag(lv.obj.FLAG.HIDDEN)
 
         # Create msgbox
-        self.msgbox = lv.msgbox(self)
+        self.msgbox = lv.msgbox()
         self.msgbox.add_title(setting["title"])
         self.msgbox.set_width(lv.pct(80))
         self.msgbox.center()
@@ -97,8 +126,10 @@ class SettingsScreen(lv.obj):
         self.textarea.set_width(lv.pct(100))
         self.textarea.set_height(lv.SIZE_CONTENT)
         self.textarea.set_text(self.prefs.get_string(setting["key"], ""))
-        self.textarea.add_event_cb(self.textarea_cb, lv.EVENT.FOCUSED, None)
-        self.textarea.add_event_cb(self.textarea_cb, lv.EVENT.DEFOCUSED, None)
+        #self.textarea.add_event_cb(self.show_keyboard, lv.EVENT.CLICKED, None)
+        #self.textarea.add_event_cb(self.show_keyboard, lv.EVENT.FOCUSED, None)
+        #self.textarea.add_event_cb(self.hide_keyboard, lv.EVENT.DEFOCUSED, None)
+        self.textarea.add_event_cb(self.textarea_cb, lv.EVENT.ALL, None)
 
         # Button container
         btn_cont = lv.obj(content)
@@ -128,11 +159,12 @@ class SettingsScreen(lv.obj):
 
     def textarea_cb(self, event):
         code = event.get_code()
-        if code == lv.EVENT.FOCUSED:
-            self.keyboard.remove_flag(lv.obj.FLAG.HIDDEN)
-            self.keyboard.set_textarea(self.textarea)
+        event_name = mpos.ui.get_event_name(code)
+        print(f"textarea cb code {code} has event_name {event_name}")
+        if code == lv.EVENT.CLICKED or code == lv.EVENT.FOCUSED:
+            self.show_keyboard()
         elif code == lv.EVENT.DEFOCUSED:
-            self.keyboard.add_flag(lv.obj.FLAG.HIDDEN)
+            self.hide_keyboard()
 
     def save_setting(self, setting):
         if self.textarea:
@@ -145,10 +177,10 @@ class SettingsScreen(lv.obj):
 
     def close_popup(self, event):
         if self.msgbox:
-            self.msgbox.delete()
+            self.msgbox.close()
             self.msgbox = None
         if self.keyboard:
-            self.keyboard.add_flag(lv.obj.FLAG.HIDDEN)
+            self.hide_keyboard()
 
 
 
