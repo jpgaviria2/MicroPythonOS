@@ -48,7 +48,7 @@ async def _process_callbacks_async():
     """Process queued callbacks asynchronously."""
     import _thread
     while True:
-        print(f"thread {_thread.get_ident()}: _process_callbacks_async")
+        #print(f"thread {_thread.get_ident()}: _process_callbacks_async")
         while _callback_queue:
             _log_debug("Processing callbacks queue...")
             try:
