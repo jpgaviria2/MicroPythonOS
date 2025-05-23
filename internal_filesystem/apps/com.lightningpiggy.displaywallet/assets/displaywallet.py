@@ -9,9 +9,9 @@ settings_screen = None
 
 
 # Settings screen implementation
-class SettingsScreen(lv.obj):
+class SettingsScreen():
     def __init__(self):
-        super().__init__(None)
+        #super().__init__(None)
         self.prefs = mpos.config.SharedPreferences("com.lightningpiggy.displaywallet")
         self.settings = [
             {"title": "Wallet Type", "key": "wallet_type", "value_label": None},
@@ -22,19 +22,20 @@ class SettingsScreen(lv.obj):
         self.keyboard = None
         self.textarea = None
         self.msgbox = None
-        self.create_ui()
+        self.screen = self.create_ui()
 
     def create_ui(self):
+        screen = lv.obj()
         print("creating ui...")
-        self.set_size(lv.pct(100), lv.pct(100))
-        self.set_style_pad_all(10, 0)
-        self.set_flex_flow(lv.FLEX_FLOW.COLUMN)
-        self.set_style_border_width(0, 0)
+        screen.set_size(lv.pct(100), lv.pct(100))
+        screen.set_style_pad_all(10, 0)
+        screen.set_flex_flow(lv.FLEX_FLOW.COLUMN)
+        screen.set_style_border_width(0, 0)
         
         # Create settings entries
         for setting in self.settings:
             # Container for each setting
-            setting_cont = lv.obj(self)
+            setting_cont = lv.obj(screen)
             setting_cont.set_width(lv.pct(100))
             setting_cont.set_height(lv.SIZE_CONTENT)
             setting_cont.set_style_border_width(1, 0)
@@ -72,7 +73,7 @@ class SettingsScreen(lv.obj):
         self.keyboard.add_event_cb(self.keyboard_cb,lv.EVENT.READY,None)
         self.keyboard.add_event_cb(self.keyboard_cb,lv.EVENT.CANCEL,None)
         #self.keyboard.add_event_cb(self.keyboard_value_changed_cb,lv.EVENT.VALUE_CHANGED,None)
-
+        return screen
 
     def hide_keyboard(self, event=None):
         print("hide_keyboard: hiding keyboard")
@@ -176,11 +177,13 @@ class SettingsScreen(lv.obj):
 def settings_button_tap(event):
     global settings_screen
     if not settings_screen:
-        settings_screen = SettingsScreen()
+        settings_screen = SettingsScreen().screen
     lv.screen_load(settings_screen)
+    #mpos.ui.startActivity(settings_screen)
 
 def build_main_ui():
     appscreen.clean()
+    appscreen.set_style_pad_all(10, 0)
     balance_label = lv.label(appscreen)
     balance_label.align(lv.ALIGN.TOP_LEFT, 0, 0)
     balance_label.set_style_text_font(lv.font_montserrat_20, 0)
