@@ -104,7 +104,10 @@ class SettingsScreen():
     def open_edit_popup(self, setting):
         # Close existing msgbox and keyboard if open
         if self.msgbox:
-            self.msgbox.delete()
+            try:
+                self.msgbox.delete()
+            except Exception as e:
+                print(f"Warning: could not delete msgbox: {e}")
             self.msgbox = None
         if self.keyboard:
             self.keyboard.add_flag(lv.obj.FLAG.HIDDEN)

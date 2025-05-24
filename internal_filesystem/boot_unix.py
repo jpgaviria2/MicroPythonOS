@@ -69,6 +69,12 @@ def swipe_read_cb(indev_drv, data):
                 mpos.ui.open_drawer()
             start_y = None  # Reset Y after swipe
             start_x = None  # Reset X to avoid conflicts
+    else:
+        # Mouse/touch released
+        if start_y is not None and y < start_y - 50:  # Threshold for swipe-up
+            print("Swipe Up Detected")
+            mpos.ui.close_drawer()
+
         # Check for rightward swipe from left edge (x increased significantly)
         if start_x is not None and x > start_x + 50:  # Threshold for swipe right
             print("Long swipe right")
@@ -77,11 +83,6 @@ def swipe_read_cb(indev_drv, data):
                 mpos.ui.back_screen()  # Call custom method for left menu
             start_y = None  # Reset Y after swipe
             start_x = None  # Reset X after swipe
-    else:
-        # Mouse/touch released
-        if start_y is not None and y < start_y - 50:  # Threshold for swipe-up
-            print("Swipe Up Detected")
-            mpos.ui.close_drawer()
         
         # Reset both coordinates on release
         start_y = None
