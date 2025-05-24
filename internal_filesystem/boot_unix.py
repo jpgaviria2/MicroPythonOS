@@ -40,11 +40,22 @@ start_x = None  # Store the starting X-coordinate for left-edge swipe
 
 def swipe_read_cb(indev_drv, data):
     global start_y, start_x
+    global indev
+    global mouse
 
     pressed = mouse.get_state()  # Get mouse/touch pressed state
     point = lv.point_t()
     mouse.get_point(point)  # Get current coordinates
+    #indev.get_point(point) # Always returns 0,0
     x, y = point.x, point.y
+    
+    #indev.stop_processing()
+    #data.state = lv.INDEV_STATE.RELEASED  # Ensure release state
+    #data.point.x = -1  # Move point off-screen to prevent widget interaction
+    #data.point.y = -1
+    #indev.stop_processing() # doesn't work on unix
+    #return
+    #mouse.stop_processing()
 
     if pressed and start_y is None and start_x is None:
         # Mouse/touch pressed (start of potential swipe)

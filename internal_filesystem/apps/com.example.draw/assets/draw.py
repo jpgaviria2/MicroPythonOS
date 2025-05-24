@@ -1,7 +1,5 @@
 import mpos.ui
 
-appscreen = lv.screen_active()
-
 import lvgl as lv
 
 indev_error_x = 160
@@ -45,6 +43,7 @@ def touch_cb(event):
     event_code=event.get_code()
     # Ignore:
     # =======
+    # 19: HIT_TEST
     # COVER_CHECK
     # DRAW_MAIN
     # DRAW_MAIN_BEGIN
@@ -53,10 +52,9 @@ def touch_cb(event):
     # DRAW_POST_BEGIN
     # DRAW_POST_END
     # GET_SELF_SIZE
-    if event_code not in [23,25,26,27,28,29,30,49]:
+    if event_code not in [19,23,25,26,27,28,29,30,49]:
         name = mpos.ui.get_event_name(event_code)
-        #x, y = get_xy()
-        #print(f"lv_event_t: code={event_code}, name={name}, x={x}, y={y}") # target={event.get_target()}, user_data={event.get_user_data()}, param={event.get_param()}
+        #print(f"lv_event_t: code={event_code}, name={name}") # target={event.get_target()}, user_data={event.get_user_data()}, param={event.get_param()}
         if event_code == lv.EVENT.PRESSING: # this is probably enough
         #if event_code in [lv.EVENT.PRESSED, lv.EVENT.PRESSING, lv.EVENT.LONG_PRESSED, lv.EVENT.LONG_PRESSED_REPEAT]:
             x, y = get_xy()
@@ -81,7 +79,8 @@ def touch_cb(event):
                             canvas.set_px(x + dx, y + dy, DARKPINK, lv.OPA.COVER)
 
 
-canvas = lv.canvas(appscreen)
+main_screen = lv.obj()
+canvas = lv.canvas(main_screen)
 
 disp = lv.display_get_default()
 hor_res = disp.get_horizontal_resolution()
@@ -97,3 +96,4 @@ canvas.fill_bg(lv.color_white(), lv.OPA.COVER)
 canvas.add_flag(lv.obj.FLAG.CLICKABLE)
 canvas.add_event_cb(touch_cb, lv.EVENT.ALL, None)
 
+mpos.ui.load_screen(main_screen)

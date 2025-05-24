@@ -428,6 +428,10 @@ def clean_top_layer():
 
 screen_stack = []
 
+def empty_screen_stack():
+    global screen_stack
+    screen_stack.clear()
+
 def load_screen(screen):
     global screen_stack
     topscreen = None
@@ -447,7 +451,7 @@ def back_screen():
         #print("Adding notification bar and drawer to top layer")
         #mpos.ui.create_notification_bar()
         #mpos.ui.create_drawer()
-        close_top_layer_msgboxes()
+        close_top_layer_msgboxes() # would be nicer to "cancel" all input events
         
         print("Loading previous screen")
         screen_stack.pop()  # Remove current screen

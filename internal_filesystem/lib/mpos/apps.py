@@ -32,7 +32,7 @@ def execute_script(script_source, is_file, is_launcher, is_graphical):
                 prevscreen = lv.screen_active()
                 newscreen=lv.obj()
                 newscreen.set_size(lv.pct(100),lv.pct(100))
-            lv.screen_load(newscreen)
+            mpos.ui.load_screen(newscreen)
             script_globals = {
                 'lv': lv,
                 'th': mpos.ui.th,
@@ -111,6 +111,7 @@ def start_app(app_dir, is_launcher=False):
         mpos.ui.close_bar()
 
 def restart_launcher():
+    mpos.ui.empty_screen_stack()
     # No need to stop the other launcher first, because it exits after building the screen
     start_app_by_name("com.example.launcher", True)
 
