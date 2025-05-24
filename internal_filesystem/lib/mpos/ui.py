@@ -16,7 +16,7 @@ drawer=None
 rootscreen = None
 
 drawer_open=False
-bar_open=True
+bar_open=False
 
 hide_bar_animation = None
 show_bar_animation = None
@@ -119,7 +119,7 @@ def create_notification_bar():
     # Create notification bar
     notification_bar = lv.obj(lv.layer_top())
     notification_bar.set_size(lv.pct(100), NOTIFICATION_BAR_HEIGHT)
-    notification_bar.set_pos(0, 0)
+    notification_bar.set_pos(0, show_bar_animation_start_value)
     notification_bar.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
     notification_bar.set_scroll_dir(lv.DIR.VER)
     notification_bar.set_style_border_width(0, 0)
