@@ -61,7 +61,7 @@ def swipe_read_cb(indev_drv, data):
         # Mouse/touch pressed (start of potential swipe)
         start_y = y  # Store Y for vertical swipe detection
         start_x = x  # Store X for horizontal swipe detection
-        print(f"Mouse press at X={start_x}, Y={start_y}")
+        #print(f"Mouse press at X={start_x}, Y={start_y}")
         
         # Check if press is in notification bar (for swipe down)
         if y <= mpos.ui.NOTIFICATION_BAR_HEIGHT:

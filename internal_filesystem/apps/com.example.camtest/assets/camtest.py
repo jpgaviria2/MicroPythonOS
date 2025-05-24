@@ -7,6 +7,12 @@
 
 import time
 
+import mpos.apps
+import mpos.ui
+
+# screens:
+main_screen = None
+
 keepliveqrdecoding = False
 width = 240
 height = 240
@@ -72,7 +78,7 @@ def qrdecode_one():
 
 def close_button_click(e):
     print("Close button clicked")
-    show_launcher()
+    mpos.ui.back_screen()
 
 
 def snap_button_click(e):
@@ -142,20 +148,20 @@ def try_capture(event):
 
 
 def build_ui():
-    global image, image_dsc,qr_label, status_label, cam, use_webcam, qr_button, snap_button, status_label_cont
-    cont = lv.obj(appscreen)
-    cont.set_style_pad_all(0, 0)
-    cont.set_style_border_width(0, 0)
-    cont.set_size(lv.pct(100), lv.pct(100))
-    cont.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)    
-    close_button = lv.button(cont)
+    global image, image_dsc,qr_label, status_label, cam, use_webcam, qr_button, snap_button, status_label_cont, main_screen
+    main_screen = lv.obj()
+    main_screen.set_style_pad_all(0, 0)
+    main_screen.set_style_border_width(0, 0)
+    main_screen.set_size(lv.pct(100), lv.pct(100))
+    main_screen.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
+    close_button = lv.button(main_screen)
     close_button.set_size(60,60)
     close_button.align(lv.ALIGN.TOP_RIGHT, 0, 0)
     close_label = lv.label(close_button)
     close_label.set_text(lv.SYMBOL.CLOSE)
     close_label.center()
     close_button.add_event_cb(close_button_click,lv.EVENT.CLICKED,None)
-    snap_button = lv.button(cont)
+    snap_button = lv.button(main_screen)
     snap_button.set_size(60, 60)
     snap_button.align(lv.ALIGN.RIGHT_MID, 0, 0)
     snap_button.add_flag(lv.obj.FLAG.HIDDEN)
@@ -163,7 +169,7 @@ def build_ui():
     snap_label.set_text(lv.SYMBOL.OK)
     snap_label.center()
     snap_button.add_event_cb(snap_button_click,lv.EVENT.CLICKED,None)
-    qr_button = lv.button(cont)
+    qr_button = lv.button(main_screen)
     qr_button.set_size(60, 60)
     qr_button.add_flag(lv.obj.FLAG.HIDDEN)
     qr_button.align(lv.ALIGN.BOTTOM_RIGHT, 0, 0)
@@ -172,7 +178,7 @@ def build_ui():
     qr_label.center()
     qr_button.add_event_cb(qr_button_click,lv.EVENT.CLICKED,None)
     # Initialize LVGL image widget
-    image = lv.image(cont)
+    image = lv.image(main_screen)
     image.align(lv.ALIGN.LEFT_MID, 0, 0)
     # Create image descriptor once
     image_dsc = lv.image_dsc_t({
@@ -188,7 +194,7 @@ def build_ui():
         'data': None # Will be updated per frame
     })
     image.set_src(image_dsc)
-    status_label_cont = lv.obj(appscreen)
+    status_label_cont = lv.obj(main_screen)
     status_label_cont.set_size(lv.pct(66),lv.pct(60))
     status_label_cont.align(lv.ALIGN.LEFT_MID, lv.pct(5), 0)
     status_label_cont.set_style_bg_color(lv.color_white(), 0)
@@ -200,6 +206,7 @@ def build_ui():
     status_label.set_style_text_color(lv.color_white(), 0)
     status_label.set_width(lv.pct(100))
     status_label.center()
+    mpos.ui.load_screen(main_screen)
 
 
 def init_cam():
@@ -235,7 +242,7 @@ def init_cam():
 
 
 def check_running(timer):
-    if lv.screen_active() != appscreen:
+    if lv.screen_active() != main_screen:
         print("camtest.py backgrounded, cleaning up...")
         check_running_timer.delete()
         if capture_timer:
@@ -248,7 +255,6 @@ def check_running(timer):
 
 
 
-appscreen = lv.screen_active()
 build_ui()
 
 cam = init_cam()

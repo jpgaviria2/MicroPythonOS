@@ -9,17 +9,19 @@
 # All icons took: 1250ms
 # Most of this time is actually spent reading and parsing manifests.
 
-appscreen = lv.screen_active()
-
 import uos
 import lvgl as lv
+import mpos.apps
+import mpos.ui
 
 # Create a container for the grid
-cont = lv.obj(appscreen)
-cont.set_pos(0, NOTIFICATION_BAR_HEIGHT) # leave some margin for the notification bar
+main_screen = lv.obj()
+cont = lv.obj(main_screen)
+cont.set_pos(0, mpos.ui.NOTIFICATION_BAR_HEIGHT) # leave some margin for the notification bar
 cont.set_size(lv.pct(100), lv.pct(100))
 cont.set_style_pad_all(10, 0)
 cont.set_flex_flow(lv.FLEX_FLOW.ROW_WRAP)
+mpos.ui.load_screen(main_screen)
 
 # Grid parameters
 icon_size = 64  # Adjust based on your display
@@ -56,7 +58,7 @@ for dir_path in [apps_dir, apps_dir_builtin]:
                     base_name = d
                     if base_name not in seen_base_names:  # Avoid duplicates
                         seen_base_names.add(base_name)
-                        app = parse_manifest(f"{full_path}/META-INF/MANIFEST.JSON")
+                        app = mpos.apps.parse_manifest(f"{full_path}/META-INF/MANIFEST.JSON")
                         if app.category != "launcher":  # Skip launchers
                             app_list.append((app.name, full_path))
     except OSError:
@@ -94,7 +96,7 @@ for app_name, app_dir_fullpath in app_list:
     label.set_width(iconcont_width)
     label.align(lv.ALIGN.BOTTOM_MID, 0, 0)
     label.set_style_text_align(lv.TEXT_ALIGN.CENTER, 0)
-    app_cont.add_event_cb(lambda e, path=app_dir_fullpath: start_app(path), lv.EVENT.CLICKED, None)
+    app_cont.add_event_cb(lambda e, path=app_dir_fullpath: mpos.apps.start_app(path), lv.EVENT.CLICKED, None)
 
 end = time.ticks_ms()
 print(f"Displaying all icons took: {end-start}ms")

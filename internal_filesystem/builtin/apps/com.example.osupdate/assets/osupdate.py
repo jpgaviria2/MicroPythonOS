@@ -1,11 +1,13 @@
-appscreen = lv.screen_active()
-appscreen.clean()
-
 import lvgl as lv
 import requests
 import ujson
 import time
 import _thread
+
+import mpos.info
+import mpos.ui
+
+main_screen = None
 
 status_label=None
 install_button=None
@@ -34,7 +36,7 @@ def compare_versions(ver1: str, ver2: str) -> bool:
 
 # Custom OTA update with LVGL progress
 def update_with_lvgl(url):
-    global install_button, status_label
+    global install_button, status_label, main_screen
     install_button.add_flag(lv.obj.FLAG.HIDDEN) # or change to cancel button?
     status_label.set_text("Update in progress.\nNavigate away to cancel.")
     import ota.update
@@ -45,10 +47,10 @@ def update_with_lvgl(url):
     print(f"Current partition: {current_partition}")
     next_partition = current_partition.get_next_update()
     print(f"Next partition: {next_partition}")
-    label = lv.label(appscreen)
+    label = lv.label(main_screen)
     label.set_text("OS Update: 0.00%")
     label.align(lv.ALIGN.CENTER, 0, -30)
-    progress_bar = lv.bar(appscreen)
+    progress_bar = lv.bar(main_screen)
     progress_bar.set_size(200, 20)
     progress_bar.align(lv.ALIGN.BOTTOM_MID, 0, -50)
     progress_bar.set_range(0, 100)
@@ -65,7 +67,7 @@ def update_with_lvgl(url):
     chunk_size = 4096
     i = 0
     print(f"Starting OTA update of size: {total_size}")
-    while appscreen == lv.screen_active(): # stop if the user navigates away
+    while main_screen == lv.screen_active(): # stop if the user navigates away
         time.sleep_ms(100) # don't hog the CPU
         chunk = response.raw.read(chunk_size)
         if not chunk:
@@ -96,8 +98,8 @@ def install_button_click(download_url):
 
 def handle_update_info(version, download_url, changelog):
     global install_button, status_label
-    label = f"Installed OS version: {CURRENT_OS_VERSION}\n"
-    if compare_versions(version, CURRENT_OS_VERSION):
+    label = f"Installed OS version: {mpos.info.CURRENT_OS_VERSION}\n"
+    if compare_versions(version, mpos.info.CURRENT_OS_VERSION):
         label += "Available new"
         install_button.remove_flag(lv.obj.FLAG.HIDDEN)
         install_button.add_event_cb(lambda e, u=download_url: install_button_click(u), lv.EVENT.CLICKED, None)
@@ -137,15 +139,17 @@ def show_update_info():
         print("Error:", str(e))
     
 
-install_button = lv.button(appscreen)
-install_button.align(lv.ALIGN.TOP_RIGHT, 0, NOTIFICATION_BAR_HEIGHT)
+main_screen = lv.obj()
+install_button = lv.button(main_screen)
+install_button.align(lv.ALIGN.TOP_RIGHT, 0, mpos.ui.NOTIFICATION_BAR_HEIGHT)
 install_button.add_flag(lv.obj.FLAG.HIDDEN) # button will be shown if there is an update available
 install_button.set_size(lv.SIZE_CONTENT, lv.pct(20))
 install_label = lv.label(install_button)
 install_label.set_text("Update OS")
 install_label.center()
-status_label = lv.label(appscreen)
-status_label.align(lv.ALIGN.TOP_LEFT,0,NOTIFICATION_BAR_HEIGHT)
+status_label = lv.label(main_screen)
+status_label.align(lv.ALIGN.TOP_LEFT,0,mpos.ui.NOTIFICATION_BAR_HEIGHT)
+mpos.ui.load_screen(main_screen)
 
 network_connected = True
 try:

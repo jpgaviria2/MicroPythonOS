@@ -7,10 +7,11 @@ import time
 import _thread
 
 import mpos.apps
+import mpos.ui
 
 # Screens:
 app_detail_screen = None
-appscreen = lv.screen_active()
+main_screen = None
 
 apps = []
 update_button = None
@@ -58,10 +59,10 @@ def is_update_available(app_fullname, new_version):
     installed_app=None
     if is_installed_by_path(appdir):
         print(f"{appdir} found, getting version...")
-        installed_app = parse_manifest(f"{appdir}/META-INF/MANIFEST.JSON")
+        installed_app = mpos.apps.parse_manifest(f"{appdir}/META-INF/MANIFEST.JSON")
     elif is_installed_by_path(builtinappdir):
         print(f"{builtinappdir} found, getting version...")
-        installed_app = parse_manifest(f"{builtinappdir}/META-INF/MANIFEST.JSON")
+        installed_app = mpos.apps.parse_manifest(f"{builtinappdir}/META-INF/MANIFEST.JSON")
     if not installed_app or installed_app.version == "0.0.0": # special case, if the installed app doesn't have a version number then there's no update
         return False
     return compare_versions(new_version, installed_app.version)
@@ -264,10 +265,14 @@ def load_icon(icon_path):
     return image_dsc
 
 def create_apps_list():
-    global apps
+    global apps, main_screen
+    main_screen = lv.obj()
+    please_wait_label = lv.label(main_screen)
+    please_wait_label.set_text("Downloading app index...")
+    please_wait_label.center()
     default_icon_dsc = load_icon("builtin/res/mipmap-mdpi/default_icon_64x64.png")
     print("create_apps_list")
-    apps_list = lv.list(appscreen)
+    apps_list = lv.list(main_screen)
     apps_list.set_style_pad_all(0, 0)
     apps_list.set_size(lv.pct(100), lv.pct(100))
     print("create_apps_list iterating")
@@ -300,6 +305,7 @@ def create_apps_list():
         desc_label.set_style_text_font(lv.font_montserrat_12, 0)
         desc_label.add_event_cb(lambda e, a=app: show_app_detail(a), lv.EVENT.CLICKED, None)
     print("create_apps_list app done")
+    mpos.ui.load_screen(main_screen)
     try:
         _thread.stack_size(16*1024)
         _thread.start_new_thread(download_icons,())
@@ -309,21 +315,21 @@ def create_apps_list():
 
 def show_app_detail(app):
     global app_detail_screen, install_button, progress_bar, install_label
+    #app_detail_screen = lv.obj()
+    #app_detail_screen.set_size(lv.pct(100), lv.pct(100))
+    #back_button = lv.button(app_detail_screen)
+    #back_button.set_width(lv.pct(15))
+    #back_button.add_flag(lv.obj.FLAG.CLICKABLE)
+    #back_button.add_event_cb(back_to_main, lv.EVENT.CLICKED, None)
+    #back_label = lv.label(back_button)
+    #back_label.set_text(lv.SYMBOL.LEFT)
+    #back_label.center()
     app_detail_screen = lv.obj()
     app_detail_screen.set_size(lv.pct(100), lv.pct(100))
-    back_button = lv.button(app_detail_screen)
-    back_button.set_width(lv.pct(15))
-    back_button.add_flag(lv.obj.FLAG.CLICKABLE)
-    back_button.add_event_cb(back_to_main, lv.EVENT.CLICKED, None)
-    back_label = lv.label(back_button)
-    back_label.set_text(lv.SYMBOL.LEFT)
-    back_label.center()
-    cont = lv.obj(app_detail_screen)
-    cont.set_size(lv.pct(100), lv.pct(100))
-    cont.set_pos(0, 40)
-    cont.set_flex_flow(lv.FLEX_FLOW.COLUMN)
+    app_detail_screen.set_pos(0, 40)
+    app_detail_screen.set_flex_flow(lv.FLEX_FLOW.COLUMN)
     #
-    headercont = lv.obj(cont)
+    headercont = lv.obj(app_detail_screen)
     headercont.set_style_pad_all(0, 0)
     headercont.set_flex_flow(lv.FLEX_FLOW.ROW)
     headercont.set_size(lv.pct(100), lv.SIZE_CONTENT)
@@ -344,12 +350,12 @@ def show_app_detail(app):
     publisher_label.set_text(app.publisher)
     publisher_label.set_style_text_font(lv.font_montserrat_16, 0)
     #
-    progress_bar = lv.bar(cont)
+    progress_bar = lv.bar(app_detail_screen)
     progress_bar.set_width(lv.pct(100))
     progress_bar.set_range(0, 100)
     progress_bar.add_flag(lv.obj.FLAG.HIDDEN)
     # Always have this button:
-    buttoncont = lv.obj(cont)
+    buttoncont = lv.obj(app_detail_screen)
     buttoncont.set_style_pad_all(0, 0)
     buttoncont.set_flex_flow(lv.FLEX_FLOW.ROW)
     buttoncont.set_size(lv.pct(100), lv.SIZE_CONTENT)
@@ -373,17 +379,17 @@ def show_app_detail(app):
         update_label.set_text("Update")
         update_label.center()
     # version label:
-    version_label = lv.label(cont)
+    version_label = lv.label(app_detail_screen)
     version_label.set_width(lv.pct(100))
     version_label.set_text(f"Latest version: {app.version}") # make this bold if this is newer than the currently installed one
     version_label.set_style_text_font(lv.font_montserrat_12, 0)
     version_label.align_to(install_button, lv.ALIGN.OUT_BOTTOM_MID, 0, lv.pct(5))
-    long_desc_label = lv.label(cont)
+    long_desc_label = lv.label(app_detail_screen)
     long_desc_label.align_to(version_label, lv.ALIGN.OUT_BOTTOM_MID, 0, lv.pct(5))
     long_desc_label.set_text(app.long_description)
     long_desc_label.set_style_text_font(lv.font_montserrat_12, 0)
     long_desc_label.set_width(lv.pct(100))
-    lv.screen_load(app_detail_screen)
+    mpos.ui.load_screen(app_detail_screen)
 
 
 def toggle_install(download_url, fullname):
@@ -416,27 +422,16 @@ def update_button_click(download_url, fullname):
         print("Could not start download_and_unzip thread: ", e)
 
 
-def back_to_main(event):
-    global app_detail_screen
-    if app_detail_screen:
-        app_detail_screen.delete()
-        app_detail_screen = None
-    lv.screen_load(appscreen)
-
 
 def janitor_cb(timer):
-    global appscreen, app_detail_screen
-    if lv.screen_active() != appscreen and lv.screen_active() != app_detail_screen:
+    global main_screen, app_detail_screen
+    if lv.screen_active() != main_screen and lv.screen_active() != app_detail_screen:
         print("appstore.py backgrounded, cleaning up...")
         janitor.delete()
-        restart_launcher() # refresh the launcher
+        mpos.apps.restart_launcher() # refresh the launcher
         print("appstore.py ending")
 
 janitor = lv.timer_create(janitor_cb, 400, None)
-
-please_wait_label = lv.label(appscreen)
-please_wait_label.set_text("Downloading app index...")
-please_wait_label.center()
 
 can_check_network = True
 try:

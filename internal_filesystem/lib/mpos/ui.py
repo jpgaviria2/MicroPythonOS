@@ -457,5 +457,7 @@ def back_screen():
         screen_stack.pop()  # Remove current screen
         prevscreen = screen_stack[-1] # load previous screen
         lv.screen_load(prevscreen)
+        if len(screen_stack) == 1:
+            open_bar()
     else:
         print("Warning: can't go back because screen_stack is empty.")

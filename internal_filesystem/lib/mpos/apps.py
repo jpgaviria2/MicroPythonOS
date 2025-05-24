@@ -7,11 +7,12 @@ import uos
 import _thread
 import traceback
 
+import mpos.apps
 import mpos.info
 import mpos.ui
 
 # Run the script in the current thread:
-def execute_script(script_source, is_file, is_launcher, is_graphical):
+def execute_script(script_source, is_file):
     thread_id = _thread.get_ident()
     compile_name = 'script' if not is_file else script_source
     print(f"Thread {thread_id}: executing script")
@@ -20,31 +21,10 @@ def execute_script(script_source, is_file, is_launcher, is_graphical):
             print(f"Thread {thread_id}: reading script from file {script_source}")
             with open(script_source, 'r') as f: # TODO: check if file exists first?
                 script_source = f.read()
-        if not is_graphical:
-            script_globals = {
-                '__name__': "__main__"
-            }
-        else: # is_graphical
-            if is_launcher:
-                prevscreen = None
-                newscreen = mpos.ui.rootscreen
-            else:
-                prevscreen = lv.screen_active()
-                newscreen=lv.obj()
-                newscreen.set_size(lv.pct(100),lv.pct(100))
-            mpos.ui.load_screen(newscreen)
-            script_globals = {
-                'lv': lv,
-                'th': mpos.ui.th,
-                'NOTIFICATION_BAR_HEIGHT': mpos.ui.NOTIFICATION_BAR_HEIGHT, # for apps that want to leave space for notification bar
-                'appscreen': newscreen,
-                'start_app': start_app, # for launcher apps
-                'parse_manifest': parse_manifest, # for launcher apps
-                'restart_launcher': restart_launcher, # for appstore apps
-                'show_launcher': mpos.ui.show_launcher, # for apps that want to show the launcher
-                'CURRENT_OS_VERSION': mpos.info.CURRENT_OS_VERSION, # for osupdate
-                '__name__': "__main__"
-            }
+        script_globals = {
+            'lv': lv,
+            '__name__': "__main__"
+        }
         print(f"Thread {thread_id}: starting script")
         try:
             compiled_script = compile(script_source, compile_name, 'exec')
@@ -63,8 +43,8 @@ def execute_script(script_source, is_file, is_launcher, is_graphical):
 
 # Run the script in a new thread:
 # TODO: check if the script exists here instead of launching a new thread?
-def execute_script_new_thread(scriptname, is_file, is_launcher, is_graphical):
-    print(f"main.py: execute_script_new_thread({scriptname},{is_file},{is_launcher})")
+def execute_script_new_thread(scriptname, is_file):
+    print(f"main.py: execute_script_new_thread({scriptname},{is_file})")
     try:
         # 168KB maximum at startup but 136KB after loading display, drivers, LVGL gui etc so let's go for 128KB for now, still a lot...
         # But then no additional threads can be created. A stacksize of 32KB allows for 4 threads, so 3 in the app itself, which might be tight.
@@ -77,12 +57,12 @@ def execute_script_new_thread(scriptname, is_file, is_launcher, is_graphical):
             stack=32*1024
         elif "appstore"in scriptname:
             print("Starting appstore with extra stack size!")
-            stack=24*1024
+            stack=24*1024 # this doesn't do anything because it's all started in the same thread
         else:
             stack=16*1024 # 16KB doesn't seem to be enough for the AppStore app on desktop
         print(f"app.py: setting stack size for script to {stack}")
         _thread.stack_size(stack)
-        _thread.start_new_thread(execute_script, (scriptname, is_file, is_launcher, is_graphical))
+        _thread.start_new_thread(execute_script, (scriptname, is_file))
     except Exception as e:
         print("main.py: execute_script_new_thread(): error starting new thread thread: ", e)
 
@@ -100,10 +80,10 @@ def start_app(app_dir, is_launcher=False):
     print(f"main.py start_app({app_dir},{is_launcher})")
     mpos.ui.set_foreground_app(app_dir) # would be better to store only the app name...
     manifest_path = f"{app_dir}/META-INF/MANIFEST.JSON"
-    app = parse_manifest(manifest_path)
+    app = mpos.apps.parse_manifest(manifest_path)
     start_script_fullpath = f"{app_dir}/{app.entrypoint}"
     #execute_script_new_thread(start_script_fullpath, True, is_launcher, True) # Starting (GUI?) apps in a new thread can cause hangs (GIL lock?)
-    execute_script(start_script_fullpath, True, is_launcher, True)
+    execute_script(start_script_fullpath, True)
     # Launchers have the bar, other apps don't have it
     if is_launcher:
         mpos.ui.open_bar()
