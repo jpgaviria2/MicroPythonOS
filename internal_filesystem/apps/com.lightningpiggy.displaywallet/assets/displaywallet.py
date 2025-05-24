@@ -2,17 +2,14 @@ import time
 
 import mpos.config
 import mpos.ui
-import mpos.apps
 
 # screens:
 main_screen = None
 settings_screen = None
 
-
 # Settings screen implementation
 class SettingsScreen():
     def __init__(self):
-        #super().__init__(None)
         self.prefs = mpos.config.SharedPreferences("com.lightningpiggy.displaywallet")
         self.settings = [
             {"title": "Wallet Type", "key": "wallet_type", "value_label": None},
