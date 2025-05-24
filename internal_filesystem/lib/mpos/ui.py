@@ -418,6 +418,13 @@ def close_top_layer_msgboxes():
     else:
         print(f"Top layer still has {child_count} children")
 
+def clean_top_layer():
+    print("Cleaning top layer")
+    timer1.delete()
+    timer2.delete()
+    timer3.delete()
+    timer4.delete()
+    lv.layer_top().clean()
 
 screen_stack = []
 
@@ -436,15 +443,11 @@ def load_screen(screen):
 def back_screen():
     global screen_stack
     if len(screen_stack) > 1:
-        print("Cleaning top layer")
-        timer1.delete()
-        timer2.delete()
-        timer3.delete()
-        timer4.delete()
-        lv.layer_top().clean()
-        mpos.ui.create_notification_bar()
-        mpos.ui.create_drawer()
-        #close_top_layer_msgboxes() # problem is they are created AFTER it goes to the previous screen!
+        #clean_top_layer()
+        #print("Adding notification bar and drawer to top layer")
+        #mpos.ui.create_notification_bar()
+        #mpos.ui.create_drawer()
+        close_top_layer_msgboxes()
         
         print("Loading previous screen")
         screen_stack.pop()  # Remove current screen
