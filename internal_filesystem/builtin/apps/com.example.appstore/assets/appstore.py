@@ -251,7 +251,7 @@ def download_icons():
         image_dsc = download_icon(app.icon_url)
         app.image_dsc = image_dsc # save it for the app detail page
         lv.async_call(lambda l: app.image.set_src(image_dsc), None)
-        time.sleep_ms(50) # not waiting here will result in some async_calls() not being executed
+        time.sleep_ms(100) # not waiting here will result in some async_calls() not being executed
     print("Finished downloading icons...")
 
 
@@ -264,14 +264,18 @@ def load_icon(icon_path):
         })
     return image_dsc
 
-def create_apps_list():
-    global apps, main_screen
+def create_ui():
+    global main_screen, please_wait_label
     main_screen = lv.obj()
     please_wait_label = lv.label(main_screen)
     please_wait_label.set_text("Downloading app index...")
     please_wait_label.center()
-    default_icon_dsc = load_icon("builtin/res/mipmap-mdpi/default_icon_64x64.png")
+    mpos.ui.load_screen(main_screen)
+
+def create_apps_list():
     print("create_apps_list")
+    global apps, main_screen
+    default_icon_dsc = load_icon("builtin/res/mipmap-mdpi/default_icon_64x64.png")
     apps_list = lv.list(main_screen)
     apps_list.set_style_pad_all(0, 0)
     apps_list.set_size(lv.pct(100), lv.pct(100))
@@ -305,15 +309,19 @@ def create_apps_list():
         desc_label.set_style_text_font(lv.font_montserrat_12, 0)
         desc_label.add_event_cb(lambda e, a=app: show_app_detail(a), lv.EVENT.CLICKED, None)
     print("create_apps_list app done")
-    mpos.ui.load_screen(main_screen)
     try:
-        _thread.stack_size(16*1024)
+        stacksize = 24*1024
+        import sys
+        if sys.platform == "esp32":
+            stacksize = 16*1024
+        _thread.stack_size(stacksize)
         _thread.start_new_thread(download_icons,())
     except Exception as e:
         print("Could not start thread to download icons: ", e)
 
 
 def show_app_detail(app):
+    print("Creating app detail screen...")
     global app_detail_screen, install_button, progress_bar, install_label
     #app_detail_screen = lv.obj()
     #app_detail_screen.set_size(lv.pct(100), lv.pct(100))
@@ -389,6 +397,7 @@ def show_app_detail(app):
     long_desc_label.set_text(app.long_description)
     long_desc_label.set_style_text_font(lv.font_montserrat_12, 0)
     long_desc_label.set_width(lv.pct(100))
+    print("Loading app detail screen...")
     mpos.ui.load_screen(app_detail_screen)
 
 
@@ -431,6 +440,8 @@ def janitor_cb(timer):
         mpos.apps.restart_launcher() # refresh the launcher
         print("appstore.py ending")
 
+create_ui()
+
 janitor = lv.timer_create(janitor_cb, 400, None)
 
 can_check_network = True
@@ -442,6 +453,10 @@ except Exception as e:
 if can_check_network and not network.WLAN(network.STA_IF).isconnected():
     please_wait_label.set_text("Error: WiFi is not connected.")
 else:
-    _thread.stack_size(16*1024)
+    stacksize = 24*1024
+    import sys
+    if sys.platform == "esp32":
+        stacksize = 16*1024
+    _thread.stack_size(stacksize)
     _thread.start_new_thread(download_apps, ("http://demo.lnpiggy.com:2121/apps.json",))
 
