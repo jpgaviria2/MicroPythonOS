@@ -381,3 +381,28 @@ EVENT_MAP = {
 def get_event_name(event_code):
     return EVENT_MAP.get(event_code, f"Unknown event {event_code}")
 
+
+
+screen_stack = []
+
+def load_screen(screen):
+    global screen_stack
+    topscreen = None
+    if len(screen_stack) > 0:
+        topscreen = screen_stack[-1]
+    if not topscreen or screen != topscreen:
+        print("Appending screen to screen_stack")
+        screen_stack.append(screen)
+    else:
+        print("Warning: not adding new screen to screen_stack because it's already there, just bringing to foreground.")
+    lv.screen_load(screen)
+
+def back_screen():
+    global screen_stack
+    if len(screen_stack) > 1:
+        print("Loading previous screen")
+        screen_stack.pop()  # Remove current screen
+        prevscreen = screen_stack[-1] # load previous screen
+        lv.screen_load(prevscreen)
+    else:
+        print("Warning: can't go back because screen_stack is empty.")

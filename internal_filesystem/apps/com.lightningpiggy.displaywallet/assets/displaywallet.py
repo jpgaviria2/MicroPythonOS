@@ -2,9 +2,10 @@ import time
 
 import mpos.config
 import mpos.ui
+import mpos.apps
 
 # screens:
-appscreen = lv.screen_active()
+main_screen = None
 settings_screen = None
 
 
@@ -178,13 +179,13 @@ def settings_button_tap(event):
     global settings_screen
     if not settings_screen:
         settings_screen = SettingsScreen().screen
-    lv.screen_load(settings_screen)
-    #mpos.ui.startActivity(settings_screen)
+    mpos.ui.load_screen(settings_screen)
 
 def build_main_ui():
-    appscreen.clean()
-    appscreen.set_style_pad_all(10, 0)
-    balance_label = lv.label(appscreen)
+    global main_screen
+    main_screen = lv.obj()
+    main_screen.set_style_pad_all(10, 0)
+    balance_label = lv.label(main_screen)
     balance_label.align(lv.ALIGN.TOP_LEFT, 0, 0)
     balance_label.set_style_text_font(lv.font_montserrat_20, 0)
     balance_label.set_text('123456')
@@ -193,19 +194,20 @@ def build_main_ui():
     style_line.set_line_width(4)
     style_line.set_line_color(lv.palette_main(lv.PALETTE.PINK))
     style_line.set_line_rounded(True)
-    balance_line = lv.line(appscreen)
+    balance_line = lv.line(main_screen)
     balance_line.set_points([{'x':0,'y':35},{'x':300,'y':35}],2)
     balance_line.add_style(style_line, 0)
-    settings_button = lv.button(appscreen)
+    settings_button = lv.button(main_screen)
     settings_button.align(lv.ALIGN.BOTTOM_RIGHT, 0, 0)
     snap_label = lv.label(settings_button)
     snap_label.set_text(lv.SYMBOL.SETTINGS)
     snap_label.center()
     settings_button.add_event_cb(settings_button_tap,lv.EVENT.CLICKED,None)
+    mpos.ui.load_screen(main_screen)
 
 
 def janitor_cb(timer):
-    if lv.screen_active() != appscreen and lv.screen_active() != settings_screen:
+    if lv.screen_active() != main_screen and lv.screen_active() != settings_screen:
         print("app backgrounded, cleaning up...")
         janitor.delete()
         if settings_screen:

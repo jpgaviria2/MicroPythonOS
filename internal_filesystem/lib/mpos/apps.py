@@ -110,7 +110,6 @@ def start_app(app_dir, is_launcher=False):
     else:
         mpos.ui.close_bar()
 
-
 def restart_launcher():
     # No need to stop the other launcher first, because it exits after building the screen
     start_app_by_name("com.example.launcher", True)
