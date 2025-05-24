@@ -2,12 +2,10 @@ import time
 
 import mpos.config
 import mpos.ui
-import mpos.apps
 
 # screens:
 main_screen = None
 settings_screen = None
-
 
 # Settings screen implementation
 class SettingsScreen():

@@ -108,8 +108,14 @@ def create_rootscreen():
     rootlabel.align(lv.ALIGN.CENTER, 0, 0)
 
 
+timer1 = None
+timer2 = None
+timer3 = None
+timer4 = None
+
 def create_notification_bar():
     global notification_bar
+    global timer1, timer2, timer3, timer4
     # Create notification bar
     notification_bar = lv.obj(lv.layer_top())
     notification_bar.set_size(lv.pct(100), NOTIFICATION_BAR_HEIGHT)
@@ -212,7 +218,7 @@ def create_notification_bar():
     show_bar_animation.set_custom_exec_cb(lambda not_used, value : notification_bar.set_y(value))
     
 
-def create_drawer(display):
+def create_drawer(display=None):
     global drawer
     drawer=lv.obj(lv.layer_top())
     drawer.set_size(lv.pct(100),lv.pct(90))
@@ -232,7 +238,8 @@ def create_drawer(display):
     def slider_event(e):
         value=slider.get_value()
         slider_label.set_text(f"{value}%")
-        display.set_backlight(value)
+        if display:
+            display.set_backlight(value)
     
     slider.add_event_cb(slider_event,lv.EVENT.VALUE_CHANGED,None)
     wifi_btn=lv.button(drawer)
@@ -382,6 +389,35 @@ def get_event_name(event_code):
     return EVENT_MAP.get(event_code, f"Unknown event {event_code}")
 
 
+def close_top_layer_msgboxes():
+    """
+    Iterate through all widgets in lv.layer_top() and close any lv.msgbox instances.
+    """
+    top_layer = lv.layer_top()
+    if not top_layer:
+        print("No top layer found")
+        return
+
+    # Get number of children
+    child_count = top_layer.get_child_count_by_type(lv.msgbox_backdrop_class)
+    print(f"Top layer has {child_count} msgbox_backdrops")
+
+    # Iterate through children (use index to avoid modifying list during deletion)
+    i = 0
+    while i < top_layer.get_child_count_by_type(lv.msgbox_backdrop_class):
+        child = top_layer.get_child_by_type(i,lv.msgbox_backdrop_class)
+        print("Found msgbox, closing it")
+        msgbox = child.get_child_by_type(0,lv.msgbox_class)
+        msgbox.close()  # Close the message box
+        # Note: lv.msgbox_close() may delete the object, so child count may change
+
+    # Optional: Verify no msgboxes remain
+    child_count = top_layer.get_child_count_by_type(lv.msgbox_backdrop_class)
+    if child_count == 0:
+        print("All msgboxes closed, top layer empty")
+    else:
+        print(f"Top layer still has {child_count} children")
+
 
 screen_stack = []
 
@@ -400,6 +436,16 @@ def load_screen(screen):
 def back_screen():
     global screen_stack
     if len(screen_stack) > 1:
+        print("Cleaning top layer")
+        timer1.delete()
+        timer2.delete()
+        timer3.delete()
+        timer4.delete()
+        lv.layer_top().clean()
+        mpos.ui.create_notification_bar()
+        mpos.ui.create_drawer()
+        #close_top_layer_msgboxes() # problem is they are created AFTER it goes to the previous screen!
+        
         print("Loading previous screen")
         screen_stack.pop()  # Remove current screen
         prevscreen = screen_stack[-1] # load previous screen
