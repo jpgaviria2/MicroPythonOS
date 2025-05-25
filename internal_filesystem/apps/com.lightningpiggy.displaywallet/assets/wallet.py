@@ -1,6 +1,14 @@
 import _thread
 import requests
 import json
+import ssl
+import time
+
+from nostr.relay_manager import RelayManager
+from nostr.message_type import ClientMessageType
+from nostr.filter import Filter, Filters
+from nostr.event import EncryptedDirectMessage
+from nostr.key import PrivateKey
 
 import mpos.apps
 import mpos.time
@@ -20,6 +28,10 @@ class Wallet:
         elif isinstance(self, NWCWallet):
             return "NWCWallet"
 
+    def start_refresh_balance(self):
+        _thread.stack_size(mpos.apps.good_stack_size())
+        _thread.start_new_thread(self.fetch_balance_thread, ())
+
 
 class LNBitsWallet(Wallet):
 
@@ -28,11 +40,11 @@ class LNBitsWallet(Wallet):
         self.lnbits_url = lnbits_url
         self.lnbits_readkey = lnbits_readkey
 
-    def fetch_balance_thread(self, lnbits_url, lnbits_readkey):
+    def fetch_balance_thread(self):
         print("fetch_balance_thread")
-        walleturl = lnbits_url + "/api/v1/wallet"
+        walleturl = self.lnbits_url + "/api/v1/wallet"
         headers = {
-            "X-Api-Key": lnbits_readkey,
+            "X-Api-Key": self.lnbits_readkey,
         }
         try:
             response = requests.get(walleturl, timeout=10, headers=headers)
@@ -52,27 +64,59 @@ class LNBitsWallet(Wallet):
             except Exception as e:
                 print(f"Could not parse reponse text '{response_text}' as JSON: {e}")
 
-    def start_refresh_balance(self):
-        _thread.stack_size(mpos.apps.good_stack_size())
-        _thread.start_new_thread(self.fetch_balance_thread, (self.lnbits_url, self.lnbits_readkey))
 
 class NWCWallet(Wallet):
 
     def __init__(self, nwc_url):
         super().__init__()
         self.nwc_url = nwc_url
-        nwc_data = parse_nwc_url(nwc_url)
-        self.relay = nwc_data['relay']
-        self.wallet_pubkey = nwc_data['pubkey']
-        self.secret = nwc_data['secret']
-        self.lud16 = nwc_data['lud16']
-        print(f"DEBUG: Parsed NWC data - Relay: {relay}, Pubkey: {wallet_pubkey}, Secret: {secret}, lud16: {lud16}")
-        # TODO: open connection to relay, subscribe to updates
+        self.relay, self.wallet_pubkey, self.secret, self.lud16 = self.parse_nwc_url(nwc_url)
+        self.private_key = PrivateKey(bytes.fromhex(self.secret))
+        self.relay_manager = RelayManager()
+        self.relay_manager.add_relay(self.relay)
+        print(f"DEBUG: Opening relay connections")
+        self.relay_manager.open_connections({"cert_reqs": ssl.CERT_NONE})
+        # Set up subscription to receive response
+        self.subscription_id = "nwc_balance_" + str(round(time.time()))
+        #print(f"DEBUG: Setting up subscription with ID: {self.subscription_id}")
+        self.filters = Filters([Filter(
+            kinds=[23195],  # NWC replies
+            authors=[self.wallet_pubkey],
+            pubkey_refs=[self.private_key.public_key.hex()]
+        )])
+        #print(f"DEBUG: Subscription filters: {filters.to_json_array()}")
+        self.relay_manager.add_subscription(self.subscription_id, self.filters)
+        time.sleep(5)
+
 
     def start_refresh_balance(self) :
-        # TODO: make sure connected to relay (otherwise connect) and fetch balance
-        pass
+        # TODO: make sure connected to relay (otherwise connect)
 
+        # Create get_balance request
+        balance_request = {
+            "method": "get_balance",
+            "params": {}
+        }
+        print(f"DEBUG: Created balance request: {balance_request}")
+    
+        print(f"DEBUG: Creating encrypted DM to wallet pubkey: {self.wallet_pubkey}")
+        dm = EncryptedDirectMessage(
+            recipient_pubkey=self.wallet_pubkey,
+            cleartext_content=json.dumps(balance_request)
+        )
+        
+        print(f"DEBUG: Signing DM {json.dumps(dm)} with private key")
+        self.private_key.sign_event(dm) # sign also does encryption if it's a encrypted dm
+        print(f"DEBUG: DM created with ID: {dm.id}")
+    
+        # Publish request
+        print(f"DEBUG: Publishing subscription request")
+        request_message = [ClientMessageType.REQUEST, self.subscription_id]
+        request_message.extend(self.filters.to_json_array())
+        self.relay_manager.publish_message(json.dumps(request_message))
+        print(f"DEBUG: Publishing encrypted DM")
+        self.relay_manager.publish_event(dm)
+    
     def parse_nwc_url(self, nwc_url):
         """Parse Nostr Wallet Connect URL to extract pubkey, relay, secret, and lud16."""
         print(f"DEBUG: Starting to parse NWC URL: {nwc_url}")
@@ -125,14 +169,9 @@ class NWCWallet(Wallet):
             # Validate secret (should be 64 hex characters)
             if len(secret) != 64 or not all(c in '0123456789abcdef' for c in secret):
                 raise ValueError("Invalid NWC URL: secret must be 64 hex characters")
-    
-            return {
-                'relay': relay,
-                'pubkey': pubkey,
-                'secret': secret,
-                'lud16': lud16
-            }
+
+            print(f"DEBUG: Parsed NWC data - Relay: {relay}, Pubkey: {pubkey}, Secret: {secret}, lud16: {lud16}")
+            return relay, pubkey, secret, lud16
         except Exception as e:
             print(f"DEBUG: Error parsing NWC URL: {e}")
-            sys.exit(1)
 
