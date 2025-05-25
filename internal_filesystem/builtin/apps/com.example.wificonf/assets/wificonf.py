@@ -4,8 +4,10 @@ import time
 import lvgl as lv
 import _thread
 
+import mpos.ui
+
 # Screens:
-appscreen = lv.screen_active()
+main_screen=None
 password_page=None
 
 ssids=[]
@@ -271,7 +273,7 @@ def show_password_page(ssid):
     label.center()
     cancel_button.add_event_cb(cancel_cb,lv.EVENT.CLICKED,None)
     print("show_password_page: Loading password page")
-    lv.screen_load(password_page)
+    mpos.ui.load_screen(password_page)
 
 def connect_cb(event):
     global access_points
@@ -283,8 +285,8 @@ def connect_cb(event):
     save_config()
     print("connect_cb: Deleting password page")
     password_page.delete()
-    print("connect_cb: Restoring main appscreen")
-    lv.screen_load(appscreen)
+    print("connect_cb: Restoring main_screen")
+    mpos.ui.load_screen(main_screen)
     print(f"connect_cb: Attempting connection to {selected_ssid}")
     start_attempt_connecting(selected_ssid,password)
 
@@ -292,29 +294,32 @@ def cancel_cb(event):
     print("cancel_cb: Cancel button clicked")
     print("Deleting password screen...")
     password_page.delete()
-    print("cancel_cb: Restoring main appscreen")
-    lv.screen_load(appscreen)
+    print("cancel_cb: Restoring main_screen")
+    #mpos.ui.load_screen(main_screen)
+    mpos.ui.back_screen()
 
 def create_ui():
-    global aplist,appscreen,error_label,scan_button_label,scan_button
+    global aplist,main_screen,error_label,scan_button_label,scan_button
+    main_screen = lv.obj()
+    main_screen.set_style_pad_all(15, 0)
     print("create_ui: Creating list widget")
-    aplist=lv.list(appscreen)
+    aplist=lv.list(main_screen)
     aplist.set_size(lv.pct(100),lv.pct(80))
     aplist.align(lv.ALIGN.TOP_MID,0,0)
     print("create_ui: Creating error label")
-    error_label=lv.label(appscreen)
+    error_label=lv.label(main_screen)
     error_label.set_text("")
     error_label.align(lv.ALIGN.BOTTOM_MID,0,-40)
     error_label.add_flag(lv.obj.FLAG.HIDDEN)
     print("create_ui: Creating Scan button")
-    scan_button=lv.button(appscreen)
+    scan_button=lv.button(main_screen)
     scan_button.set_size(lv.SIZE_CONTENT,lv.pct(15))
-    scan_button.align(lv.ALIGN.BOTTOM_MID,0,-5)
+    scan_button.align(lv.ALIGN.BOTTOM_MID,0,0)
     scan_button_label=lv.label(scan_button)
     scan_button_label.set_text(scan_button_scan_text)
     scan_button_label.center()
     scan_button.add_event_cb(scan_cb,lv.EVENT.CLICKED,None)
-
+    mpos.ui.load_screen(main_screen)
 
 
 havenetwork = True
