@@ -217,12 +217,15 @@ def redraw_balance_cb(timer):
         balance_label.set_text(str(wallet.last_known_balance))
 
 def janitor_cb(timer):
+    global wallet
     if lv.screen_active() != main_screen and lv.screen_active() != settings_screen:
         print("app backgrounded, cleaning up...")
         janitor.delete()
-        redraw_timer.delete()
+        wallet.destroy()
         if settings_screen:
             settings_screen.delete()
+        if main_screen:
+            main_screen.delete()
 
 build_main_ui()
 
@@ -242,7 +245,6 @@ elif wallet_type == "nwc":
 else:
     print(f"No or unsupported wallet type configured: '{wallet_type}'")
 
-wallet.start_refresh_balance()
-redraw_timer = lv.timer_create(redraw_balance_cb, 1000, None)
+wallet.start_refresh_balance(lambda : balance_label.set_text(str(wallet.last_known_balance)))
 
 janitor = lv.timer_create(janitor_cb, 1000, None)
