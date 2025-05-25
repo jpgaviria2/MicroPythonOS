@@ -30,6 +30,30 @@ notification_bar = None
 foreground_app_name=None
 
 
+def get_pointer_xy():
+    indev = lv.indev_active()
+    if indev:
+        point = lv.point_t()
+        indev.get_point(point)
+        return point.x, point.y
+    else:
+        return indev_error_x,indev_error_y # make it visible that this occurred
+
+
+drawer_swipe_start_y = 0
+def drawer_swipe_cb(event):
+    global drawer_swipe_start_y
+    event_code = event.get_code()
+    #name = mpos.ui.get_event_name(event_code)
+    #print(f"drawer_swipe_cb {event_code} and {name}")
+    if event_code == lv.EVENT.PRESSED:
+        x, drawer_swipe_start_y = get_pointer_xy()
+    elif event_code == lv.EVENT.RELEASED:
+        x, end_y = get_pointer_xy()
+        if end_y < drawer_swipe_start_y - NOTIFICATION_BAR_HEIGHT:
+            mpos.ui.close_drawer()
+
+
 # Shutdown function to run in main thread
 def shutdown():
     print("Shutting down...")
@@ -81,10 +105,13 @@ def close_bar():
         hide_bar_animation.start()
 
 def show_launcher():
-    global rootscreen
-    set_foreground_app("com.example.launcher")
-    open_bar()
-    lv.screen_load(rootscreen)
+    mpos.apps.restart_launcher()
+    #global rootscreen
+    #set_foreground_app("com.example.launcher")
+    #open_bar()
+    #prevscreen = screen_stack[0] # load previous screen
+    #lv.screen_load(prevscreen)
+    #lv.screen_load(rootscreen)
 
 def create_rootscreen():
     global rootscreen
@@ -218,6 +245,7 @@ def create_notification_bar():
     show_bar_animation.set_custom_exec_cb(lambda not_used, value : notification_bar.set_y(value))
     
 
+
 def create_drawer(display=None):
     global drawer
     drawer=lv.obj(lv.layer_top())
@@ -226,7 +254,9 @@ def create_drawer(display=None):
     drawer.set_scroll_dir(lv.DIR.NONE)
     drawer.set_style_pad_all(0, 0)
     drawer.add_flag(lv.obj.FLAG.HIDDEN)
-    
+    #drawer.add_flag(lv.obj.FLAG.GESTURE_BUBBLE) # no gestures are received... maybe not supported by SDL Pointer Driver...
+    drawer.add_event_cb(drawer_swipe_cb, lv.EVENT.PRESSED, None)
+    drawer.add_event_cb(drawer_swipe_cb, lv.EVENT.RELEASED, None)    
     slider_label=lv.label(drawer)
     slider_label.set_text(f"{100}%") # TODO: restore this from configuration
     slider_label.align(lv.ALIGN.TOP_MID,0,lv.pct(4))
@@ -251,7 +281,7 @@ def create_drawer(display=None):
     def wifi_event(e):
         global drawer_open
         close_drawer()
-        start_app_by_name("com.example.wificonf")
+        mpos.apps.start_app_by_name("com.example.wificonf")
     
     wifi_btn.add_event_cb(wifi_event,lv.EVENT.CLICKED,None)
     #
@@ -313,6 +343,7 @@ def create_drawer(display=None):
         sys.exit(0)
     
     poweroff_btn.add_event_cb(poweroff_cb,lv.EVENT.CLICKED,None)
+    
 
 
 
@@ -451,7 +482,7 @@ def back_screen():
         #print("Adding notification bar and drawer to top layer")
         #mpos.ui.create_notification_bar()
         #mpos.ui.create_drawer()
-        close_top_layer_msgboxes() # would be nicer to "cancel" all input events
+        #close_top_layer_msgboxes() # would be nicer to "cancel" all input events
         
         print("Loading previous screen")
         screen_stack.pop()  # Remove current screen
@@ -461,3 +492,107 @@ def back_screen():
             open_bar()
     else:
         print("Warning: can't go back because screen_stack is empty.")
+
+
+
+# Would be better to somehow save other events, like clicks, and pass them down to the layers below if released with x < 60
+def back_swipe_cb(event):
+    #global rect
+
+    event_code = event.get_code()
+    name = mpos.ui.get_event_name(event_code)
+    print(f"back_swipe_cb {event_code} and {name}")
+
+    #xa = rect.get_x_aligned()
+    #ya = rect.get_y_aligned()
+    #print(f"xa, ya: {xa},{ya}")
+
+    #obj = e.get_target()
+    #lvobj = lv.obj(obj)
+    #pos = lvobj.get_pos()  # Get current position
+    #print(f"pos: {lvobj.get_x()}, {lvobj.get_y()}")
+
+    indev = lv.indev_active()
+    if indev:
+        point = lv.point_t()
+        indev.get_point(point)
+        x = point.x
+        y = point.y
+        print(f"pos: {x}, {y}")
+        #rect.set_pos(x, 0)
+        if event_code == lv.EVENT.RELEASED and x > 60: # TODO: use display_width / 3 here
+            mpos.ui.back_screen()
+            #rect.set_pos(0,0)
+        #rect.set_pos(xa + point.x, ya + point.y)
+        #rect.set_pos(point.x, point.y)
+
+
+def handle_back_swipe():
+    rect = lv.obj(lv.layer_top())
+    rect.set_size(NOTIFICATION_BAR_HEIGHT, lv.layer_top().get_height()-NOTIFICATION_BAR_HEIGHT)
+    rect.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
+    rect.set_pos(0, NOTIFICATION_BAR_HEIGHT)
+    style = lv.style_t()
+    style.init()
+    style.set_bg_opa(lv.OPA.TRANSP)
+    #style.set_bg_opa(15)
+    style.set_border_width(0)
+    style.set_radius(0)
+    #style.set_border_color(lv.color_hex(0xFF0000))  # White border for visibility
+    #style.set_border_opa(lv.OPA._50)  # 50% opacity for the border
+    rect.add_style(style, 0)
+    #rect.add_flag(lv.obj.FLAG.CLICKABLE)  # Make the object clickable
+    #rect.add_flag(lv.obj.FLAG.GESTURE_BUBBLE)  # Allow dragging
+    #rect.add_event_cb(drag_event_cb, lv.EVENT.PRESSING, None)
+    rect.add_event_cb(back_swipe_cb, lv.EVENT.RELEASED, None)
+
+# Would be better to somehow save other events, like clicks, and pass them down to the layers below if released with x < 60
+def top_swipe_cb(event):
+    #global rect
+
+    event_code = event.get_code()
+    name = mpos.ui.get_event_name(event_code)
+    print(f"top_swipe_cb {event_code} and {name}")
+
+    #xa = rect.get_x_aligned()
+    #ya = rect.get_y_aligned()
+    #print(f"xa, ya: {xa},{ya}")
+
+    #obj = e.get_target()
+    #lvobj = lv.obj(obj)
+    #pos = lvobj.get_pos()  # Get current position
+    #print(f"pos: {lvobj.get_x()}, {lvobj.get_y()}")
+
+    indev = lv.indev_active()
+    if indev:
+        point = lv.point_t()
+        indev.get_point(point)
+        x = point.x
+        y = point.y
+        print(f"pos: {x}, {y}")
+        #rect.set_pos(x, 0)
+        if event_code == lv.EVENT.RELEASED and y > 60: # TODO: use display_height / 3 here
+            mpos.ui.open_drawer()
+            #rect.set_pos(0,0)
+        #rect.set_pos(xa + point.x, ya + point.y)
+        #rect.set_pos(point.x, point.y)
+
+
+def handle_top_swipe():
+    rect = lv.obj(lv.layer_top())
+    rect.set_size(lv.pct(100), NOTIFICATION_BAR_HEIGHT)
+    rect.set_pos(0, 0)
+    rect.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
+    style = lv.style_t()
+    style.init()
+    style.set_bg_opa(lv.OPA.TRANSP)
+    #style.set_bg_opa(15)
+    style.set_border_width(0)
+    style.set_radius(0)
+    #style.set_border_color(lv.color_hex(0xFF0000))  # White border for visibility
+    #style.set_border_opa(lv.OPA._50)  # 50% opacity for the border
+    rect.add_style(style, 0)
+    #rect.add_flag(lv.obj.FLAG.CLICKABLE)  # Make the object clickable
+    #rect.add_flag(lv.obj.FLAG.GESTURE_BUBBLE)  # Allow dragging
+    #rect.add_event_cb(drag_event_cb, lv.EVENT.PRESSING, None)
+    rect.add_event_cb(top_swipe_cb, lv.EVENT.RELEASED, None)

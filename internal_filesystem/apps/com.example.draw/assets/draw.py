@@ -1,20 +1,9 @@
 import mpos.ui
 
-import lvgl as lv
-
 indev_error_x = 160
 indev_error_y = 120
 
 DARKPINK = lv.color_hex(0xEC048C)
-
-def get_xy():
-    indev = lv.indev_active()
-    if indev:
-        point = lv.point_t()
-        indev.get_point(point)
-        return point.x, point.y
-    else:
-        return indev_error_x,indev_error_y # make it visible that this occurred
 
 # doesnt work:
 def draw_line(x, y):
@@ -57,7 +46,7 @@ def touch_cb(event):
         #print(f"lv_event_t: code={event_code}, name={name}") # target={event.get_target()}, user_data={event.get_user_data()}, param={event.get_param()}
         if event_code == lv.EVENT.PRESSING: # this is probably enough
         #if event_code in [lv.EVENT.PRESSED, lv.EVENT.PRESSING, lv.EVENT.LONG_PRESSED, lv.EVENT.LONG_PRESSED_REPEAT]:
-            x, y = get_xy()
+            x, y = mpos.ui.get_pointer_xy()
             # drawing a point works:
             #canvas.set_px(x,y,lv.color_black(),lv.OPA.COVER)
             #

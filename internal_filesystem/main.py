@@ -5,6 +5,8 @@ import mpos.ui
 mpos.ui.create_rootscreen()
 mpos.ui.create_notification_bar()
 mpos.ui.create_drawer(display)
+mpos.ui.handle_back_swipe()
+mpos.ui.handle_top_swipe()
 mpos.ui.th = task_handler.TaskHandler(duration=5) # 5ms is recommended for MicroPython+LVGL on desktop
 
 try:
