@@ -3,6 +3,8 @@ import time
 import mpos.config
 import mpos.ui
 
+from wallet import LNBitsWallet
+
 # screens:
 main_screen = None
 settings_screen = None
@@ -225,7 +227,7 @@ if wallet_type == "lnbits":
     try:
         wallet = LNBitsWallet(config.get_string("lnbits_url"), config.get_string("lnbits_readkey"))
     except Exception as e:
-        print("Couldn't initialize LNBitsWallet because {e}")
+        print(f"Couldn't initialize LNBitsWallet because {e}")
 elif wallet_type == "nwc":
     try:
         wallet = NWCWallet(config.get_string("nwc_url"))

@@ -12,10 +12,10 @@ import mpos.info
 import mpos.ui
 
 # Run the script in the current thread:
-def execute_script(script_source, is_file):
+def execute_script(script_source, is_file, cwd=None):
     thread_id = _thread.get_ident()
     compile_name = 'script' if not is_file else script_source
-    print(f"Thread {thread_id}: executing script")
+    print(f"Thread {thread_id}: executing script with cwd: {cwd}")
     try:
         if is_file:
             print(f"Thread {thread_id}: reading script from file {script_source}")
@@ -26,6 +26,10 @@ def execute_script(script_source, is_file):
             '__name__': "__main__"
         }
         print(f"Thread {thread_id}: starting script")
+        import sys
+        path_before = sys.path
+        if cwd:
+            sys.path.append(cwd)
         try:
             compiled_script = compile(script_source, compile_name, 'exec')
             exec(compiled_script, script_globals)
@@ -35,7 +39,7 @@ def execute_script(script_source, is_file):
             tb = getattr(e, '__traceback__', None)
             traceback.print_exception(type(e), e, tb)
         print(f"Thread {thread_id}: script {compile_name} finished")
-        # Note that newscreen isn't deleted, as it might still be foreground, or it might be mpos.ui.rootscreen
+        sys.path = path_before
     except Exception as e:
         print(f"Thread {thread_id}: error:")
         tb = getattr(e, '__traceback__', None)
@@ -83,7 +87,7 @@ def start_app(app_dir, is_launcher=False):
     app = mpos.apps.parse_manifest(manifest_path)
     start_script_fullpath = f"{app_dir}/{app.entrypoint}"
     #execute_script_new_thread(start_script_fullpath, True, is_launcher, True) # Starting (GUI?) apps in a new thread can cause hangs (GIL lock?)
-    execute_script(start_script_fullpath, True)
+    execute_script(start_script_fullpath, True, app_dir + "/assets/")
     # Launchers have the bar, other apps don't have it
     if is_launcher:
         mpos.ui.open_bar()
@@ -158,12 +162,12 @@ def auto_connect():
     # Maybe start_app_by_name() and start_app_by_name() could be merged so the try-except logic is not duplicated...
     try:
         stat = uos.stat(custom_auto_connect)
-        execute_script_new_thread(custom_auto_connect, True, False, False)
+        execute_script_new_thread(custom_auto_connect, True)
     except Exception as e:
         try:
             print(f"Couldn't execute {custom_auto_connect} because exception {e}, trying {builtin_auto_connect}...")
             stat = uos.stat(builtin_auto_connect)
-            execute_script_new_thread(builtin_auto_connect, True, False, False)
+            execute_script_new_thread(builtin_auto_connect, True)
         except Exception as e:
             print("Couldn't execute {builtin_auto_connect} because exception {e}, continuing...")
     
