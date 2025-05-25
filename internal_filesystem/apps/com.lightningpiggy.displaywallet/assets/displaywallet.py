@@ -9,6 +9,8 @@ from wallet import LNBitsWallet
 main_screen = None
 settings_screen = None
 
+balance_label = None
+
 # Settings screen implementation
 class SettingsScreen():
     def __init__(self):
@@ -185,7 +187,7 @@ def settings_button_tap(event):
     mpos.ui.load_screen(settings_screen)
 
 def build_main_ui():
-    global main_screen
+    global main_screen, balance_label
     main_screen = lv.obj()
     main_screen.set_style_pad_all(10, 0)
     balance_label = lv.label(main_screen)
@@ -209,14 +211,18 @@ def build_main_ui():
     mpos.ui.load_screen(main_screen)
 
 
+def redraw_balance_cb(timer):
+    global balance_label
+    if balance_label.get_text() != str(wallet.last_known_balance):
+        balance_label.set_text(str(wallet.last_known_balance))
+
 def janitor_cb(timer):
     if lv.screen_active() != main_screen and lv.screen_active() != settings_screen:
         print("app backgrounded, cleaning up...")
         janitor.delete()
+        redraw_timer.delete()
         if settings_screen:
             settings_screen.delete()
-        
-janitor = lv.timer_create(janitor_cb, 1000, None)
 
 build_main_ui()
 
@@ -236,4 +242,7 @@ elif wallet_type == "nwc":
 else:
     print(f"No or unsupported wallet type configured: '{wallet_type}'")
 
+wallet.start_refresh_balance()
+redraw_timer = lv.timer_create(redraw_balance_cb, 1000, None)
 
+janitor = lv.timer_create(janitor_cb, 1000, None)

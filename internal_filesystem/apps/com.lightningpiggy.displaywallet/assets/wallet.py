@@ -1,9 +1,15 @@
+import _thread
+import requests
+import json
+
+import mpos.apps
+import mpos.time
 
 class Wallet:
 
     # These values could be loading from a cache.json file at __init__
     last_known_balance = 0
-    last_known_balance_timestamp = 0
+    #last_known_balance_timestamp = 0
 
     def __init__(self):
         pass
@@ -22,24 +28,33 @@ class LNBitsWallet(Wallet):
         self.lnbits_url = lnbits_url
         self.lnbits_readkey = lnbits_readkey
 
-    def fetch_balance_thread():
+    def fetch_balance_thread(self, lnbits_url, lnbits_readkey):
         print("fetch_balance_thread")
-        walleturl = self.lnbits_url + "/api/v1/wallet"
+        walleturl = lnbits_url + "/api/v1/wallet"
         headers = {
-            "X-Api-Key": self.lnbits_readkey,
+            "X-Api-Key": lnbits_readkey,
         }
         try:
-            response = requests.get(self.lnbits_url, timeout=10, headers=headers)
+            response = requests.get(walleturl, timeout=10, headers=headers)
         except Exception as e:
             print("GET request failed:", e)
             #lv.async_call(lambda l: please_wait_label.set_text(f"Error downloading app index: {e}"), None)
         if response and response.status_code == 200:
-            print(f"Got response text: {response.text}")
+            response_text = response.text
+            print(f"Got response text: {response_text}")
             response.close()
+            try:
+                balance_reply = json.loads(response_text)
+                print(f"Got balance: {balance_reply['balance']}")
+                balance_msat = balance_reply['balance']
+                self.last_known_balance = round(balance_msat / 1000)
+                #self.last_known_balance_timestamp = mpos.time.epoch_seconds()
+            except Exception as e:
+                print(f"Could not parse reponse text '{response_text}' as JSON: {e}")
 
     def start_refresh_balance(self):
         _thread.stack_size(mpos.apps.good_stack_size())
-        _thread.start_new_thread(self.fetch_balance_thread, ())
+        _thread.start_new_thread(self.fetch_balance_thread, (self.lnbits_url, self.lnbits_readkey))
 
 class NWCWallet(Wallet):
 
