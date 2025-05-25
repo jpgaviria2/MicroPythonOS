@@ -11,6 +11,13 @@ import mpos.apps
 import mpos.info
 import mpos.ui
 
+def good_stack_size():
+    stacksize = 24*1024
+    import sys
+    if sys.platform == "esp32":
+        stacksize = 16*1024
+    return stacksize
+
 # Run the script in the current thread:
 def execute_script(script_source, is_file, cwd=None):
     thread_id = _thread.get_ident()
@@ -64,6 +71,7 @@ def execute_script_new_thread(scriptname, is_file):
             stack=24*1024 # this doesn't do anything because it's all started in the same thread
         else:
             stack=16*1024 # 16KB doesn't seem to be enough for the AppStore app on desktop
+        stack = mpos.apps.good_stack_size()
         print(f"app.py: setting stack size for script to {stack}")
         _thread.stack_size(stack)
         _thread.start_new_thread(execute_script, (scriptname, is_file))

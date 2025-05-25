@@ -4,6 +4,7 @@ import ujson
 import time
 import _thread
 
+import mpos.apps
 import mpos.info
 import mpos.ui
 
@@ -91,7 +92,7 @@ def update_with_lvgl(url):
 def install_button_click(download_url):
     print(f"install_button_click for url {download_url}")
     try:
-        _thread.stack_size(12*1024)
+        _thread.stack_size(mpos.apps.good_stack_size())
         _thread.start_new_thread(update_with_lvgl, (download_url,))
     except Exception as e:
         print("Could not start update_with_lvgl thread: ", e)

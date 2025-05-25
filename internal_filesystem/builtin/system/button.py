@@ -4,6 +4,8 @@ from machine import Pin, Timer
 import time
 import _thread
 
+import mpos.apps
+
 # Configure IO0 as input with pull-up resistor
 button = Pin(0, Pin.IN, Pin.PULL_UP)
 
@@ -35,7 +37,7 @@ def on_long_press(t): # Callback for when long press duration is reached.
     timer.deinit()  # Stop the timer
     global is_pressed
     if is_pressed and button.value() == 0:  # Ensure button is still pressed
-        _thread.stack_size(12*1024)
+        _thread.stack_size(mpos.apps.good_stack_size())
         _thread.start_new_thread(handle_long_press, ())
     else:
         is_pressed = False

@@ -4,6 +4,7 @@ import time
 import lvgl as lv
 import _thread
 
+import mpos.apps
 import mpos.ui
 
 # Screens:
@@ -99,7 +100,7 @@ def start_scan_networks():
         busy_scanning = True
         scan_button.remove_flag(lv.obj.FLAG.CLICKABLE)
         scan_button_label.set_text(scan_button_scanning_text)
-        _thread.stack_size(12*1024)
+        _thread.stack_size(get_good_stacksize())
         _thread.start_new_thread(scan_networks_thread, ())
 
 
@@ -144,7 +145,7 @@ def start_attempt_connecting(ssid,password):
         print("Not attempting connect because busy_connecting.")
     else:
         busy_connecting = True
-        _thread.stack_size(12*1024)
+        _thread.stack_size(get_good_stacksize())
         _thread.start_new_thread(attempt_connecting_thread, (ssid,password))
 
 def show_error(message):
@@ -295,7 +296,6 @@ def cancel_cb(event):
     print("Deleting password screen...")
     password_page.delete()
     print("cancel_cb: Restoring main_screen")
-    #mpos.ui.load_screen(main_screen)
     mpos.ui.back_screen()
 
 def create_ui():

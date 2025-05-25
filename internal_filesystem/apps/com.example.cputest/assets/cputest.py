@@ -36,6 +36,9 @@ import hashlib
 import os
 import _thread
 
+import mpos.apps
+import mpos.ui
+
 keeprunning = True
 summary = "Running 3 CPU tests...\n\n"
 
@@ -96,19 +99,20 @@ def stress_test_thread():
 
 def janitor_cb(timer):
     global keeprunning
-    if lv.screen_active() != appscreen:
+    if lv.screen_active() != main_screen:
         print("cputest.py backgrounded, cleaning up...")
         janitor.delete()
         keeprunning = False
         update_status_timer.delete()
 
-appscreen = lv.screen_active()
+main_screen = lv.obj()
 janitor = lv.timer_create(janitor_cb, 1000, None)
 update_status_timer = lv.timer_create(lambda timer: status.set_text(summary), 750, None)
 
-status = lv.label(appscreen)
+status = lv.label(main_screen)
 status.align(lv.ALIGN.TOP_LEFT, 5, 10)
 status.set_text(summary)
+mpos.ui.load_screen(main_screen)
 
-_thread.stack_size(12*1024)
+_thread.stack_size(mpos.apps.good_stack_size())
 _thread.start_new_thread(stress_test_thread, ())

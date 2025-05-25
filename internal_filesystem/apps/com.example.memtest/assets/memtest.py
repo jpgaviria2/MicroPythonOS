@@ -32,6 +32,9 @@ import gc
 import time
 import _thread
 
+import mpos.apps
+import mpos.ui
+
 # Configuration
 ALLOCATION_TIMEOUT_MS = 100  # Timeout for a single allocation (in milliseconds)
 keep_running = True
@@ -110,18 +113,19 @@ def stress_test_thread():
 
 def janitor_cb(timer):
     global keep_running
-    if lv.screen_active() != appscreen:
+    if lv.screen_active() != main_screen:
         print("memtest.py backgrounded, cleaning up...")
         janitor.delete()
         keep_running = False
 
-appscreen = lv.screen_active()
-status = lv.label(appscreen)
+main_screen = lv.obj()
+status = lv.label(main_screen)
 status.align(lv.ALIGN.TOP_LEFT, 5, 10)
 status.set_style_text_color(lv.color_hex(0xFFFFFF), 0)
 status.set_style_text_font(lv.font_unscii_8, 0)
+mpos.ui.load_screen(main_screen)
 
-_thread.stack_size(12*1024)
+_thread.stack_size(mpos.apps.good_stack_size())
 _thread.start_new_thread(stress_test_thread, ())
 
 janitor = lv.timer_create(janitor_cb, 400, None)
