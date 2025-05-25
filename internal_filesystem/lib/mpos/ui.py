@@ -52,6 +52,7 @@ def drawer_swipe_cb(event):
         x, end_y = get_pointer_xy()
         if end_y < drawer_swipe_start_y - NOTIFICATION_BAR_HEIGHT:
             mpos.ui.close_drawer()
+        drawer_swipe_start_y = 0
 
 
 # Shutdown function to run in main thread
@@ -497,11 +498,13 @@ def back_screen():
 
 # Would be better to somehow save other events, like clicks, and pass them down to the layers below if released with x < 60
 def back_swipe_cb(event):
-    #global rect
+    if drawer_open:
+        print("ignoring back gesture because drawer is open")
+        return
 
     event_code = event.get_code()
-    name = mpos.ui.get_event_name(event_code)
-    print(f"back_swipe_cb {event_code} and {name}")
+    #name = mpos.ui.get_event_name(event_code)
+    #print(f"back_swipe_cb {event_code} and {name}")
 
     #xa = rect.get_x_aligned()
     #ya = rect.get_y_aligned()
