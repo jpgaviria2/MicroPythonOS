@@ -17,6 +17,8 @@ import mpos.ui
 # Create a container for the grid
 main_screen = lv.obj()
 cont = lv.obj(main_screen)
+cont.set_style_border_width(0, 0)
+cont.set_style_radius(0, 0)
 cont.set_pos(0, mpos.ui.NOTIFICATION_BAR_HEIGHT) # leave some margin for the notification bar
 cont.set_size(lv.pct(100), lv.pct(100))
 cont.set_style_pad_all(10, 0)
