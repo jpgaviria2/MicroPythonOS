@@ -1,20 +1,19 @@
-# START OF COPY-PASTE FROM https://sim.lvgl.io/v9.0/micropython/ports/webassembly/
+import mpos.ui
 
-# Initialize
-
-import display_driver # not needed, but included because the LVGL simulator does it
-import lvgl as lv
-
-# Create a button with a label
+def button_click(e):
+    print("Button clicked!")
 
 scr = lv.obj()
+
+# Create a button with a label
 btn = lv.button(scr)
 btn.align(lv.ALIGN.CENTER, 0, 0)
+#btn.set_size(lv.pct(100),lv.pct(100))
+btn.add_event_cb(button_click,lv.EVENT.CLICKED,None)
 label = lv.label(btn)
 label.set_text('Hello World!')
-lv.screen_load(scr)
 
-# END OF COPY-PASTE FROM https://sim.lvgl.io/v9.0/micropython/ports/webassembly/
+mpos.ui.load_screen(scr)
 
 # Optional janitor that cleans up when the app is backgrounded:
 def janitor_cb(timer):
