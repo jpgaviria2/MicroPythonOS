@@ -310,11 +310,7 @@ def create_apps_list():
         desc_label.add_event_cb(lambda e, a=app: show_app_detail(a), lv.EVENT.CLICKED, None)
     print("create_apps_list app done")
     try:
-        stacksize = 24*1024
-        import sys
-        if sys.platform == "esp32":
-            stacksize = 16*1024
-        _thread.stack_size(stacksize)
+        _thread.stack_size(mpos.apps.good_stack_size())
         _thread.start_new_thread(download_icons,())
     except Exception as e:
         print("Could not start thread to download icons: ", e)
@@ -407,14 +403,14 @@ def toggle_install(download_url, fullname):
     label_text = install_label.get_text()
     if label_text == action_label_install:
         try:
-            _thread.stack_size(12*1024)
+            _thread.stack_size(mpos.apps.good_stack_size())
             _thread.start_new_thread(download_and_unzip, (download_url, f"apps/{fullname}", fullname))
         except Exception as e:
             print("Could not start download_and_unzip thread: ", e)
     elif label_text == action_label_uninstall or label_text == action_label_restore:
         print("Uninstalling app....")
         try:
-            _thread.stack_size(12*1024)
+            _thread.stack_size(mpos.apps.good_stack_size())
             _thread.start_new_thread(uninstall_app, (f"apps/{fullname}", fullname))
         except Exception as e:
             print("Could not start download_and_unzip thread: ", e)
@@ -425,7 +421,7 @@ def update_button_click(download_url, fullname):
     update_button.add_flag(lv.obj.FLAG.HIDDEN)
     install_button.set_size(lv.pct(100), 40)
     try:
-        _thread.stack_size(12*1024)
+        _thread.stack_size(mpos.apps.good_stack_size())
         _thread.start_new_thread(download_and_unzip, (download_url, f"apps/{fullname}", fullname))
     except Exception as e:
         print("Could not start download_and_unzip thread: ", e)
@@ -453,10 +449,6 @@ except Exception as e:
 if can_check_network and not network.WLAN(network.STA_IF).isconnected():
     please_wait_label.set_text("Error: WiFi is not connected.")
 else:
-    stacksize = 24*1024
-    import sys
-    if sys.platform == "esp32":
-        stacksize = 16*1024
-    _thread.stack_size(stacksize)
+    _thread.stack_size(mpos.apps.good_stack_size())
     _thread.start_new_thread(download_apps, ("http://demo.lnpiggy.com:2121/apps.json",))
 
