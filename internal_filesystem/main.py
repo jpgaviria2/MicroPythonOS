@@ -9,6 +9,7 @@ mpos.ui.handle_back_swipe()
 mpos.ui.handle_top_swipe()
 mpos.ui.th = task_handler.TaskHandler(duration=5) # 5ms is recommended for MicroPython+LVGL on desktop
 
+# Maybe this should only be done if there is not already a "builtin" folder... with the expected apps/4apps
 try:
     import freezefs_mount_builtin
 except Exception as e:
