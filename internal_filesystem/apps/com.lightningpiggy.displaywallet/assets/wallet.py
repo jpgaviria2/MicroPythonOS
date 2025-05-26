@@ -20,7 +20,7 @@ class Wallet:
     #last_known_balance_timestamp = 0
 
     def __init__(self):
-        pass
+        self.keep_running = True
 
     def __str__(self):
         if isinstance(self, LNBitsWallet):
@@ -28,14 +28,22 @@ class Wallet:
         elif isinstance(self, NWCWallet):
             return "NWCWallet"
 
-    def start_refresh_balance(self, balance_updated_cb):
+    # Need callbacks for:
+    #    - started (so the user can show the UI) 
+    #    - stopped (so the user can delete/free it)
+    #    - error (so the user can show the error)
+    #    - balance
+    #    - transactions
+    def start(self, balance_updated_cb):
+        self.keep_running = True
         _thread.stack_size(mpos.apps.good_stack_size())
-        _thread.start_new_thread(self.fetch_balance_thread, (balance_updated_cb,))
+        _thread.start_new_thread(self.manage_wallet_thread, (balance_updated_cb,))
 
-    def destroy(self):
-        # optional to inherit
-        pass
+    def stop(self):
+        self.keep_running = False
 
+    def is_running(self):
+        return self.keep_running
 
 class LNBitsWallet(Wallet):
 
@@ -44,8 +52,20 @@ class LNBitsWallet(Wallet):
         self.lnbits_url = lnbits_url
         self.lnbits_readkey = lnbits_readkey
 
-    def fetch_balance_thread(self, balance_updated_cb):
-        print("fetch_balance_thread")
+    def manage_wallet_thread(self, balance_updated_cb):
+        print("manage_wallet_thread")
+        while self.keep_running:
+            try:
+                self.last_known_balance = fetch_balance()
+                balance_updated_cb()
+                # TODO: if the balance changed, then re-list transactions
+            except Exception as e:
+                print(f"WARNING: fetch_balance got exception {e}, ignorning.")
+            print("Sleeping a while before re-fetching balance...")
+            time.sleep(60)
+        print("manage_wallet_thread stopping")
+
+    def fetch_balance():
         walleturl = self.lnbits_url + "/api/v1/wallet"
         headers = {
             "X-Api-Key": self.lnbits_readkey,
@@ -53,8 +73,7 @@ class LNBitsWallet(Wallet):
         try:
             response = requests.get(walleturl, timeout=10, headers=headers)
         except Exception as e:
-            print("GET request failed:", e)
-            #lv.async_call(lambda l: please_wait_label.set_text(f"Error downloading app index: {e}"), None)
+            print("fetch_balance: get request failed:", e)
         if response and response.status_code == 200:
             response_text = response.text
             print(f"Got response text: {response_text}")
@@ -63,11 +82,10 @@ class LNBitsWallet(Wallet):
                 balance_reply = json.loads(response_text)
                 print(f"Got balance: {balance_reply['balance']}")
                 balance_msat = balance_reply['balance']
-                self.last_known_balance = round(balance_msat / 1000)
-                #self.last_known_balance_timestamp = mpos.time.epoch_seconds()
-                balance_updated_cb()
+                return round(balance_msat / 1000)
             except Exception as e:
                 print(f"Could not parse reponse text '{response_text}' as JSON: {e}")
+                raise e
 
 
 class NWCWallet(Wallet):
@@ -75,30 +93,28 @@ class NWCWallet(Wallet):
     def __init__(self, nwc_url):
         super().__init__()
         self.nwc_url = nwc_url
-        self.relay, self.wallet_pubkey, self.secret, self.lud16 = self.parse_nwc_url(nwc_url)
+        self.connected = False
+
+    def manage_wallet_thread(self, balance_updated_cb):
+        self.relay, self.wallet_pubkey, self.secret, self.lud16 = self.parse_nwc_url(self.nwc_url)
         self.private_key = PrivateKey(bytes.fromhex(self.secret))
         self.relay_manager = RelayManager()
         self.relay_manager.add_relay(self.relay)
+
+        print(f"DEBUG: Opening relay connections")
+        self.relay_manager.open_connections({"cert_reqs": ssl.CERT_NONE})
         self.connected = False
-
-    def destroy(self):
-        self.relay_manager.close_connections()
-
-    def fetch_balance_thread(self, balance_updated_cb) :
-        # make sure connected to relay (otherwise connect)
-        if self.relay_manager.relays[self.relay].connected != True:
-            print(f"DEBUG: Opening relay connections")
-            self.relay_manager.open_connections({"cert_reqs": ssl.CERT_NONE})
-            self.connected = False
-            for _ in range(20):
-                time.sleep(0.5)
-                if self.relay_manager.relays[self.relay].connected is True:
-                    self.connected = True
-                    break
-                print("Waiting for relay connection...")
+        for _ in range(20):
+            time.sleep(0.5)
+            if self.relay_manager.relays[self.relay].connected is True:
+                self.connected = True
+                break
+            print("Waiting for relay connection...")
         if not self.connected:
-            print("Failed to connect, aborting...")
+            print("ERROR: could not connect to NWC relay {self.relay}, aborting...")
+            # TODO: call an error callback to notify the user
             return
+
         # Set up subscription to receive response
         self.subscription_id = "nwc_balance_" + str(round(time.time()))
         print(f"DEBUG: Setting up subscription with ID: {self.subscription_id}")
@@ -110,6 +126,7 @@ class NWCWallet(Wallet):
         print(f"DEBUG: Subscription filters: {self.filters.to_json_array()}")
         self.relay_manager.add_subscription(self.subscription_id, self.filters)
         time.sleep(1)
+
         # Create get_balance request
         balance_request = {
             "method": "get_balance",
@@ -123,36 +140,21 @@ class NWCWallet(Wallet):
         )
         print(f"DEBUG: Signing DM {json.dumps(dm)} with private key")
         self.private_key.sign_event(dm) # sign also does encryption if it's a encrypted dm
-        print(f"DEBUG: DM created with ID: {dm.id}")
-        # Publish request
         print(f"DEBUG: Publishing subscription request")
         request_message = [ClientMessageType.REQUEST, self.subscription_id]
         request_message.extend(self.filters.to_json_array())
         self.relay_manager.publish_message(json.dumps(request_message))
         print(f"DEBUG: Publishing encrypted DM")
         self.relay_manager.publish_event(dm)
-        # only accept events after the time it was published
-        after_time = mpos.time.epoch_seconds()
-        after_time -= 60 # go back a bit because server clocks might be drifting
-        print(f"will only consider events after {after_time}")
 
-        # Wait for response
-        print(f"DEBUG: Waiting for response...")
-        print(f"starting at {time.localtime()}")
-        start_time = mpos.time.epoch_seconds()
-        balance = None
-        while mpos.time.epoch_seconds() - start_time < 60 * 2:
-            while self.relay_manager.message_pool.has_events():
+        print(f"DEBUG: Waiting for incoming NWC events...")
+        while self.keep_running:
+            if self.relay_manager.message_pool.has_events():
                 print(f"DEBUG: Event received from message pool")
                 event_msg = self.relay_manager.message_pool.get_event()
                 event_created_at = event_msg.event.created_at
                 print(f"Received at {time.localtime()} a message with timestamp {event_created_at}")
-                #if event_created_at < after_time:
-                #    print("Skipping event because it's too old!")
-                #    continue
-                #print(f"event_msg content {event_msg.event.content}")
                 try:
-                    #print(f"DEBUG: Decrypting event from public_key: {event_msg.event.public_key}")
                     decrypted_content = self.private_key.decrypt_message(
                         event_msg.event.content,
                         event_msg.event.public_key
@@ -160,15 +162,25 @@ class NWCWallet(Wallet):
                     print(f"DEBUG: Decrypted content: {decrypted_content}")
                     response = json.loads(decrypted_content)
                     print(f"DEBUG: Parsed response: {response}")
-                    self.last_known_balance = round(int(response["result"]["balance"]) / 1000)
-                    print(f"Got balance: {self.last_known_balance}")
-                    balance_updated_cb()
-                    break
+                    if response["result"]:
+                        if response["result"]["balance"]:
+                            self.last_known_balance = round(int(response["result"]["balance"]) / 1000)
+                            print(f"Got balance: {self.last_known_balance}")
+                            # TODO: if balance changed, then update list of transactions
+                            balance_updated_cb()
+                        elif response["result"]["transactions"]:
+                            print("TODO: Response contains transactions!")
+                        else:
+                            print("Unsupported response, ignoring.")
+                    else:
+                        print("Event doesn't contain result, ignoring.")
                 except Exception as e:
                     print(f"DEBUG: Error processing response: {e}")
-            if balance is not None:
-                break
             time.sleep(1)
+
+        print("NWCWallet: manage_wallet_thread stopping, closing connections...")
+        self.relay_manager.close_connections()
+
 
     def parse_nwc_url(self, nwc_url):
         """Parse Nostr Wallet Connect URL to extract pubkey, relay, secret, and lud16."""
@@ -185,6 +197,7 @@ class NWCWallet(Wallet):
                 print(f"DEBUG: No recognized prefix found in URL")
                 raise ValueError("Invalid NWC URL: missing 'nostr+walletconnect://' or 'nwc:' prefix")
             print(f"DEBUG: URL after prefix removal: {nwc_url}")
+            # TODO: urldecode because the relay might have %3A%2F%2F etc
             # Split into pubkey and query params
             parts = nwc_url.split('?')
             pubkey = parts[0]
@@ -201,7 +214,7 @@ class NWCWallet(Wallet):
                 params = parts[1].split('&')
                 for param in params:
                     if param.startswith('relay='):
-                        relay = param[6:] # TODO: urldecode because the relay might have %3A%2F%2F etc
+                        relay = param[6:]
                         print(f"DEBUG: Extracted relay: {relay}")
                     elif param.startswith('secret='):
                         secret = param[7:]

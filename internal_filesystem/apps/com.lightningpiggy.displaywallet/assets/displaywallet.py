@@ -9,7 +9,10 @@ from wallet import LNBitsWallet, NWCWallet
 main_screen = None
 settings_screen = None
 
+# widgets
 balance_label = None
+
+wallet = None
 
 # Settings screen implementation
 class SettingsScreen():
@@ -181,9 +184,10 @@ class SettingsScreen():
 
 
 def settings_button_tap(event):
-    global settings_screen
+    global settings_screen, wallet
     if not settings_screen:
         settings_screen = SettingsScreen().screen
+    wallet.stop()
     mpos.ui.load_screen(settings_screen)
 
 def build_main_ui():
@@ -217,11 +221,31 @@ def redraw_balance_cb(timer):
         balance_label.set_text(str(wallet.last_known_balance))
 
 def janitor_cb(timer):
-    global wallet
-    if lv.screen_active() != main_screen and lv.screen_active() != settings_screen:
+    global wallet, config
+    if lv.screen_active() == main_screen and (not wallet or not wallet.is_running()):
+        # just started the app or just returned from settings_screen
+        config = mpos.config.SharedPreferences("com.lightningpiggy.displaywallet")
+        wallet_type = config.get_string("wallet_type")
+        if wallet_type == "lnbits":
+            try:
+                wallet = LNBitsWallet(config.get_string("lnbits_url"), config.get_string("lnbits_readkey"))
+            except Exception as e:
+                print(f"Couldn't initialize LNBitsWallet because: {e}")
+        elif wallet_type == "nwc":
+            try:
+                wallet = NWCWallet(config.get_string("nwc_url"))
+            except Exception as e:
+                print(f"Couldn't initialize NWCWallet because: {e}")
+        else:
+            print(f"No or unsupported wallet type configured: '{wallet_type}'")
+        if wallet:
+            wallet.start(lambda : balance_label.set_text(str(wallet.last_known_balance)))
+        else:
+            print("ERROR: could not start any wallet!") # maybe call the error callback to show the error to the user
+    elif lv.screen_active() != main_screen and lv.screen_active() != settings_screen:
         print("app backgrounded, cleaning up...")
         janitor.delete()
-        wallet.destroy()
+        wallet.stop()
         if settings_screen:
             settings_screen.delete()
         if main_screen:
@@ -229,22 +253,4 @@ def janitor_cb(timer):
 
 build_main_ui()
 
-config = mpos.config.SharedPreferences("com.lightningpiggy.displaywallet")
-
-wallet_type = config.get_string("wallet_type")
-if wallet_type == "lnbits":
-    try:
-        wallet = LNBitsWallet(config.get_string("lnbits_url"), config.get_string("lnbits_readkey"))
-    except Exception as e:
-        print(f"Couldn't initialize LNBitsWallet because: {e}")
-elif wallet_type == "nwc":
-    try:
-        wallet = NWCWallet(config.get_string("nwc_url"))
-    except Exception as e:
-        print(f"Couldn't initialize NWCWallet because: {e}")
-else:
-    print(f"No or unsupported wallet type configured: '{wallet_type}'")
-
-wallet.start_refresh_balance(lambda : balance_label.set_text(str(wallet.last_known_balance)))
-
-janitor = lv.timer_create(janitor_cb, 1000, None)
+janitor = lv.timer_create(janitor_cb, 500, None)
