@@ -35,6 +35,13 @@ class Wallet:
             return False
         return all(p1 == p2 for p1, p2 in zip(list1, list2))
 
+    def handle_new_balance(self, new_balance):
+        if new_balance != self.last_known_balance:
+            self.last_known_balance = new_balance
+            self.balance_updated_cb()
+            new_payments = self.fetch_payments() # if the balance changed, then re-list transactions
+            self.handle_new_payments(new_payments)
+
     def handle_new_payments(self, new_payments):
         print("handle_new_payments")
         if not self.are_payment_lists_equal(self.payment_list, new_payments):
@@ -76,11 +83,7 @@ class LNBitsWallet(Wallet):
         while self.keep_running:
             try:
                 new_balance = self.fetch_balance()
-                if new_balance != self.last_known_balance:
-                    self.last_known_balance = new_balance
-                    self.balance_updated_cb()
-                    new_payments = self.fetch_payments() # if the balance changed, then re-list transactions
-                    self.handle_new_payments(new_payments)
+                self.handle_new_balance(new_balance)
             except Exception as e:
                 print(f"WARNING: wallet_manager_thread got exception {e}, ignorning.")
             print("Sleeping a while before re-fetching balance...")
@@ -124,10 +127,10 @@ class LNBitsWallet(Wallet):
             response.close()
             try:
                 payments_reply = json.loads(response_text)
-                print(f"Got payments: {payments_reply}")
+                #print(f"Got payments: {payments_reply}")
                 new_payments = []
                 for payment in payments_reply:
-                    print(f"Got payment: {payment}")
+                    #print(f"Got payment: {payment}")
                     amount = payment["amount"]
                     amount = round(amount / 1000)
                     comment = payment["memo"]
@@ -182,25 +185,7 @@ class NWCWallet(Wallet):
         self.relay_manager.add_subscription(self.subscription_id, self.filters)
         time.sleep(1)
 
-        # Create get_balance request
-        balance_request = {
-            "method": "get_balance",
-            "params": {}
-        }
-        print(f"DEBUG: Created balance request: {balance_request}")
-        print(f"DEBUG: Creating encrypted DM to wallet pubkey: {self.wallet_pubkey}")
-        dm = EncryptedDirectMessage(
-            recipient_pubkey=self.wallet_pubkey,
-            cleartext_content=json.dumps(balance_request)
-        )
-        print(f"DEBUG: Signing DM {json.dumps(dm)} with private key")
-        self.private_key.sign_event(dm) # sign also does encryption if it's a encrypted dm
-        print(f"DEBUG: Publishing subscription request")
-        request_message = [ClientMessageType.REQUEST, self.subscription_id]
-        request_message.extend(self.filters.to_json_array())
-        self.relay_manager.publish_message(json.dumps(request_message))
-        print(f"DEBUG: Publishing encrypted DM")
-        self.relay_manager.publish_event(dm)
+        self.fetch_balance()
 
         print(f"DEBUG: Waiting for incoming NWC events...")
         while self.keep_running:
@@ -236,6 +221,30 @@ class NWCWallet(Wallet):
         print("NWCWallet: manage_wallet_thread stopping, closing connections...")
         self.relay_manager.close_connections()
 
+    def fetch_balance(self):
+        # Create get_balance request
+        balance_request = {
+            "method": "get_balance",
+            "params": {}
+        }
+        print(f"DEBUG: Created balance request: {balance_request}")
+        print(f"DEBUG: Creating encrypted DM to wallet pubkey: {self.wallet_pubkey}")
+        dm = EncryptedDirectMessage(
+            recipient_pubkey=self.wallet_pubkey,
+            cleartext_content=json.dumps(balance_request)
+        )
+        print(f"DEBUG: Signing DM {json.dumps(dm)} with private key")
+        self.private_key.sign_event(dm) # sign also does encryption if it's a encrypted dm
+        print(f"DEBUG: Publishing subscription request")
+        request_message = [ClientMessageType.REQUEST, self.subscription_id]
+        request_message.extend(self.filters.to_json_array())
+        self.relay_manager.publish_message(json.dumps(request_message))
+        print(f"DEBUG: Publishing encrypted DM")
+        self.relay_manager.publish_event(dm)
+
+    def fetch_payments(self):
+        # just send the message to request payments and they'll be handled by the main loop
+        pass
 
     def parse_nwc_url(self, nwc_url):
         """Parse Nostr Wallet Connect URL to extract pubkey, relay, secret, and lud16."""
