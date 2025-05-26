@@ -37,7 +37,7 @@ class Wallet:
     def start(self, balance_updated_cb):
         self.keep_running = True
         _thread.stack_size(mpos.apps.good_stack_size())
-        _thread.start_new_thread(self.manage_wallet_thread, (balance_updated_cb,))
+        _thread.start_new_thread(self.wallet_manager_thread, (balance_updated_cb,))
 
     def stop(self):
         self.keep_running = False
@@ -52,8 +52,8 @@ class LNBitsWallet(Wallet):
         self.lnbits_url = lnbits_url
         self.lnbits_readkey = lnbits_readkey
 
-    def manage_wallet_thread(self, balance_updated_cb):
-        print("manage_wallet_thread")
+    def wallet_manager_thread(self, balance_updated_cb):
+        print("wallet_manager_thread")
         while self.keep_running:
             try:
                 self.last_known_balance = fetch_balance()
@@ -63,7 +63,7 @@ class LNBitsWallet(Wallet):
                 print(f"WARNING: fetch_balance got exception {e}, ignorning.")
             print("Sleeping a while before re-fetching balance...")
             time.sleep(60)
-        print("manage_wallet_thread stopping")
+        print("wallet_manager_thread stopping")
 
     def fetch_balance():
         walleturl = self.lnbits_url + "/api/v1/wallet"
@@ -95,7 +95,7 @@ class NWCWallet(Wallet):
         self.nwc_url = nwc_url
         self.connected = False
 
-    def manage_wallet_thread(self, balance_updated_cb):
+    def wallet_manager_thread(self, balance_updated_cb):
         self.relay, self.wallet_pubkey, self.secret, self.lud16 = self.parse_nwc_url(self.nwc_url)
         self.private_key = PrivateKey(bytes.fromhex(self.secret))
         self.relay_manager = RelayManager()
