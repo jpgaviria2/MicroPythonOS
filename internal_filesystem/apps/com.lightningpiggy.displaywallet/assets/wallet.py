@@ -12,12 +12,14 @@ from nostr.key import PrivateKey
 
 import mpos.apps
 import mpos.time
+import mpos.util
 
 class Wallet:
 
     # These values could be loading from a cache.json file at __init__
-    last_known_balance = 0
+    last_known_balance = -1
     #last_known_balance_timestamp = 0
+    payment_list = []
 
     def __init__(self):
         self.keep_running = True
@@ -28,16 +30,33 @@ class Wallet:
         elif isinstance(self, NWCWallet):
             return "NWCWallet"
 
+    def are_payment_lists_equal(self, list1, list2):
+        if len(list1) != len(list2):
+            return False
+        return all(p1 == p2 for p1, p2 in zip(list1, list2))
+
+    def handle_new_payments(self, new_payments):
+        print("handle_new_payments")
+        if not self.are_payment_lists_equal(self.payment_list, new_payments):
+            print("new list of payments")
+            self.payment_list = new_payments
+            self.payments_updated_cb()
+
+    def payment_list_string(self):
+        return "\n".join(f"{payment.amount_sats} sats: {payment.comment}" for payment in self.payment_list)
+
     # Need callbacks for:
     #    - started (so the user can show the UI) 
     #    - stopped (so the user can delete/free it)
     #    - error (so the user can show the error)
     #    - balance
     #    - transactions
-    def start(self, balance_updated_cb):
+    def start(self, balance_updated_cb, payments_updated_cb):
         self.keep_running = True
+        self.balance_updated_cb = balance_updated_cb
+        self.payments_updated_cb = payments_updated_cb
         _thread.stack_size(mpos.apps.good_stack_size())
-        _thread.start_new_thread(self.wallet_manager_thread, (balance_updated_cb,))
+        _thread.start_new_thread(self.wallet_manager_thread, ())
 
     def stop(self):
         self.keep_running = False
@@ -52,20 +71,23 @@ class LNBitsWallet(Wallet):
         self.lnbits_url = lnbits_url
         self.lnbits_readkey = lnbits_readkey
 
-    def wallet_manager_thread(self, balance_updated_cb):
+    def wallet_manager_thread(self):
         print("wallet_manager_thread")
         while self.keep_running:
             try:
-                self.last_known_balance = fetch_balance()
-                balance_updated_cb()
-                # TODO: if the balance changed, then re-list transactions
+                new_balance = self.fetch_balance()
+                if new_balance != self.last_known_balance:
+                    self.last_known_balance = new_balance
+                    self.balance_updated_cb()
+                    new_payments = self.fetch_payments() # if the balance changed, then re-list transactions
+                    self.handle_new_payments(new_payments)
             except Exception as e:
-                print(f"WARNING: fetch_balance got exception {e}, ignorning.")
+                print(f"WARNING: wallet_manager_thread got exception {e}, ignorning.")
             print("Sleeping a while before re-fetching balance...")
             time.sleep(60)
         print("wallet_manager_thread stopping")
 
-    def fetch_balance():
+    def fetch_balance(self):
         walleturl = self.lnbits_url + "/api/v1/wallet"
         headers = {
             "X-Api-Key": self.lnbits_readkey,
@@ -87,6 +109,39 @@ class LNBitsWallet(Wallet):
                 print(f"Could not parse reponse text '{response_text}' as JSON: {e}")
                 raise e
 
+    def fetch_payments(self):
+        paymentsurl = self.lnbits_url + "/api/v1/payments?limit=6"
+        headers = {
+            "X-Api-Key": self.lnbits_readkey,
+        }
+        try:
+            response = requests.get(paymentsurl, timeout=10, headers=headers)
+        except Exception as e:
+            print("fetch_payments: get request failed:", e)
+        if response and response.status_code == 200:
+            response_text = response.text
+            print(f"Got response text: {response_text}")
+            response.close()
+            try:
+                payments_reply = json.loads(response_text)
+                print(f"Got payments: {payments_reply}")
+                new_payments = []
+                for payment in payments_reply:
+                    print(f"Got payment: {payment}")
+                    amount = payment["amount"]
+                    amount = round(amount / 1000)
+                    comment = payment["memo"]
+                    extra = payment["extra"]
+                    if extra:
+                        extracomment = extra["comment"]
+                        if extracomment:
+                            comment = extracomment
+                    payment = Payment(amount, comment)
+                    new_payments.append(payment)
+                return new_payments
+            except Exception as e:
+                print(f"Could not parse reponse text '{response_text}' as JSON: {e}")
+                raise e
 
 class NWCWallet(Wallet):
 
@@ -95,7 +150,7 @@ class NWCWallet(Wallet):
         self.nwc_url = nwc_url
         self.connected = False
 
-    def wallet_manager_thread(self, balance_updated_cb):
+    def wallet_manager_thread(self):
         self.relay, self.wallet_pubkey, self.secret, self.lud16 = self.parse_nwc_url(self.nwc_url)
         self.private_key = PrivateKey(bytes.fromhex(self.secret))
         self.relay_manager = RelayManager()
@@ -167,7 +222,7 @@ class NWCWallet(Wallet):
                             self.last_known_balance = round(int(response["result"]["balance"]) / 1000)
                             print(f"Got balance: {self.last_known_balance}")
                             # TODO: if balance changed, then update list of transactions
-                            balance_updated_cb()
+                            self.balance_updated_cb()
                         elif response["result"]["transactions"]:
                             print("TODO: Response contains transactions!")
                         else:
@@ -197,7 +252,9 @@ class NWCWallet(Wallet):
                 print(f"DEBUG: No recognized prefix found in URL")
                 raise ValueError("Invalid NWC URL: missing 'nostr+walletconnect://' or 'nwc:' prefix")
             print(f"DEBUG: URL after prefix removal: {nwc_url}")
-            # TODO: urldecode because the relay might have %3A%2F%2F etc
+            # urldecode because the relay might have %3A%2F%2F etc
+            nwc_url = mpos.util.urldecode(nwc_url)
+            print(f"after urldecode: {nwc_url}")
             # Split into pubkey and query params
             parts = nwc_url.split('?')
             pubkey = parts[0]
@@ -234,3 +291,17 @@ class NWCWallet(Wallet):
         except Exception as e:
             print(f"DEBUG: Error parsing NWC URL: {e}")
 
+
+class Payment:
+
+    def __init__(self, amount_sats, comment):
+        self.amount_sats = amount_sats
+        self.comment = comment
+
+    def __str__(self):
+            return f"Payment(amount_sats={self.amount_sats}, comment='{self.comment}')"
+
+    def __eq__(self, other):
+        if not isinstance(other, Payment):
+            return False
+        return self.amount_sats == other.amount_sats and self.comment == other.comment

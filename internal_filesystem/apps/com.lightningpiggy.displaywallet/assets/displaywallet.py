@@ -11,6 +11,7 @@ settings_screen = None
 
 # widgets
 balance_label = None
+payments_label = None
 
 wallet = None
 
@@ -191,21 +192,25 @@ def settings_button_tap(event):
     mpos.ui.load_screen(settings_screen)
 
 def build_main_ui():
-    global main_screen, balance_label
+    global main_screen, balance_label, payments_label
     main_screen = lv.obj()
     main_screen.set_style_pad_all(10, 0)
     balance_label = lv.label(main_screen)
     balance_label.align(lv.ALIGN.TOP_LEFT, 0, 0)
-    balance_label.set_style_text_font(lv.font_montserrat_20, 0)
-    balance_label.set_text('123456')
+    balance_label.set_style_text_font(lv.font_montserrat_22, 0)
+    balance_label.set_text(lv.SYMBOL.REFRESH)
     style_line = lv.style_t()
     style_line.init()
-    style_line.set_line_width(4)
+    style_line.set_line_width(2)
     style_line.set_line_color(lv.palette_main(lv.PALETTE.PINK))
     style_line.set_line_rounded(True)
     balance_line = lv.line(main_screen)
     balance_line.set_points([{'x':0,'y':35},{'x':300,'y':35}],2)
     balance_line.add_style(style_line, 0)
+    payments_label = lv.label(main_screen)
+    payments_label.align_to(balance_line,lv.ALIGN.OUT_BOTTOM_LEFT,0,10)
+    payments_label.set_style_text_font(lv.font_montserrat_16, 0)
+    payments_label.set_text(lv.SYMBOL.REFRESH)
     settings_button = lv.button(main_screen)
     settings_button.align(lv.ALIGN.BOTTOM_RIGHT, 0, 0)
     snap_label = lv.label(settings_button)
@@ -215,10 +220,14 @@ def build_main_ui():
     mpos.ui.load_screen(main_screen)
 
 
-def redraw_balance_cb(timer):
+def redraw_balance_cb():
     global balance_label
-    if balance_label.get_text() != str(wallet.last_known_balance):
-        balance_label.set_text(str(wallet.last_known_balance))
+    balance_label.set_text(str(wallet.last_known_balance))
+
+def redraw_payments_cb():
+    global payments_label
+    print("redrawing payments")
+    payments_label.set_text(wallet.payment_list_string())
 
 def janitor_cb(timer):
     global wallet, config
@@ -239,7 +248,7 @@ def janitor_cb(timer):
         else:
             print(f"No or unsupported wallet type configured: '{wallet_type}'")
         if wallet:
-            wallet.start(lambda : balance_label.set_text(str(wallet.last_known_balance)))
+            wallet.start(redraw_balance_cb, redraw_payments_cb)
         else:
             print("ERROR: could not start any wallet!") # maybe call the error callback to show the error to the user
     elif lv.screen_active() != main_screen and lv.screen_active() != settings_screen:
