@@ -14,12 +14,56 @@ import mpos.apps
 import mpos.time
 import mpos.util
 
+# keeps a list of items
+# The .add() method ensures the list remains unique (via __eq__)
+# and sorted (via __lt__) by inserting new items in the correct position.
+class UniqueSortedList:
+    def __init__(self):
+        self._items = []
+
+    def add(self, item):
+        # Check if item already exists (using __eq__)
+        if item not in self._items:
+            # Insert item in sorted position (using __lt__)
+            for i, existing_item in enumerate(self._items):
+                if item < existing_item:
+                    self._items.insert(i, item)
+                    return
+            # If item is larger than all existing items, append it
+            self._items.append(item)
+
+    def __iter__(self):
+        # Return iterator for the internal list
+        return iter(self._items)
+
+    def get(self, index_nr):
+        # Retrieve item at given index, raise IndexError if invalid
+        try:
+            return self._items[index_nr]
+        except IndexError:
+            raise IndexError("Index out of range")
+
+    def __len__(self):
+        # Return the number of items for len() calls
+        return len(self._items)
+
+    def __str__(self):
+        print("UniqueSortedList tostring called")
+        return "\n".join(str(item) for item in self._items)
+
+    def __eq__(self, other):
+        if len(self._items) != len(other):
+            return False
+        return all(p1 == p2 for p1, p2 in zip(self._items, other))
+
+
+
 class Wallet:
 
     # These values could be loading from a cache.json file at __init__
     last_known_balance = -1
     #last_known_balance_timestamp = 0
-    payment_list = []
+    payment_list = UniqueSortedList()
 
     def __init__(self):
         self.keep_running = True
@@ -30,11 +74,6 @@ class Wallet:
         elif isinstance(self, NWCWallet):
             return "NWCWallet"
 
-    def are_payment_lists_equal(self, list1, list2):
-        if len(list1) != len(list2):
-            return False
-        return all(p1 == p2 for p1, p2 in zip(list1, list2))
-
     def handle_new_balance(self, new_balance):
         if new_balance != self.last_known_balance:
             self.last_known_balance = new_balance
@@ -44,13 +83,10 @@ class Wallet:
 
     def handle_new_payments(self, new_payments):
         print("handle_new_payments")
-        if not self.are_payment_lists_equal(self.payment_list, new_payments):
+        if self.payment_list != new_payments:
             print("new list of payments")
             self.payment_list = new_payments
             self.payments_updated_cb()
-
-    def payment_list_string(self):
-        return "\n".join(f"{payment.amount_sats} sats: {payment.comment}" for payment in self.payment_list)
 
     # Need callbacks for:
     #    - started (so the user can show the UI) 
@@ -128,19 +164,20 @@ class LNBitsWallet(Wallet):
             try:
                 payments_reply = json.loads(response_text)
                 #print(f"Got payments: {payments_reply}")
-                new_payments = []
+                new_payments = UniqueSortedList()
                 for payment in payments_reply:
                     #print(f"Got payment: {payment}")
                     amount = payment["amount"]
                     amount = round(amount / 1000)
                     comment = payment["memo"]
+                    epoch_time = payment["time"]
                     extra = payment["extra"]
                     if extra:
                         extracomment = extra["comment"]
                         if extracomment:
                             comment = extracomment
-                    payment = Payment(amount, comment)
-                    new_payments.append(payment)
+                    payment = Payment(epoch_time, amount, comment)
+                    new_payments.add(payment)
                 return new_payments
             except Exception as e:
                 print(f"Could not parse reponse text '{response_text}' as JSON: {e}")
@@ -183,6 +220,10 @@ class NWCWallet(Wallet):
         )])
         print(f"DEBUG: Subscription filters: {self.filters.to_json_array()}")
         self.relay_manager.add_subscription(self.subscription_id, self.filters)
+        print(f"DEBUG: Publishing subscription request")
+        request_message = [ClientMessageType.REQUEST, self.subscription_id]
+        request_message.extend(self.filters.to_json_array())
+        self.relay_manager.publish_message(json.dumps(request_message))
         time.sleep(1)
 
         self.fetch_balance()
@@ -235,16 +276,23 @@ class NWCWallet(Wallet):
         )
         print(f"DEBUG: Signing DM {json.dumps(dm)} with private key")
         self.private_key.sign_event(dm) # sign also does encryption if it's a encrypted dm
-        print(f"DEBUG: Publishing subscription request")
-        request_message = [ClientMessageType.REQUEST, self.subscription_id]
-        request_message.extend(self.filters.to_json_array())
-        self.relay_manager.publish_message(json.dumps(request_message))
         print(f"DEBUG: Publishing encrypted DM")
         self.relay_manager.publish_event(dm)
 
     def fetch_payments(self):
-        # just send the message to request payments and they'll be handled by the main loop
-        pass
+        # Create get_balance request
+        list_transactions = {
+            "method": "list_transactions",
+            "params": {
+                "limit": 6
+            }
+        }
+        dm = EncryptedDirectMessage(
+            recipient_pubkey=self.wallet_pubkey,
+            cleartext_content=json.dumps(list_transactions)
+        )
+        self.private_key.sign_event(dm) # sign also does encryption if it's a encrypted dm
+        self.relay_manager.publish_event(dm)
 
     def parse_nwc_url(self, nwc_url):
         """Parse Nostr Wallet Connect URL to extract pubkey, relay, secret, and lud16."""
@@ -303,14 +351,39 @@ class NWCWallet(Wallet):
 
 class Payment:
 
-    def __init__(self, amount_sats, comment):
+    def __init__(self, epoch_time, amount_sats, comment):
+        self.epoch_time = epoch_time
         self.amount_sats = amount_sats
         self.comment = comment
 
     def __str__(self):
-            return f"Payment(amount_sats={self.amount_sats}, comment='{self.comment}')"
+        sattext = "sats"
+        if self.amount_sats is 1:
+            sattext = "sat"
+        return f"{self.amount_sats} {sattext}: {self.comment}"
 
     def __eq__(self, other):
         if not isinstance(other, Payment):
             return False
-        return self.amount_sats == other.amount_sats and self.comment == other.comment
+        return self.epoch_time == other.epoch_time and self.amount_sats == other.amount_sats and self.comment == other.comment
+
+    def __lt__(self, other):
+        if not isinstance(other, Payment):
+            return NotImplemented
+        return (self.epoch_time, self.amount_sats, self.comment) < (other.epoch_time, other.amount_sats, other.comment)
+
+    def __le__(self, other):
+        if not isinstance(other, Payment):
+            return NotImplemented
+        return (self.epoch_time, self.amount_sats, self.comment) <= (other.epoch_time, other.amount_sats, other.comment)
+
+    def __gt__(self, other):
+        if not isinstance(other, Payment):
+            return NotImplemented
+        return (self.epoch_time, self.amount_sats, self.comment) > (other.epoch_time, other.amount_sats, other.comment)
+
+    def __ge__(self, other):
+        if not isinstance(other, Payment):
+            return NotImplemented
+        return (self.epoch_time, self.amount_sats, self.comment) >= (other.epoch_time, other.amount_sats, other.comment)
+

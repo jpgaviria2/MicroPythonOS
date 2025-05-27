@@ -227,7 +227,7 @@ def redraw_balance_cb():
 def redraw_payments_cb():
     global payments_label
     print("redrawing payments")
-    payments_label.set_text(wallet.payment_list_string())
+    payments_label.set_text(str(wallet.payment_list))
 
 def janitor_cb(timer):
     global wallet, config
