@@ -1,3 +1,9 @@
+import mpos.ui
+
+# screens:
+
+main_screen = None
+
 def map_nonlinear(value: float) -> int:
     # Preserve sign and work with absolute value
     sign = 1 if value >= 0 else -1
@@ -43,7 +49,7 @@ def refresh(timer):
 
 
 def janitor_cb(timer):
-    if lv.screen_active() != appscreen:
+    if lv.screen_active() != main_screen:
         print("imutest.py backgrounded, cleaning up...")
         janitor.delete()
         refresh_timer.delete()
@@ -59,21 +65,22 @@ except Exception as e:
     have_imu=False
 
 
-appscreen = lv.screen_active()
-templabel = lv.label(appscreen)
+main_screen = lv.obj()
+templabel = lv.label(main_screen)
 templabel.align(lv.ALIGN.TOP_MID, 0, 10)
-sliderx = lv.slider(appscreen)
+sliderx = lv.slider(main_screen)
 sliderx.align(lv.ALIGN.CENTER, 0, -60)
-slidery = lv.slider(appscreen)
+slidery = lv.slider(main_screen)
 slidery.align(lv.ALIGN.CENTER, 0, -30)
-sliderz = lv.slider(appscreen)
+sliderz = lv.slider(main_screen)
 sliderz.align(lv.ALIGN.CENTER, 0, 0)
-slidergx = lv.slider(appscreen)
+slidergx = lv.slider(main_screen)
 slidergx.align(lv.ALIGN.CENTER, 0, 30)
-slidergy = lv.slider(appscreen)
+slidergy = lv.slider(main_screen)
 slidergy.align(lv.ALIGN.CENTER, 0, 60)
-slidergz = lv.slider(appscreen)
+slidergz = lv.slider(main_screen)
 slidergz.align(lv.ALIGN.CENTER, 0, 90)
+mpos.ui.load_screen(main_screen)
 
 refresh_timer = lv.timer_create(refresh, 100, None)
 janitor = lv.timer_create(janitor_cb, 500, None)
