@@ -76,10 +76,13 @@ class Wallet:
 
     def handle_new_balance(self, new_balance):
         if new_balance != self.last_known_balance:
+            print("Balance changed!")
             self.last_known_balance = new_balance
+            print("Calling balance_updated_cb")
             self.balance_updated_cb()
-            new_payments = self.fetch_payments() # if the balance changed, then re-list transactions
-            self.handle_new_payments(new_payments)
+            # Refreshing isn't strictly necessary if it was changed by a payment notification
+            print("Refreshing payments...")
+            self.fetch_payments() # if the balance changed, then re-list transactions 
 
     def handle_new_payments(self, new_payments):
         print("handle_new_payments")
@@ -119,7 +122,6 @@ class LNBitsWallet(Wallet):
         while self.keep_running:
             try:
                 new_balance = self.fetch_balance()
-                self.handle_new_balance(new_balance)
             except Exception as e:
                 print(f"WARNING: wallet_manager_thread got exception {e}, ignorning.")
             print("Sleeping a while before re-fetching balance...")
@@ -143,7 +145,8 @@ class LNBitsWallet(Wallet):
                 balance_reply = json.loads(response_text)
                 print(f"Got balance: {balance_reply['balance']}")
                 balance_msat = balance_reply['balance']
-                return round(balance_msat / 1000)
+                new_balance = round(int(balance_msat) / 1000)
+                self.handle_new_balance(new_balance)
             except Exception as e:
                 print(f"Could not parse reponse text '{response_text}' as JSON: {e}")
                 raise e
@@ -165,20 +168,20 @@ class LNBitsWallet(Wallet):
                 payments_reply = json.loads(response_text)
                 #print(f"Got payments: {payments_reply}")
                 new_payments = UniqueSortedList()
-                for payment in payments_reply:
-                    #print(f"Got payment: {payment}")
-                    amount = payment["amount"]
+                for transaction in payments_reply:
+                    #print(f"Got transaction: {transaction}")
+                    amount = transaction["amount"]
                     amount = round(amount / 1000)
-                    comment = payment["memo"]
-                    epoch_time = payment["time"]
-                    extra = payment["extra"]
+                    comment = transaction["memo"]
+                    epoch_time = transaction["time"]
+                    extra = transaction["extra"]
                     if extra:
                         extracomment = extra["comment"]
                         if extracomment:
                             comment = extracomment
-                    payment = Payment(epoch_time, amount, comment)
-                    new_payments.add(payment)
-                return new_payments
+                    transaction = Payment(epoch_time, amount, comment)
+                    new_payments.add(transaction)
+                self.handle_new_payments(new_payments)
             except Exception as e:
                 print(f"Could not parse reponse text '{response_text}' as JSON: {e}")
                 raise e
@@ -211,7 +214,7 @@ class NWCWallet(Wallet):
             return
 
         # Set up subscription to receive response
-        self.subscription_id = "nwc_balance_" + str(round(time.time()))
+        self.subscription_id = "micropython_nwc_" + str(round(time.time()))
         print(f"DEBUG: Setting up subscription with ID: {self.subscription_id}")
         self.filters = Filters([Filter(
             kinds=[23195],  # NWC replies
@@ -224,7 +227,7 @@ class NWCWallet(Wallet):
         request_message = [ClientMessageType.REQUEST, self.subscription_id]
         request_message.extend(self.filters.to_json_array())
         self.relay_manager.publish_message(json.dumps(request_message))
-        time.sleep(1)
+        time.sleep(5)
 
         self.fetch_balance()
 
@@ -243,14 +246,34 @@ class NWCWallet(Wallet):
                     print(f"DEBUG: Decrypted content: {decrypted_content}")
                     response = json.loads(decrypted_content)
                     print(f"DEBUG: Parsed response: {response}")
-                    if response["result"]:
-                        if response["result"]["balance"]:
-                            self.last_known_balance = round(int(response["result"]["balance"]) / 1000)
-                            print(f"Got balance: {self.last_known_balance}")
-                            # TODO: if balance changed, then update list of transactions
-                            self.balance_updated_cb()
-                        elif response["result"]["transactions"]:
-                            print("TODO: Response contains transactions!")
+                    result = response.get("result")
+                    if result:
+                        if result.get("balance"):
+                            new_balance = round(int(response["result"]["balance"]) / 1000)
+                            print(f"Got balance: {new_balance}")
+                            self.handle_new_balance(new_balance)
+                        elif result.get("transactions"):
+                            print("Response contains transactions!")
+                            new_payments = UniqueSortedList()
+                            for transaction in result["transactions"]:
+                                amount = transaction["amount"]
+                                amount = round(amount / 1000)
+                                comment = transaction["description"]
+                                try:
+                                    json_comment = json.loads(comment)
+                                    for field in json_comment:
+                                        if field[0] == "text/plain":
+                                            comment = field[1]
+                                            break
+                                    else:
+                                        print("text/plain field is missing from JSON description")
+                                except Exception as e:
+                                    print(f"Could not parse comment as JSON: {e}")
+                                    pass # NWC description can also be just a regular sting, not json
+                                epoch_time = transaction["created_at"]
+                                payment = Payment(epoch_time, amount, comment)
+                                new_payments.add(payment)
+                            self.handle_new_payments(new_payments)
                         else:
                             print("Unsupported response, ignoring.")
                     else:
@@ -290,8 +313,10 @@ class NWCWallet(Wallet):
         dm = EncryptedDirectMessage(
             recipient_pubkey=self.wallet_pubkey,
             cleartext_content=json.dumps(list_transactions)
+            #cleartext_content='{"params":{"limit": 4 },"method":"list_transactions"}'
         )
         self.private_key.sign_event(dm) # sign also does encryption if it's a encrypted dm
+        print("\n\nPublishing DM to fetch payments...\n\n")
         self.relay_manager.publish_event(dm)
 
     def parse_nwc_url(self, nwc_url):
