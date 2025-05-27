@@ -1,5 +1,5 @@
 {
-"name": "Camera Tester",
+"name": "Camera",
 "publisher": "ACME Inc",
 "short_description": "Simple test of the camera",
 "long_description": "A simple test of the camera makes it possible to validate the hardware.",

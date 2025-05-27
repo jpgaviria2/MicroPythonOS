@@ -1,5 +1,5 @@
 {
-"name": "IMU Tester",
+"name": "Accelero",
 "publisher": "ACME Inc",
 "short_description": "Test the Inertial Measurement Unit",
 "long_description": "It is always good to make sure the accelerometer is working properly. How else can you measure acceleration and position?",

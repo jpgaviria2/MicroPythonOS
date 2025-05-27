@@ -1,5 +1,5 @@
 {
-"name": "CPU Tester",
+"name": "Benchmark",
 "publisher": "ACME Inc",
 "short_description": "Testing the CPU speed",
 "long_description": "Experimentally determines how many idle loops and sha256-hashing loops the CPU can perform per second.",

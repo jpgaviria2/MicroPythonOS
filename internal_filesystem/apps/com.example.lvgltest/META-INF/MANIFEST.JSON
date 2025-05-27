@@ -1,5 +1,5 @@
 {
-"name": "SpinnerTest",
+"name": "Graphics",
 "publisher": "ACME Inc",
 "short_description": "Testing on-display spinner animations",
 "long_description": "Stress testing multiple concurrent animations on the display by adding more and more spinners",
