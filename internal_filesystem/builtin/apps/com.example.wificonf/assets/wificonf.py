@@ -100,7 +100,7 @@ def start_scan_networks():
         busy_scanning = True
         scan_button.remove_flag(lv.obj.FLAG.CLICKABLE)
         scan_button_label.set_text(scan_button_scanning_text)
-        _thread.stack_size(get_good_stacksize())
+        _thread.stack_size(mpos.apps.good_stack_size())
         _thread.start_new_thread(scan_networks_thread, ())
 
 
