@@ -217,10 +217,14 @@ def create_notification_bar():
         else:
             temp_label.set_text("42°C")
     
-    import gc
     def update_memfree(timer):
-        gc.collect()
-        memfree_label.set_text(f"{gc.mem_free()}")
+        import gc
+        gc.collect() # otherwise it goes down to 10% before shooting back up to 70%
+        free = gc.mem_free()
+        used = gc.mem_alloc()
+        total_memory = gc.mem_free() + gc.mem_alloc()
+        percentage = round(free * 100 / (free + used))
+        memfree_label.set_text(f"{percentage}%")
     
     timer1 = lv.timer_create(update_time, CLOCK_UPDATE_INTERVAL, None)
     timer2 = lv.timer_create(update_temperature, TEMPERATURE_UPDATE_INTERVAL, None)
@@ -254,6 +258,8 @@ def create_drawer(display=None):
     drawer.set_pos(0,NOTIFICATION_BAR_HEIGHT)
     drawer.set_scroll_dir(lv.DIR.NONE)
     drawer.set_style_pad_all(0, 0)
+    drawer.set_style_border_width(0, 0)
+    drawer.set_style_radius(0, 0)
     drawer.add_flag(lv.obj.FLAG.HIDDEN)
     #drawer.add_flag(lv.obj.FLAG.GESTURE_BUBBLE) # no gestures are received... maybe not supported by SDL Pointer Driver...
     drawer.add_event_cb(drawer_swipe_cb, lv.EVENT.PRESSED, None)
