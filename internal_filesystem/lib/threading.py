@@ -1,5 +1,7 @@
 import _thread
 
+import mpos.apps
+
 class Thread:
     def __init__(self, group=None, target=None, name=None, args=(), kwargs=None, daemon=None):
         self.target = target
@@ -18,8 +20,8 @@ class Thread:
         #stacksize = 12*1024
         # small stack sizes 8KB gives segfault directly
         # 22KB or less is too tight on desktop, 23KB and more is fine
-        stacksize = 24*1024
-        #stacksize = mpos.apps.good_stack_size() # don't depend on mpos here
+        #stacksize = 24*1024
+        stacksize = mpos.apps.good_stack_size()
         #stacksize = 20*1024
         print(f"starting thread with stacksize {stacksize}")
         _thread.stack_size(stacksize)
