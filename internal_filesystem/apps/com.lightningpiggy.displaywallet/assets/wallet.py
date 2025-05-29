@@ -74,15 +74,15 @@ class Wallet:
         elif isinstance(self, NWCWallet):
             return "NWCWallet"
 
-    def handle_new_balance(self, new_balance):
+    def handle_new_balance(self, new_balance, fetchPaymentsIfChanged=True):
         if new_balance != self.last_known_balance:
             print("Balance changed!")
             self.last_known_balance = new_balance
             print("Calling balance_updated_cb")
             self.balance_updated_cb()
-            # Refreshing isn't strictly necessary if it was changed by a payment notification
-            print("Refreshing payments...")
-            self.fetch_payments() # if the balance changed, then re-list transactions 
+            if fetchPaymentsIfChanged: # Fetching *all* payments isn't necessary if balance was changed by a payment notification
+                print("Refreshing payments...")
+                self.fetch_payments() # if the balance changed, then re-list transactions
 
     def handle_new_payments(self, new_payments):
         print("handle_new_payments")
@@ -117,16 +117,71 @@ class LNBitsWallet(Wallet):
         self.lnbits_url = lnbits_url
         self.lnbits_readkey = lnbits_readkey
 
+
+    def parseLNBitsPayment(self, transaction):
+        amount = transaction["amount"]
+        amount = round(amount / 1000)
+        comment = transaction["memo"]
+        epoch_time = transaction["time"]
+        extra = transaction["extra"]
+        if extra:
+            extracomment = extra["comment"]
+            if extracomment:
+                if extracomment.get(0): # some LNBits 0.x versions return a list instead of a string here...
+                    comment = extracomment.get(0)
+                else:
+                    comment = extracomment
+        return Payment(epoch_time, amount, comment)
+
+    # Example data: {"wallet_balance": 4936, "payment": {"checking_id": "037c14...56b3", "pending": false, "amount": 1000000, "fee": 0, "memo": "zap2oink", "time": 1711226003, "bolt11": "lnbc10u1pjl70y....qq9renr", "preimage": "0000...000", "payment_hash": "037c1438b20ef4729b1d3dc252c2809dc2a2a2e641c7fb99fe4324e182f356b3", "expiry": 1711226603.0, "extra": {"tag": "lnurlp", "link": "TkjgaB", "extra": "1000000", "comment": ["yes"], "lnaddress": "oink@demo.lnpiggy.com"}, "wallet_id": "c9168...8de4", "webhook": null, "webhook_status": null}}
+    def on_message(self, class_obj, message: str):
+        print(f"relay.py _on_message received: {message}")
+        try:
+            payment_notification = json.loads(message)
+            new_balance = payment_notification.get("wallet_balance")
+            if new_balance:
+                self.handle_new_balance(new_balance, False) # handle new balance BUT don't trigger a full fetch_payments
+                transaction = payment_notification.get("payment")
+                new_payments = UniqueSortedList()
+                print(f"Got transaction: {transaction}")
+                paymentObj = parseLNBitsPayment(transaction)
+                new_payments.add(paymentObj)
+                self.handle_new_payments(new_payments)
+        except Exception as e:
+            print(f"websocket on_message got exception: {e}")
+
+    def websocket_thread(self):
+        print("Opening websocket for payment notifications...")
+        wsurl = self.lnbits_url + "/api/v1/ws/" + self.lnbits_readkey
+        self.ws = WebSocketApp(
+            wsurl,
+            on_message=self.on_message,
+        ) # maybe add other callbacks to reconnect when disconnected etc.
+        self.ws.run_forever(
+            sslopt=ssl_options,
+            http_proxy_host=None if proxy is None else proxy.get("host"),
+            http_proxy_port=None if proxy is None else proxy.get("port"),
+            proxy_type=None if proxy is None else proxy.get("type"),
+            ping_interval=5
+        )
+
+
     def wallet_manager_thread(self):
         print("wallet_manager_thread")
+        websocket_running = False
         while self.keep_running:
             try:
-                new_balance = self.fetch_balance()
+                new_balance = self.fetch_balance() # TODO: only do this every 60 seconds, but loop the main thread more frequently
             except Exception as e:
                 print(f"WARNING: wallet_manager_thread got exception {e}, ignorning.")
+            if not websocket_running: # after
+                websocket_running = True
+                _thread.stack_size(mpos.apps.good_stack_size())
+                _thread.start_new_thread(self.websocket_thread, ())
             print("Sleeping a while before re-fetching balance...")
             time.sleep(60)
         print("wallet_manager_thread stopping")
+        self.ws.close()
 
     def fetch_balance(self):
         walleturl = self.lnbits_url + "/api/v1/wallet"
@@ -170,17 +225,8 @@ class LNBitsWallet(Wallet):
                 new_payments = UniqueSortedList()
                 for transaction in payments_reply:
                     #print(f"Got transaction: {transaction}")
-                    amount = transaction["amount"]
-                    amount = round(amount / 1000)
-                    comment = transaction["memo"]
-                    epoch_time = transaction["time"]
-                    extra = transaction["extra"]
-                    if extra:
-                        extracomment = extra["comment"]
-                        if extracomment:
-                            comment = extracomment
-                    transaction = Payment(epoch_time, amount, comment)
-                    new_payments.add(transaction)
+                    paymentObj = parseLNBitsPayment(transaction)
+                    new_payments.add(paymentObj)
                 self.handle_new_payments(new_payments)
             except Exception as e:
                 print(f"Could not parse reponse text '{response_text}' as JSON: {e}")
@@ -192,6 +238,21 @@ class NWCWallet(Wallet):
         super().__init__()
         self.nwc_url = nwc_url
         self.connected = False
+
+    def getCommentFromTransaction(self, transaction):
+        comment = ""
+        try:
+            comment = transaction["description"]
+            json_comment = json.loads(comment)
+            for field in json_comment:
+                if field[0] == "text/plain":
+                    comment = field[1]
+                    break
+            else:
+                print("text/plain field is missing from JSON description")
+        except Exception as e:
+            print(f"Info: could not parse comment as JSON, using as-is: {e}")
+        return comment
 
     def wallet_manager_thread(self):
         self.relay, self.wallet_pubkey, self.secret, self.lud16 = self.parse_nwc_url(self.nwc_url)
@@ -217,7 +278,7 @@ class NWCWallet(Wallet):
         self.subscription_id = "micropython_nwc_" + str(round(time.time()))
         print(f"DEBUG: Setting up subscription with ID: {self.subscription_id}")
         self.filters = Filters([Filter(
-            kinds=[23195],  # NWC replies
+            kinds=[23195, 23196],  # NWC reponses and notifications
             authors=[self.wallet_pubkey],
             pubkey_refs=[self.private_key.public_key.hex()]
         )])
@@ -258,21 +319,27 @@ class NWCWallet(Wallet):
                             for transaction in result["transactions"]:
                                 amount = transaction["amount"]
                                 amount = round(amount / 1000)
-                                comment = transaction["description"]
-                                try:
-                                    json_comment = json.loads(comment)
-                                    for field in json_comment:
-                                        if field[0] == "text/plain":
-                                            comment = field[1]
-                                            break
-                                    else:
-                                        print("text/plain field is missing from JSON description")
-                                except Exception as e:
-                                    print(f"Could not parse comment as JSON: {e}")
-                                    pass # NWC description can also be just a regular sting, not json
+                                comment = self.getCommentFromTransaction(transaction)
                                 epoch_time = transaction["created_at"]
                                 payment = Payment(epoch_time, amount, comment)
                                 new_payments.add(payment)
+                            self.handle_new_payments(new_payments)
+                        elif result.get("notification"): # it's a notification
+                            notification = result.get("notification")
+                            amount = notification["amount"]
+                            amount = round(amount / 1000)
+                            type = notification["type"]
+                            if type == "outgoing":
+                                amount = -amount
+                            elif type != "incoming":
+                                print(f"WARNING: invalid notification type {type}, ignoring.")
+                                continue
+                            self.handle_new_balance(new_balance, False)
+                            epoch_time = transaction["created_at"]
+                            comment = self.getCommentFromTransaction(notification)
+                            payment = Payment(epoch_time, amount, comment)
+                            new_payments = UniqueSortedList()
+                            new_payments.add(payment)
                             self.handle_new_payments(new_payments)
                         else:
                             print("Unsupported response, ignoring.")
@@ -383,7 +450,7 @@ class Payment:
 
     def __str__(self):
         sattext = "sats"
-        if self.amount_sats is 1:
+        if self.amount_sats == 1:
             sattext = "sat"
         return f"{self.amount_sats} {sattext}: {self.comment}"
 
