@@ -328,6 +328,9 @@ class WebSocketApp:
                 elif msg.type == WSMsgType.ERROR or ws.ws.closed:
                     _log_error("WebSocket error or closed")
                     raise WebSocketConnectionClosedException("WebSocket closed")
+                elif msg.type == ABNF.OPCODE_PING:
+                    data = msg.data
+                    _run_callback(self.on_ping, self, data, ABNF.OPCODE_PING, True)
 
     async def _send_async(self, data, opcode):
         """Async send implementation."""
