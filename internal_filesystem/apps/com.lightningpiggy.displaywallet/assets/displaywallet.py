@@ -205,6 +205,8 @@ def build_main_ui():
     receive_qr.set_light_color(lv.color_white())
     receive_qr.update("tfar@getalby.com", len("tfar@getalby.com"))
     receive_qr.align(lv.ALIGN.TOP_RIGHT,0,0)
+    receive_qr.set_style_border_color(lv.color_white(), 0)
+    receive_qr.set_style_border_width(3, 0);
     style_line = lv.style_t()
     style_line.init()
     style_line.set_line_width(2)

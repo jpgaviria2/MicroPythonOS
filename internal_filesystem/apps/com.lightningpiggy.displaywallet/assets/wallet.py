@@ -24,12 +24,12 @@ class UniqueSortedList:
     def add(self, item):
         # Check if item already exists (using __eq__)
         if item not in self._items:
-            # Insert item in sorted position (using __lt__)
+            # Insert item in sorted position for descending order (using __gt__)
             for i, existing_item in enumerate(self._items):
-                if item < existing_item:
+                if item > existing_item:
                     self._items.insert(i, item)
                     return
-            # If item is larger than all existing items, append it
+            # If item is smaller than all existing items, append it
             self._items.append(item)
 
     def __iter__(self):
@@ -56,9 +56,8 @@ class UniqueSortedList:
             return False
         return all(p1 == p2 for p1, p2 in zip(self._items, other))
 
-
+# Payment class remains unchanged
 class Payment:
-
     def __init__(self, epoch_time, amount_sats, comment):
         self.epoch_time = epoch_time
         self.amount_sats = amount_sats
@@ -94,8 +93,6 @@ class Payment:
         if not isinstance(other, Payment):
             return NotImplemented
         return (self.epoch_time, self.amount_sats, self.comment) >= (other.epoch_time, other.amount_sats, other.comment)
-
-
 
 
 class Wallet:
@@ -374,7 +371,7 @@ class NWCWallet(Wallet):
                             elif type != "incoming":
                                 print(f"WARNING: invalid notification type {type}, ignoring.")
                                 continue
-                            new_balance = self.balance + amount
+                            new_balance = self.last_known_balance + amount
                             self.handle_new_balance(new_balance, False)
                             epoch_time = transaction["created_at"]
                             comment = self.getCommentFromTransaction(notification)
