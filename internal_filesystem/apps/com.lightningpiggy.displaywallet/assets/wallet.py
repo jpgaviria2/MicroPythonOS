@@ -57,6 +57,46 @@ class UniqueSortedList:
         return all(p1 == p2 for p1, p2 in zip(self._items, other))
 
 
+class Payment:
+
+    def __init__(self, epoch_time, amount_sats, comment):
+        self.epoch_time = epoch_time
+        self.amount_sats = amount_sats
+        self.comment = comment
+
+    def __str__(self):
+        sattext = "sats"
+        if self.amount_sats == 1:
+            sattext = "sat"
+        return f"{self.amount_sats} {sattext}: {self.comment}"
+
+    def __eq__(self, other):
+        if not isinstance(other, Payment):
+            return False
+        return self.epoch_time == other.epoch_time and self.amount_sats == other.amount_sats and self.comment == other.comment
+
+    def __lt__(self, other):
+        if not isinstance(other, Payment):
+            return NotImplemented
+        return (self.epoch_time, self.amount_sats, self.comment) < (other.epoch_time, other.amount_sats, other.comment)
+
+    def __le__(self, other):
+        if not isinstance(other, Payment):
+            return NotImplemented
+        return (self.epoch_time, self.amount_sats, self.comment) <= (other.epoch_time, other.amount_sats, other.comment)
+
+    def __gt__(self, other):
+        if not isinstance(other, Payment):
+            return NotImplemented
+        return (self.epoch_time, self.amount_sats, self.comment) > (other.epoch_time, other.amount_sats, other.comment)
+
+    def __ge__(self, other):
+        if not isinstance(other, Payment):
+            return NotImplemented
+        return (self.epoch_time, self.amount_sats, self.comment) >= (other.epoch_time, other.amount_sats, other.comment)
+
+
+
 
 class Wallet:
 
@@ -83,6 +123,11 @@ class Wallet:
             if fetchPaymentsIfChanged: # Fetching *all* payments isn't necessary if balance was changed by a payment notification
                 print("Refreshing payments...")
                 self.fetch_payments() # if the balance changed, then re-list transactions
+
+    def handle_new_payment(self, new_payment):
+        print("handle_new_payment")
+        self.payment_list.add(new_payment)
+        self.payments_updated_cb()
 
     def handle_new_payments(self, new_payments):
         print("handle_new_payments")
@@ -142,11 +187,9 @@ class LNBitsWallet(Wallet):
             if new_balance:
                 self.handle_new_balance(new_balance, False) # handle new balance BUT don't trigger a full fetch_payments
                 transaction = payment_notification.get("payment")
-                new_payments = UniqueSortedList()
                 print(f"Got transaction: {transaction}")
                 paymentObj = parseLNBitsPayment(transaction)
-                new_payments.add(paymentObj)
-                self.handle_new_payments(new_payments)
+                self.handle_new_payment(paymentObj)
         except Exception as e:
             print(f"websocket on_message got exception: {e}")
 
@@ -222,12 +265,10 @@ class LNBitsWallet(Wallet):
             try:
                 payments_reply = json.loads(response_text)
                 #print(f"Got payments: {payments_reply}")
-                new_payments = UniqueSortedList()
                 for transaction in payments_reply:
                     #print(f"Got transaction: {transaction}")
                     paymentObj = parseLNBitsPayment(transaction)
-                    new_payments.add(paymentObj)
-                self.handle_new_payments(new_payments)
+                    self.handle_new_payment(paymentObj)
             except Exception as e:
                 print(f"Could not parse reponse text '{response_text}' as JSON: {e}")
                 raise e
@@ -310,22 +351,21 @@ class NWCWallet(Wallet):
                     result = response.get("result")
                     if result:
                         if result.get("balance"):
-                            new_balance = round(int(response["result"]["balance"]) / 1000)
+                            new_balance = round(int(result["balance"]) / 1000)
                             print(f"Got balance: {new_balance}")
                             self.handle_new_balance(new_balance)
                         elif result.get("transactions"):
                             print("Response contains transactions!")
-                            new_payments = UniqueSortedList()
                             for transaction in result["transactions"]:
                                 amount = transaction["amount"]
                                 amount = round(amount / 1000)
                                 comment = self.getCommentFromTransaction(transaction)
                                 epoch_time = transaction["created_at"]
-                                payment = Payment(epoch_time, amount, comment)
-                                new_payments.add(payment)
-                            self.handle_new_payments(new_payments)
-                        elif result.get("notification"): # it's a notification
-                            notification = result.get("notification")
+                                paymentObj = Payment(epoch_time, amount, comment)
+                                self.handle_new_payment(paymentObj)
+                    else:
+                        notification = response.get("notification")
+                        if notification:
                             amount = notification["amount"]
                             amount = round(amount / 1000)
                             type = notification["type"]
@@ -334,17 +374,14 @@ class NWCWallet(Wallet):
                             elif type != "incoming":
                                 print(f"WARNING: invalid notification type {type}, ignoring.")
                                 continue
+                            new_balance = self.balance + amount
                             self.handle_new_balance(new_balance, False)
                             epoch_time = transaction["created_at"]
                             comment = self.getCommentFromTransaction(notification)
-                            payment = Payment(epoch_time, amount, comment)
-                            new_payments = UniqueSortedList()
-                            new_payments.add(payment)
-                            self.handle_new_payments(new_payments)
+                            paymentObj = Payment(epoch_time, amount, comment)
+                            self.handle_new_payment(paymentObj)
                         else:
                             print("Unsupported response, ignoring.")
-                    else:
-                        print("Event doesn't contain result, ignoring.")
                 except Exception as e:
                     print(f"DEBUG: Error processing response: {e}")
             time.sleep(1)
@@ -439,43 +476,4 @@ class NWCWallet(Wallet):
             return relay, pubkey, secret, lud16
         except Exception as e:
             print(f"DEBUG: Error parsing NWC URL: {e}")
-
-
-class Payment:
-
-    def __init__(self, epoch_time, amount_sats, comment):
-        self.epoch_time = epoch_time
-        self.amount_sats = amount_sats
-        self.comment = comment
-
-    def __str__(self):
-        sattext = "sats"
-        if self.amount_sats == 1:
-            sattext = "sat"
-        return f"{self.amount_sats} {sattext}: {self.comment}"
-
-    def __eq__(self, other):
-        if not isinstance(other, Payment):
-            return False
-        return self.epoch_time == other.epoch_time and self.amount_sats == other.amount_sats and self.comment == other.comment
-
-    def __lt__(self, other):
-        if not isinstance(other, Payment):
-            return NotImplemented
-        return (self.epoch_time, self.amount_sats, self.comment) < (other.epoch_time, other.amount_sats, other.comment)
-
-    def __le__(self, other):
-        if not isinstance(other, Payment):
-            return NotImplemented
-        return (self.epoch_time, self.amount_sats, self.comment) <= (other.epoch_time, other.amount_sats, other.comment)
-
-    def __gt__(self, other):
-        if not isinstance(other, Payment):
-            return NotImplemented
-        return (self.epoch_time, self.amount_sats, self.comment) > (other.epoch_time, other.amount_sats, other.comment)
-
-    def __ge__(self, other):
-        if not isinstance(other, Payment):
-            return NotImplemented
-        return (self.epoch_time, self.amount_sats, self.comment) >= (other.epoch_time, other.amount_sats, other.comment)
 
