@@ -10,6 +10,7 @@ main_screen = None
 settings_screen = None
 
 # widgets
+receive_qr = None
 balance_label = None
 payments_label = None
 
@@ -25,6 +26,7 @@ class SettingsScreen():
             {"title": "LNBits URL", "key": "lnbits_url", "value_label": None},
             {"title": "LNBits Read/Invoice Key", "key": "lnbits_readkey", "value_label": None},
             {"title": "NWC URL", "key": "nwc_url", "value_label": None},
+            {"title": "Static receive code", "key": "static_receive_code", "value_label": None},
         ]
         self.keyboard = None
         self.textarea = None
@@ -192,7 +194,7 @@ def settings_button_tap(event):
     mpos.ui.load_screen(settings_screen)
 
 def build_main_ui():
-    global main_screen, balance_label, payments_label
+    global main_screen, balance_label, payments_label, receive_qr
     main_screen = lv.obj()
     main_screen.set_style_pad_all(10, 0)
     balance_label = lv.label(main_screen)
@@ -203,7 +205,6 @@ def build_main_ui():
     receive_qr.set_size(50)
     receive_qr.set_dark_color(lv.color_black())
     receive_qr.set_light_color(lv.color_white())
-    receive_qr.update("tfar@getalby.com", len("tfar@getalby.com"))
     receive_qr.align(lv.ALIGN.TOP_RIGHT,0,0)
     receive_qr.set_style_border_color(lv.color_white(), 0)
     receive_qr.set_style_border_width(3, 0);
@@ -242,6 +243,9 @@ def janitor_cb(timer):
     if lv.screen_active() == main_screen and (not wallet or not wallet.is_running()):
         # just started the app or just returned from settings_screen
         config = mpos.config.SharedPreferences("com.lightningpiggy.displaywallet")
+        static_receive_code = config.get_string("static_receive_code")
+        if static_receive_code:
+            receive_qr.update(static_receive_code, len(static_receive_code))
         wallet_type = config.get_string("wallet_type")
         if wallet_type == "lnbits":
             try:

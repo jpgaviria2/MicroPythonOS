@@ -10,6 +10,8 @@ from nostr.filter import Filter, Filters
 from nostr.event import EncryptedDirectMessage
 from nostr.key import PrivateKey
 
+from websocket import WebSocketApp
+
 import mpos.apps
 import mpos.time
 import mpos.util
@@ -22,6 +24,7 @@ class UniqueSortedList:
         self._items = []
 
     def add(self, item):
+        print(f"before add: {str(self)}")
         # Check if item already exists (using __eq__)
         if item not in self._items:
             # Insert item in sorted position for descending order (using __gt__)
@@ -31,6 +34,7 @@ class UniqueSortedList:
                     return
             # If item is smaller than all existing items, append it
             self._items.append(item)
+        print(f"after add: {str(self)}")
 
     def __iter__(self):
         # Return iterator for the internal list
@@ -67,13 +71,13 @@ class Payment:
         sattext = "sats"
         if self.amount_sats == 1:
             sattext = "sat"
-        return f"{self.amount_sats} {sattext}: {self.comment}"
+        return f"{self.amount_sats} {sattext} @ {self.epoch_time}: {self.comment}"
 
     def __eq__(self, other):
         if not isinstance(other, Payment):
             return False
         return self.epoch_time == other.epoch_time and self.amount_sats == other.amount_sats and self.comment == other.comment
-
+    '''
     def __lt__(self, other):
         if not isinstance(other, Payment):
             return NotImplemented
@@ -83,27 +87,29 @@ class Payment:
         if not isinstance(other, Payment):
             return NotImplemented
         return (self.epoch_time, self.amount_sats, self.comment) <= (other.epoch_time, other.amount_sats, other.comment)
-
+    '''
     def __gt__(self, other):
         if not isinstance(other, Payment):
             return NotImplemented
-        return (self.epoch_time, self.amount_sats, self.comment) > (other.epoch_time, other.amount_sats, other.comment)
-
+        #return (self.epoch_time, self.amount_sats, self.comment) > (other.epoch_time, other.amount_sats, other.comment)
+        return self.epoch_time > other.epoch_time
+'''
     def __ge__(self, other):
         if not isinstance(other, Payment):
             return NotImplemented
         return (self.epoch_time, self.amount_sats, self.comment) >= (other.epoch_time, other.amount_sats, other.comment)
-
+'''
 
 class Wallet:
 
     # These values could be loading from a cache.json file at __init__
     last_known_balance = -1
     #last_known_balance_timestamp = 0
-    payment_list = UniqueSortedList()
+    payment_list = None
 
     def __init__(self):
         self.keep_running = True
+        self.payment_list = UniqueSortedList()
 
     def __str__(self):
         if isinstance(self, LNBitsWallet):
@@ -165,14 +171,14 @@ class LNBitsWallet(Wallet):
         amount = round(amount / 1000)
         comment = transaction["memo"]
         epoch_time = transaction["time"]
-        extra = transaction["extra"]
-        if extra:
-            extracomment = extra["comment"]
-            if extracomment:
-                if extracomment.get(0): # some LNBits 0.x versions return a list instead of a string here...
-                    comment = extracomment.get(0)
-                else:
-                    comment = extracomment
+        try:
+            extra = transaction.get("extra")
+            if extra:
+                comment = extra.get("comment")
+                first_from_list = comment.get(0) # some LNBits 0.x versions return a list instead of a string here...
+                comment = first_from_list
+        except Exception as e:
+            pass
         return Payment(epoch_time, amount, comment)
 
     # Example data: {"wallet_balance": 4936, "payment": {"checking_id": "037c14...56b3", "pending": false, "amount": 1000000, "fee": 0, "memo": "zap2oink", "time": 1711226003, "bolt11": "lnbc10u1pjl70y....qq9renr", "preimage": "0000...000", "payment_hash": "037c1438b20ef4729b1d3dc252c2809dc2a2a2e641c7fb99fe4324e182f356b3", "expiry": 1711226603.0, "extra": {"tag": "lnurlp", "link": "TkjgaB", "extra": "1000000", "comment": ["yes"], "lnaddress": "oink@demo.lnpiggy.com"}, "wallet_id": "c9168...8de4", "webhook": null, "webhook_status": null}}
@@ -185,7 +191,7 @@ class LNBitsWallet(Wallet):
                 self.handle_new_balance(new_balance, False) # handle new balance BUT don't trigger a full fetch_payments
                 transaction = payment_notification.get("payment")
                 print(f"Got transaction: {transaction}")
-                paymentObj = parseLNBitsPayment(transaction)
+                paymentObj = self.parseLNBitsPayment(transaction)
                 self.handle_new_payment(paymentObj)
         except Exception as e:
             print(f"websocket on_message got exception: {e}")
@@ -193,17 +199,13 @@ class LNBitsWallet(Wallet):
     def websocket_thread(self):
         print("Opening websocket for payment notifications...")
         wsurl = self.lnbits_url + "/api/v1/ws/" + self.lnbits_readkey
+        wsurl = wsurl.replace("https://", "wss://")
+        wsurl = wsurl.replace("http://", "ws://")
         self.ws = WebSocketApp(
             wsurl,
             on_message=self.on_message,
         ) # maybe add other callbacks to reconnect when disconnected etc.
-        self.ws.run_forever(
-            sslopt=ssl_options,
-            http_proxy_host=None if proxy is None else proxy.get("host"),
-            http_proxy_port=None if proxy is None else proxy.get("port"),
-            proxy_type=None if proxy is None else proxy.get("type"),
-            ping_interval=5
-        )
+        self.ws.run_forever()
 
 
     def wallet_manager_thread(self):
@@ -261,10 +263,10 @@ class LNBitsWallet(Wallet):
             response.close()
             try:
                 payments_reply = json.loads(response_text)
-                #print(f"Got payments: {payments_reply}")
+                print(f"Got payments: {payments_reply}")
                 for transaction in payments_reply:
-                    #print(f"Got transaction: {transaction}")
-                    paymentObj = parseLNBitsPayment(transaction)
+                    print(f"Got transaction: {transaction}")
+                    paymentObj = self.parseLNBitsPayment(transaction)
                     self.handle_new_payment(paymentObj)
             except Exception as e:
                 print(f"Could not parse reponse text '{response_text}' as JSON: {e}")
