@@ -241,6 +241,7 @@ def redraw_payments_cb():
 def janitor_cb(timer):
     global wallet, config
     if lv.screen_active() == main_screen and (not wallet or not wallet.is_running()):
+        build_main_ui()
         # just started the app or just returned from settings_screen
         config = mpos.config.SharedPreferences("com.lightningpiggy.displaywallet")
         static_receive_code = config.get_string("static_receive_code")
