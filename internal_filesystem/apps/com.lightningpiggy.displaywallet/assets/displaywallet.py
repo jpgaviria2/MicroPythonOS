@@ -20,21 +20,23 @@ wallet = None
 receive_qr_data = None
 
 # Settings screen implementation
+# Settings screen implementation
 class SettingsScreen():
     def __init__(self):
-        #super().__init__(None)
         self.prefs = mpos.config.SharedPreferences("com.lightningpiggy.displaywallet")
         self.settings = [
-            {"title": "Wallet Type", "key": "wallet_type", "value_label": None},
-            {"title": "LNBits URL", "key": "lnbits_url", "value_label": None},
-            {"title": "LNBits Read/Invoice Key", "key": "lnbits_readkey", "value_label": None},
-            {"title": "Static receive code", "key": "lnbits_static_receive_code", "value_label": None},
-            {"title": "NWC URL", "key": "nwc_url", "value_label": None},
+            {"title": "Wallet Type", "key": "wallet_type", "value_label": None, "cont": None},
+            {"title": "LNBits URL", "key": "lnbits_url", "value_label": None, "cont": None},
+            {"title": "LNBits Read/Invoice Key", "key": "lnbits_readkey", "value_label": None, "cont": None},
+            {"title": "Static receive code", "key": "lnbits_static_receive_code", "value_label": None, "cont": None},
+            {"title": "NWC URL", "key": "nwc_url", "value_label": None, "cont": None},
         ]
         self.keyboard = None
         self.textarea = None
         self.msgbox = None
+        self.radio_group = None
         self.screen = self.create_ui()
+        self.update_setting_visibility()  # Initialize visibility based on saved wallet_type
 
     def create_ui(self):
         screen = lv.obj()
@@ -51,17 +53,15 @@ class SettingsScreen():
             setting_cont.set_width(lv.pct(100))
             setting_cont.set_height(lv.SIZE_CONTENT)
             setting_cont.set_style_border_width(1, 0)
-            #setting_cont.set_style_border_color(lv.color_hex(0xCCCCCC), 0)
             setting_cont.set_style_border_side(lv.BORDER_SIDE.BOTTOM, 0)
             setting_cont.set_style_pad_all(8, 0)
             setting_cont.add_flag(lv.obj.FLAG.CLICKABLE)
+            setting["cont"] = setting_cont  # Store container reference for visibility control
 
             # Title label (bold, larger)
             title = lv.label(setting_cont)
             title.set_text(setting["title"])
             title.set_style_text_font(lv.font_montserrat_16, 0)
-            #title.set_style_text_color(lv.color_hex(0x000000), 0)
-            #title.set_style_text_decor(lv.TEXT_DECOR.NONE, 0)
             title.set_pos(0, 0)
 
             # Value label (smaller, below title)
@@ -82,9 +82,8 @@ class SettingsScreen():
         self.keyboard.set_size(lv.pct(100), lv.pct(40))
         self.keyboard.align(lv.ALIGN.BOTTOM_MID, 0, 0)
         self.keyboard.add_flag(lv.obj.FLAG.HIDDEN)
-        self.keyboard.add_event_cb(self.keyboard_cb,lv.EVENT.READY,None)
-        self.keyboard.add_event_cb(self.keyboard_cb,lv.EVENT.CANCEL,None)
-        #self.keyboard.add_event_cb(self.keyboard_value_changed_cb,lv.EVENT.VALUE_CHANGED,None)
+        self.keyboard.add_event_cb(self.keyboard_cb, lv.EVENT.READY, None)
+        self.keyboard.add_event_cb(self.keyboard_cb, lv.EVENT.CANCEL, None)
         return screen
 
     def hide_keyboard(self, event=None):
@@ -92,27 +91,30 @@ class SettingsScreen():
         self.keyboard.add_flag(lv.obj.FLAG.HIDDEN)
 
     def show_keyboard(self, event):
-        # Show keyboard:
         print("showing keyboard")
         self.keyboard.remove_flag(lv.obj.FLAG.HIDDEN)
         self.keyboard.set_textarea(self.textarea)
 
     def keyboard_cb(self, event=None):
         print("keyboard_cb: Keyboard event triggered")
-        code=event.get_code()
-        if code==lv.EVENT.READY or code==lv.EVENT.CANCEL:
+        code = event.get_code()
+        if code == lv.EVENT.READY or code == lv.EVENT.CANCEL:
             print("keyboard_cb: READY or CANCEL or RETURN clicked, hiding keyboard")
             self.hide_keyboard()
-    
-    def keyboard_value_changed_cb_unused(self, event):
-        print("keyboard value changed!")
-        print(f"event: code={event.get_code()}, target={event.get_target()}, user_data={event.get_user_data()}, param={event.get_param()}") # event: code=32, target=<Blob>, user_data=<Blob>, param=<Blob>
-        button = self.keyboard.get_selected_button()
-        text = self.keyboard.get_button_text(button)
-        #print(f"button {button} and text {text}")
-        if text == lv.SYMBOL.NEW_LINE:
-            print("Newline key pressed, hiding keyboard...")
-            self.hide_keyboard()
+
+    def update_setting_visibility(self):
+        wallet_type = self.prefs.get_string("wallet_type", "lnbits")
+        for setting in self.settings:
+            if setting["key"].startswith("lnbits_"):
+                if wallet_type != "lnbits":
+                    setting["cont"].add_flag(lv.obj.FLAG.HIDDEN)
+                else:
+                    setting["cont"].remove_flag(lv.obj.FLAG.HIDDEN)
+            elif setting["key"].startswith("nwc_"):
+                if wallet_type != "nwc":
+                    setting["cont"].add_flag(lv.obj.FLAG.HIDDEN)
+                else:
+                    setting["cont"].remove_flag(lv.obj.FLAG.HIDDEN)
 
     def open_edit_popup(self, setting):
         # Close existing msgbox and keyboard if open
@@ -136,14 +138,27 @@ class SettingsScreen():
         content.set_style_pad_all(10, 0)
         content.set_flex_flow(lv.FLEX_FLOW.COLUMN)
 
-        # Textarea for editing
-        self.textarea = lv.textarea(content)
-        self.textarea.set_width(lv.pct(100))
-        self.textarea.set_height(lv.SIZE_CONTENT)
-        self.textarea.set_text(self.prefs.get_string(setting["key"], ""))
-        self.textarea.add_event_cb(self.show_keyboard, lv.EVENT.CLICKED, None)
-        self.textarea.add_event_cb(self.show_keyboard, lv.EVENT.FOCUSED, None)
-        self.textarea.add_event_cb(self.hide_keyboard, lv.EVENT.DEFOCUSED, None)
+        if setting["key"] == "wallet_type":
+            # Create radiobuttons for wallet_type
+            self.radio_group = lv.buttonmatrix(content)
+            self.radio_group.set_width(lv.pct(100))
+            buttons = ["LNBits", "Nostr Wallet Connect"]
+            self.radio_group.set_map(buttons + [""])  # Add empty string for matrix termination
+            self.radio_group.set_button_ctrl(0, lv.buttonmatrix.CTRL.CHECKABLE)
+            self.radio_group.set_button_ctrl(1, lv.buttonmatrix.CTRL.CHECKABLE)
+            current_wallet = self.prefs.get_string("wallet_type", "lnbits")
+            selected_idx = 0 if current_wallet == "lnbits" else 1
+            self.radio_group.set_button_ctrl(selected_idx, lv.buttonmatrix.CTRL.CHECKED)
+            self.radio_group.set_one_checked(True)
+        else:
+            # Textarea for other settings
+            self.textarea = lv.textarea(content)
+            self.textarea.set_width(lv.pct(100))
+            self.textarea.set_height(lv.SIZE_CONTENT)
+            self.textarea.set_text(self.prefs.get_string(setting["key"], ""))
+            self.textarea.add_event_cb(self.show_keyboard, lv.EVENT.CLICKED, None)
+            self.textarea.add_event_cb(self.show_keyboard, lv.EVENT.FOCUSED, None)
+            self.textarea.add_event_cb(self.hide_keyboard, lv.EVENT.DEFOCUSED, None)
 
         # Button container
         btn_cont = lv.obj(content)
@@ -172,12 +187,22 @@ class SettingsScreen():
         cancel_btn.add_event_cb(self.close_popup, lv.EVENT.CLICKED, None)
 
     def save_setting(self, setting):
-        if self.textarea:
+        if setting["key"] == "wallet_type" and self.radio_group:
+            selected_idx = self.radio_group.get_selected_button()
+            new_value = "lnbits" if selected_idx == 0 else "nwc"
+        elif self.textarea:
             new_value = self.textarea.get_text()
-            editor = self.prefs.edit()
-            editor.put_string(setting["key"], new_value)
-            editor.commit()
-            setting["value_label"].set_text(new_value if new_value else "Not set")
+        else:
+            new_value = ""
+        
+        editor = self.prefs.edit()
+        editor.put_string(setting["key"], new_value)
+        editor.commit()
+        setting["value_label"].set_text(new_value if new_value else "Not set")
+        
+        if setting["key"] == "wallet_type":
+            self.update_setting_visibility()
+        
         self.close_popup(None)
 
     def close_popup(self, event):
@@ -186,7 +211,6 @@ class SettingsScreen():
             self.msgbox = None
         if self.keyboard:
             self.hide_keyboard()
-
 
 
 def settings_button_tap(event):
