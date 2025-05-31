@@ -309,7 +309,7 @@ class NWCWallet(Wallet):
                 break
             print("Waiting for relay connection...")
         if not self.connected:
-            print("ERROR: could not connect to NWC relay {self.relay}, aborting...")
+            print(f"ERROR: could not connect to NWC relay {self.relay}, aborting...")
             # TODO: call an error callback to notify the user
             return
 
