@@ -8,13 +8,16 @@ from wallet import LNBitsWallet, NWCWallet
 # screens:
 main_screen = None
 settings_screen = None
+qr_screen = None
 
 # widgets
 receive_qr = None
 balance_label = None
 payments_label = None
 
+# variables
 wallet = None
+receive_qr_data = None
 
 # Settings screen implementation
 class SettingsScreen():
@@ -25,8 +28,8 @@ class SettingsScreen():
             {"title": "Wallet Type", "key": "wallet_type", "value_label": None},
             {"title": "LNBits URL", "key": "lnbits_url", "value_label": None},
             {"title": "LNBits Read/Invoice Key", "key": "lnbits_readkey", "value_label": None},
+            {"title": "Static receive code", "key": "lnbits_static_receive_code", "value_label": None},
             {"title": "NWC URL", "key": "nwc_url", "value_label": None},
-            {"title": "Static receive code", "key": "static_receive_code", "value_label": None},
         ]
         self.keyboard = None
         self.textarea = None
@@ -199,6 +202,21 @@ def main_ui_set_defaults():
     payments_label.set_text(lv.SYMBOL.REFRESH)
     receive_qr.update("", len(""))
 
+def qr_clicked_cb(event):
+    global qr_screen, big_receive_qr, receive_qr_data
+    print("QR clicked")
+    qr_screen = lv.obj()
+    big_receive_qr = lv.qrcode(qr_screen)
+    big_receive_qr.set_size(240) # TODO: make this dynamic
+    big_receive_qr.set_dark_color(lv.color_black())
+    big_receive_qr.set_light_color(lv.color_white())
+    big_receive_qr.center()
+    big_receive_qr.set_style_border_color(lv.color_white(), 0)
+    big_receive_qr.set_style_border_width(3, 0);
+    big_receive_qr.update(receive_qr_data, len(receive_qr_data))
+    mpos.ui.load_screen(qr_screen)
+
+
 def build_main_ui():
     global main_screen, balance_label, payments_label, receive_qr
     main_screen = lv.obj()
@@ -213,6 +231,8 @@ def build_main_ui():
     receive_qr.align(lv.ALIGN.TOP_RIGHT,0,0)
     receive_qr.set_style_border_color(lv.color_white(), 0)
     receive_qr.set_style_border_width(3, 0);
+    receive_qr.add_flag(lv.obj.FLAG.CLICKABLE)
+    receive_qr.add_event_cb(qr_clicked_cb,lv.EVENT.CLICKED,None)
     style_line = lv.style_t()
     style_line.init()
     style_line.set_line_width(2)
@@ -243,34 +263,34 @@ def redraw_payments_cb():
     payments_label.set_text(str(wallet.payment_list))
 
 def janitor_cb(timer):
-    global wallet, config
+    global wallet, config, receive_qr_data
     if lv.screen_active() == main_screen and (not wallet or not wallet.is_running()): # just started the app or just returned from settings_screen
         main_ui_set_defaults()
         config = mpos.config.SharedPreferences("com.lightningpiggy.displaywallet")
         wallet_type = config.get_string("wallet_type")
         if wallet_type == "lnbits":
             try:
-                static_receive_code = config.get_string("static_receive_code")
+                receive_qr_data = config.get_string("lnbits_static_receive_code")
                 wallet = LNBitsWallet(config.get_string("lnbits_url"), config.get_string("lnbits_readkey"))
             except Exception as e:
                 print(f"Couldn't initialize LNBitsWallet because: {e}")
         elif wallet_type == "nwc":
             try:
                 wallet = NWCWallet(config.get_string("nwc_url"))
-                static_receive_code = wallet.lud16
+                receive_qr_data = wallet.lud16
             except Exception as e:
                 print(f"Couldn't initialize NWCWallet because: {e}")
         else:
             print(f"No or unsupported wallet type configured: '{wallet_type}'")
-        if static_receive_code:
-            print(f"Setting static_receive_code: {static_receive_code}")
-            receive_qr.update(static_receive_code, len(static_receive_code))
+        if receive_qr_data:
+            print(f"Setting static_receive_code: {receive_qr_data}")
+            receive_qr.update(receive_qr_data, len(receive_qr_data))
         if wallet:
             print("Starting wallet...")
             wallet.start(redraw_balance_cb, redraw_payments_cb)
         else:
             print("ERROR: could not start any wallet!") # maybe call the error callback to show the error to the user
-    elif lv.screen_active() != main_screen and lv.screen_active() != settings_screen:
+    elif lv.screen_active() != main_screen and lv.screen_active() != settings_screen and lv.screen_active() != qr_screen:
         print("app backgrounded, cleaning up...")
         janitor.delete()
         wallet.stop()
