@@ -20,7 +20,6 @@ wallet = None
 receive_qr_data = None
 
 # Settings screen implementation
-# Settings screen implementation
 class SettingsScreen():
     def __init__(self):
         self.prefs = mpos.config.SharedPreferences("com.lightningpiggy.displaywallet")
@@ -34,7 +33,8 @@ class SettingsScreen():
         self.keyboard = None
         self.textarea = None
         self.msgbox = None
-        self.radio_group = None
+        self.radio_container = None
+        self.active_radio_index = 0  # Track active radio button index
         self.screen = self.create_ui()
         self.update_setting_visibility()  # Initialize visibility based on saved wallet_type
 
@@ -116,6 +116,54 @@ class SettingsScreen():
                 else:
                     setting["cont"].remove_flag(lv.obj.FLAG.HIDDEN)
 
+    def radio_event_handler(self, event):
+        code = event.get_code()
+        if code != lv.EVENT.CLICKED:
+            return
+        targetblob = event.get_target()
+        #target = self.radio_container
+        #obj = e.get_target()
+        target = lv.obj(targetblob)
+        #pos = lvobj.get_pos()  # 
+        if target == self.radio_container:
+            print("it's the container")
+            return  # Ignore clicks on the container itself
+        else:
+            print("it's not the container")
+        old_cb = self.radio_container.get_child(self.active_radio_index)
+        old_cb.remove_state(lv.STATE.CHECKED)
+        #target.add_state(lv.STATE.CHECKED)
+        # 19 = lv.STATE.HOVERED, lv.STATE.CHECKED and lv.STATE.FOCUSED
+        radio_index = -1
+        for childnr in range(2):
+            child = self.radio_container.get_child(childnr)
+            state = child.get_state()
+            print(f"state: {state}")
+            if state != lv.STATE.DEFAULT:
+                print("found checked child!")
+                radio_index = childnr
+                break
+            else:
+                print("skipping child...")
+        #self.active_radio_index = self.radio_container.get_child_by_id(target)
+        self.active_radio_index = radio_index
+        print(f"active_radio_index is now {self.active_radio_index}")
+
+    def create_radio_button(self, parent, text, index):
+        cb = lv.checkbox(parent)
+        cb.set_text(text)
+        cb.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+        # Add circular style to indicator for radio button appearance
+        style_radio = lv.style_t()
+        style_radio.init()
+        style_radio.set_radius(lv.RADIUS_CIRCLE)
+        cb.add_style(style_radio, lv.PART.INDICATOR)
+        style_radio_chk = lv.style_t()
+        style_radio_chk.init()
+        style_radio_chk.set_bg_image_src(None)
+        cb.add_style(style_radio_chk, lv.PART.INDICATOR | lv.STATE.CHECKED)
+        return cb
+
     def open_edit_popup(self, setting):
         # Close existing msgbox and keyboard if open
         if self.msgbox:
@@ -139,17 +187,22 @@ class SettingsScreen():
         content.set_flex_flow(lv.FLEX_FLOW.COLUMN)
 
         if setting["key"] == "wallet_type":
-            # Create radiobuttons for wallet_type
-            self.radio_group = lv.buttonmatrix(content)
-            self.radio_group.set_width(lv.pct(100))
-            buttons = ["LNBits", "Nostr Wallet Connect"]
-            self.radio_group.set_map(buttons + [""])  # Add empty string for matrix termination
-            self.radio_group.set_button_ctrl(0, lv.buttonmatrix.CTRL.CHECKABLE)
-            self.radio_group.set_button_ctrl(1, lv.buttonmatrix.CTRL.CHECKABLE)
+            # Create container for radio buttons
+            self.radio_container = lv.obj(content)
+            self.radio_container.set_width(lv.pct(100))
+            self.radio_container.set_height(lv.SIZE_CONTENT)
+            self.radio_container.set_flex_flow(lv.FLEX_FLOW.COLUMN)
+            self.radio_container.add_event_cb(self.radio_event_handler, lv.EVENT.CLICKED, None)
+
+            # Create radio buttons
+            options = [("LNBits", "lnbits"), ("Nostr Wallet Connect", "nwc")]
             current_wallet = self.prefs.get_string("wallet_type", "lnbits")
-            selected_idx = 0 if current_wallet == "lnbits" else 1
-            self.radio_group.set_button_ctrl(selected_idx, lv.buttonmatrix.CTRL.CHECKED)
-            self.radio_group.set_one_checked(True)
+            self.active_radio_index = 0 if current_wallet == "lnbits" else 1
+
+            for i, (text, _) in enumerate(options):
+                cb = self.create_radio_button(self.radio_container, text, i)
+                if i == self.active_radio_index:
+                    cb.add_state(lv.STATE.CHECKED)
         else:
             # Textarea for other settings
             self.textarea = lv.textarea(content)
@@ -187,8 +240,8 @@ class SettingsScreen():
         cancel_btn.add_event_cb(self.close_popup, lv.EVENT.CLICKED, None)
 
     def save_setting(self, setting):
-        if setting["key"] == "wallet_type" and self.radio_group:
-            selected_idx = self.radio_group.get_selected_button()
+        if setting["key"] == "wallet_type" and self.radio_container:
+            selected_idx = self.active_radio_index
             new_value = "lnbits" if selected_idx == 0 else "nwc"
         elif self.textarea:
             new_value = self.textarea.get_text()
