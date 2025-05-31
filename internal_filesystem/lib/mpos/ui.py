@@ -480,6 +480,7 @@ def load_screen(screen):
         screen_stack.append(screen)
     else:
         print("Warning: not adding new screen to screen_stack because it's already there, just bringing to foreground.")
+    close_top_layer_msgboxes() # otherwise they remain
     lv.screen_load(screen)
 
 def back_screen():
