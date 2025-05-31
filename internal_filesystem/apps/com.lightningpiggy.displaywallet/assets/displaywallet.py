@@ -117,36 +117,16 @@ class SettingsScreen():
                     setting["cont"].remove_flag(lv.obj.FLAG.HIDDEN)
 
     def radio_event_handler(self, event):
-        code = event.get_code()
-        if code != lv.EVENT.CLICKED:
-            return
-        targetblob = event.get_target()
-        #target = self.radio_container
-        #obj = e.get_target()
-        target = lv.obj(targetblob)
-        #pos = lvobj.get_pos()  # 
-        if target == self.radio_container:
-            print("it's the container")
-            return  # Ignore clicks on the container itself
-        else:
-            print("it's not the container")
         old_cb = self.radio_container.get_child(self.active_radio_index)
         old_cb.remove_state(lv.STATE.CHECKED)
-        #target.add_state(lv.STATE.CHECKED)
-        # 19 = lv.STATE.HOVERED, lv.STATE.CHECKED and lv.STATE.FOCUSED
-        radio_index = -1
-        for childnr in range(2):
+        self.active_radio_index = -1
+        for childnr in range(self.radio_container.get_child_count()):
             child = self.radio_container.get_child(childnr)
             state = child.get_state()
-            print(f"state: {state}")
-            if state != lv.STATE.DEFAULT:
-                print("found checked child!")
-                radio_index = childnr
+            print(f"radio_container child's state: {state}")
+            if state != lv.STATE.DEFAULT: # State can be something like 19 = lv.STATE.HOVERED & lv.STATE.CHECKED & lv.STATE.FOCUSED
+                self.active_radio_index = childnr
                 break
-            else:
-                print("skipping child...")
-        #self.active_radio_index = self.radio_container.get_child_by_id(target)
-        self.active_radio_index = radio_index
         print(f"active_radio_index is now {self.active_radio_index}")
 
     def create_radio_button(self, parent, text, index):

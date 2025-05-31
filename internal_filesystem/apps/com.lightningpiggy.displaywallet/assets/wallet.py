@@ -230,6 +230,7 @@ class LNBitsWallet(Wallet):
             "X-Api-Key": self.lnbits_readkey,
         }
         try:
+            print(f"Fetching balance with GET to {walleturl}")
             response = requests.get(walleturl, timeout=10, headers=headers)
         except Exception as e:
             print("fetch_balance: get request failed:", e)
@@ -253,6 +254,7 @@ class LNBitsWallet(Wallet):
             "X-Api-Key": self.lnbits_readkey,
         }
         try:
+            print(f"Fetching payments with GET to {paymentsurl}")
             response = requests.get(paymentsurl, timeout=10, headers=headers)
         except Exception as e:
             print("fetch_payments: get request failed:", e)
@@ -418,7 +420,7 @@ class NWCWallet(Wallet):
             #cleartext_content='{"params":{"limit": 4 },"method":"list_transactions"}'
         )
         self.private_key.sign_event(dm) # sign also does encryption if it's a encrypted dm
-        print("\n\nPublishing DM to fetch payments...\n\n")
+        print("Publishing DM to fetch payments...")
         self.relay_manager.publish_event(dm)
 
     def parse_nwc_url(self, nwc_url):
