@@ -24,7 +24,7 @@ class UniqueSortedList:
         self._items = []
 
     def add(self, item):
-        print(f"before add: {str(self)}")
+        #print(f"before add: {str(self)}")
         # Check if item already exists (using __eq__)
         if item not in self._items:
             # Insert item in sorted position for descending order (using __gt__)
@@ -34,7 +34,7 @@ class UniqueSortedList:
                     return
             # If item is smaller than all existing items, append it
             self._items.append(item)
-        print(f"after add: {str(self)}")
+        #print(f"after add: {str(self)}")
 
     def __iter__(self):
         # Return iterator for the internal list
@@ -71,13 +71,14 @@ class Payment:
         sattext = "sats"
         if self.amount_sats == 1:
             sattext = "sat"
-        return f"{self.amount_sats} {sattext} @ {self.epoch_time}: {self.comment}"
+        #return f"{self.amount_sats} {sattext} @ {self.epoch_time}: {self.comment}"
+        return f"{self.amount_sats} {sattext}: {self.comment}"
 
     def __eq__(self, other):
         if not isinstance(other, Payment):
             return False
         return self.epoch_time == other.epoch_time and self.amount_sats == other.amount_sats and self.comment == other.comment
-    '''
+
     def __lt__(self, other):
         if not isinstance(other, Payment):
             return NotImplemented
@@ -87,18 +88,16 @@ class Payment:
         if not isinstance(other, Payment):
             return NotImplemented
         return (self.epoch_time, self.amount_sats, self.comment) <= (other.epoch_time, other.amount_sats, other.comment)
-    '''
+
     def __gt__(self, other):
         if not isinstance(other, Payment):
             return NotImplemented
-        #return (self.epoch_time, self.amount_sats, self.comment) > (other.epoch_time, other.amount_sats, other.comment)
-        return self.epoch_time > other.epoch_time
-'''
+        return (self.epoch_time, self.amount_sats, self.comment) > (other.epoch_time, other.amount_sats, other.comment)
+
     def __ge__(self, other):
         if not isinstance(other, Payment):
             return NotImplemented
         return (self.epoch_time, self.amount_sats, self.comment) >= (other.epoch_time, other.amount_sats, other.comment)
-'''
 
 class Wallet:
 
@@ -278,6 +277,7 @@ class NWCWallet(Wallet):
         super().__init__()
         self.nwc_url = nwc_url
         self.connected = False
+        self.relay, self.wallet_pubkey, self.secret, self.lud16 = self.parse_nwc_url(self.nwc_url)
 
     def getCommentFromTransaction(self, transaction):
         comment = ""
@@ -295,7 +295,6 @@ class NWCWallet(Wallet):
         return comment
 
     def wallet_manager_thread(self):
-        self.relay, self.wallet_pubkey, self.secret, self.lud16 = self.parse_nwc_url(self.nwc_url)
         self.private_key = PrivateKey(bytes.fromhex(self.secret))
         self.relay_manager = RelayManager()
         self.relay_manager.add_relay(self.relay)
@@ -375,7 +374,7 @@ class NWCWallet(Wallet):
                                 continue
                             new_balance = self.last_known_balance + amount
                             self.handle_new_balance(new_balance, False)
-                            epoch_time = transaction["created_at"]
+                            epoch_time = notification["created_at"]
                             comment = self.getCommentFromTransaction(notification)
                             paymentObj = Payment(epoch_time, amount, comment)
                             self.handle_new_payment(paymentObj)
@@ -383,7 +382,7 @@ class NWCWallet(Wallet):
                             print("Unsupported response, ignoring.")
                 except Exception as e:
                     print(f"DEBUG: Error processing response: {e}")
-            time.sleep(1)
+            time.sleep(0.2)
 
         print("NWCWallet: manage_wallet_thread stopping, closing connections...")
         self.relay_manager.close_connections()

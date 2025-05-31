@@ -193,6 +193,12 @@ def settings_button_tap(event):
     wallet.stop()
     mpos.ui.load_screen(settings_screen)
 
+def main_ui_set_defaults():
+    global balance_label, payments_label, receive_qr
+    balance_label.set_text(lv.SYMBOL.REFRESH)
+    payments_label.set_text(lv.SYMBOL.REFRESH)
+    receive_qr.update("", len(""))
+
 def build_main_ui():
     global main_screen, balance_label, payments_label, receive_qr
     main_screen = lv.obj()
@@ -200,7 +206,6 @@ def build_main_ui():
     balance_label = lv.label(main_screen)
     balance_label.align(lv.ALIGN.TOP_LEFT, 0, 0)
     balance_label.set_style_text_font(lv.font_montserrat_22, 0)
-    balance_label.set_text(lv.SYMBOL.REFRESH)
     receive_qr = lv.qrcode(main_screen)
     receive_qr.set_size(50)
     receive_qr.set_dark_color(lv.color_black())
@@ -219,7 +224,6 @@ def build_main_ui():
     payments_label = lv.label(main_screen)
     payments_label.align_to(balance_line,lv.ALIGN.OUT_BOTTOM_LEFT,0,10)
     payments_label.set_style_text_font(lv.font_montserrat_16, 0)
-    payments_label.set_text(lv.SYMBOL.REFRESH)
     settings_button = lv.button(main_screen)
     settings_button.align(lv.ALIGN.BOTTOM_RIGHT, 0, 0)
     snap_label = lv.label(settings_button)
@@ -240,27 +244,29 @@ def redraw_payments_cb():
 
 def janitor_cb(timer):
     global wallet, config
-    if lv.screen_active() == main_screen and (not wallet or not wallet.is_running()):
-        build_main_ui()
-        # just started the app or just returned from settings_screen
+    if lv.screen_active() == main_screen and (not wallet or not wallet.is_running()): # just started the app or just returned from settings_screen
+        main_ui_set_defaults()
         config = mpos.config.SharedPreferences("com.lightningpiggy.displaywallet")
-        static_receive_code = config.get_string("static_receive_code")
-        if static_receive_code:
-            receive_qr.update(static_receive_code, len(static_receive_code))
         wallet_type = config.get_string("wallet_type")
         if wallet_type == "lnbits":
             try:
+                static_receive_code = config.get_string("static_receive_code")
                 wallet = LNBitsWallet(config.get_string("lnbits_url"), config.get_string("lnbits_readkey"))
             except Exception as e:
                 print(f"Couldn't initialize LNBitsWallet because: {e}")
         elif wallet_type == "nwc":
             try:
                 wallet = NWCWallet(config.get_string("nwc_url"))
+                static_receive_code = wallet.lud16
             except Exception as e:
                 print(f"Couldn't initialize NWCWallet because: {e}")
         else:
             print(f"No or unsupported wallet type configured: '{wallet_type}'")
+        if static_receive_code:
+            print(f"Setting static_receive_code: {static_receive_code}")
+            receive_qr.update(static_receive_code, len(static_receive_code))
         if wallet:
+            print("Starting wallet...")
             wallet.start(redraw_balance_cb, redraw_payments_cb)
         else:
             print("ERROR: could not start any wallet!") # maybe call the error callback to show the error to the user
