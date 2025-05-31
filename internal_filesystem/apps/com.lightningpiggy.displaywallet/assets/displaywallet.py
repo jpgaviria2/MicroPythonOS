@@ -144,6 +144,18 @@ class SettingsScreen():
         cb.add_style(style_radio_chk, lv.PART.INDICATOR | lv.STATE.CHECKED)
         return cb
 
+    def cambutton_cb(self, event):
+        print("cambutton clicked!")
+        import captureqr
+        print("after import captureqr")
+        #while True: this hangs the entire thing - not good...
+        clip = mpos.clipboard.get()
+        print(f"clip is: {clip}")
+        if clip and clip.startsWith("Result:"):
+            print("Got result from QR code scanner!")
+            #break
+        time.sleep(0.25)
+
     def open_edit_popup(self, setting):
         # Close existing msgbox and keyboard if open
         if self.msgbox:
@@ -158,7 +170,7 @@ class SettingsScreen():
         # Create msgbox
         self.msgbox = lv.msgbox()
         self.msgbox.add_title(setting["title"])
-        self.msgbox.set_width(lv.pct(80))
+        self.msgbox.set_width(lv.pct(85))
         self.msgbox.center()
 
         # Create content container
@@ -192,7 +204,14 @@ class SettingsScreen():
             self.textarea.add_event_cb(self.show_keyboard, lv.EVENT.CLICKED, None)
             self.textarea.add_event_cb(self.show_keyboard, lv.EVENT.FOCUSED, None)
             self.textarea.add_event_cb(self.hide_keyboard, lv.EVENT.DEFOCUSED, None)
-
+            # Camera for text
+            self.cambutton = lv.button(self.msgbox)
+            #self.cambutton.align(lv.ALIGN.TOP_RIGHT,0,0)
+            self.cambuttonlabel = lv.label(self.cambutton)
+            self.cambuttonlabel.set_text("CAM")
+            self.cambuttonlabel.center()
+            self.cambutton.add_event_cb(self.cambutton_cb, lv.EVENT.CLICKED, None)
+    
         # Button container
         btn_cont = lv.obj(content)
         btn_cont.set_width(lv.pct(100))
