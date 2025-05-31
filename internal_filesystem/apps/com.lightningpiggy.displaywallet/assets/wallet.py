@@ -117,6 +117,8 @@ class Wallet:
             return "NWCWallet"
 
     def handle_new_balance(self, new_balance, fetchPaymentsIfChanged=True):
+        if not self.keep_running:
+            return
         if new_balance != self.last_known_balance:
             print("Balance changed!")
             self.last_known_balance = new_balance
@@ -127,11 +129,15 @@ class Wallet:
                 self.fetch_payments() # if the balance changed, then re-list transactions
 
     def handle_new_payment(self, new_payment):
+        if not self.keep_running:
+            return
         print("handle_new_payment")
         self.payment_list.add(new_payment)
         self.payments_updated_cb()
 
     def handle_new_payments(self, new_payments):
+        if not self.keep_running:
+            return
         print("handle_new_payments")
         if self.payment_list != new_payments:
             print("new list of payments")
@@ -163,6 +169,7 @@ class LNBitsWallet(Wallet):
         super().__init__()
         self.lnbits_url = lnbits_url
         self.lnbits_readkey = lnbits_readkey
+        self.ws = None
 
 
     def parseLNBitsPayment(self, transaction):
@@ -215,14 +222,16 @@ class LNBitsWallet(Wallet):
                 new_balance = self.fetch_balance() # TODO: only do this every 60 seconds, but loop the main thread more frequently
             except Exception as e:
                 print(f"WARNING: wallet_manager_thread got exception {e}, ignorning.")
-            if not websocket_running: # after
+            if not websocket_running and self.keep_running: # after
                 websocket_running = True
                 _thread.stack_size(mpos.apps.good_stack_size())
                 _thread.start_new_thread(self.websocket_thread, ())
-            print("Sleeping a while before re-fetching balance...")
-            time.sleep(60)
+            if self.keep_running:
+                print("Sleeping a while before re-fetching balance...")
+                time.sleep(60)
         print("wallet_manager_thread stopping")
-        self.ws.close()
+        if self.ws:
+            self.ws.close()
 
     def fetch_balance(self):
         walleturl = self.lnbits_url + "/api/v1/wallet"
@@ -234,7 +243,7 @@ class LNBitsWallet(Wallet):
             response = requests.get(walleturl, timeout=10, headers=headers)
         except Exception as e:
             print("fetch_balance: get request failed:", e)
-        if response and response.status_code == 200:
+        if response and response.status_code == 200 and self.keep_running:
             response_text = response.text
             print(f"Got response text: {response_text}")
             response.close()
@@ -258,7 +267,7 @@ class LNBitsWallet(Wallet):
             response = requests.get(paymentsurl, timeout=10, headers=headers)
         except Exception as e:
             print("fetch_payments: get request failed:", e)
-        if response and response.status_code == 200:
+        if response and response.status_code == 200 and self.keep_running:
             response_text = response.text
             print(f"Got response text: {response_text}")
             response.close()
@@ -309,9 +318,11 @@ class NWCWallet(Wallet):
             if self.relay_manager.relays[self.relay].connected is True:
                 self.connected = True
                 break
+            elif not self.keep_running:
+                break
             print("Waiting for relay connection...")
-        if not self.connected:
-            print(f"ERROR: could not connect to NWC relay {self.relay}, aborting...")
+        if not self.connected or not self.keep_running:
+            print(f"ERROR: could not connect to NWC relay {self.relay} or not self.keep_running, aborting...")
             # TODO: call an error callback to notify the user
             return
 
@@ -329,7 +340,10 @@ class NWCWallet(Wallet):
         request_message = [ClientMessageType.REQUEST, self.subscription_id]
         request_message.extend(self.filters.to_json_array())
         self.relay_manager.publish_message(json.dumps(request_message))
-        time.sleep(5)
+        for _ in range(10):
+            if not self.keep_running:
+                return
+            time.sleep(0.5)
 
         self.fetch_balance()
 
@@ -390,6 +404,8 @@ class NWCWallet(Wallet):
         self.relay_manager.close_connections()
 
     def fetch_balance(self):
+        if not self.keep_running:
+            return
         # Create get_balance request
         balance_request = {
             "method": "get_balance",
@@ -407,6 +423,8 @@ class NWCWallet(Wallet):
         self.relay_manager.publish_event(dm)
 
     def fetch_payments(self):
+        if not self.keep_running:
+            return
         # Create get_balance request
         list_transactions = {
             "method": "list_transactions",
