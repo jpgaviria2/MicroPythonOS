@@ -203,6 +203,8 @@ class LNBitsWallet(Wallet):
             print(f"websocket on_message got exception: {e}")
 
     def websocket_thread(self):
+        if not self.keep_running:
+            return
         print("Opening websocket for payment notifications...")
         wsurl = self.lnbits_url + "/api/v1/ws/" + self.lnbits_readkey
         wsurl = wsurl.replace("https://", "wss://")

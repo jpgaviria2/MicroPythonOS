@@ -8,6 +8,7 @@ from wallet import LNBitsWallet, NWCWallet
 # screens:
 main_screen = None
 settings_screen = None
+settings_screen_detail = None
 qr_screen = None
 
 # widgets
@@ -32,7 +33,6 @@ class SettingsScreen():
         ]
         self.keyboard = None
         self.textarea = None
-        self.msgbox = None
         self.radio_container = None
         self.active_radio_index = 0  # Track active radio button index
         self.screen = self.create_ui()
@@ -71,8 +71,6 @@ class SettingsScreen():
             value.set_style_text_color(lv.color_hex(0x666666), 0)
             value.set_pos(0, 20)
             setting["value_label"] = value  # Store reference for updating
-
-            # Add click event to open msgbox
             setting_cont.add_event_cb(
                 lambda e, s=setting: self.open_edit_popup(s), lv.EVENT.CLICKED, None
             )
@@ -157,30 +155,44 @@ class SettingsScreen():
         time.sleep(0.25)
 
     def open_edit_popup(self, setting):
+        global settings_screen_detail
         # Close existing msgbox and keyboard if open
-        if self.msgbox:
+        if settings_screen_detail:
             try:
-                self.msgbox.delete()
+                settings_screen_detail.delete()
             except Exception as e:
-                print(f"Warning: could not delete msgbox: {e}")
-            self.msgbox = None
+                print(f"Warning: could not delete settings_screen_detail: {e}")
         if self.keyboard:
             self.keyboard.add_flag(lv.obj.FLAG.HIDDEN)
 
         # Create msgbox
-        self.msgbox = lv.msgbox()
-        self.msgbox.add_title(setting["title"])
-        self.msgbox.set_width(lv.pct(85))
-        self.msgbox.center()
+        settings_screen_detail = lv.obj()
+        settings_screen_detail.set_style_pad_all(10, 0)
+        settings_screen_detail.set_flex_flow(lv.FLEX_FLOW.COLUMN)
 
-        # Create content container
-        content = self.msgbox.get_content()
-        content.set_style_pad_all(10, 0)
-        content.set_flex_flow(lv.FLEX_FLOW.COLUMN)
+        top_cont = lv.obj(settings_screen_detail)
+        top_cont.set_width(lv.pct(100))
+        top_cont.set_height(lv.SIZE_CONTENT)
+        top_cont.set_style_pad_all(0, 0)
+        top_cont.set_flex_flow(lv.FLEX_FLOW.ROW)
+        top_cont.set_style_flex_main_place(lv.FLEX_ALIGN.SPACE_BETWEEN, 0)
+
+        setting_label = lv.label(top_cont)
+        setting_label.set_text(setting["title"])
+        setting_label.align(lv.ALIGN.TOP_LEFT,0,0)
+        setting_label.set_style_text_font(lv.font_montserrat_22, 0)
+
+        # Camera for text
+        self.cambutton = lv.button(top_cont)
+        self.cambutton.align(lv.ALIGN.TOP_RIGHT,0,0)
+        self.cambuttonlabel = lv.label(self.cambutton)
+        self.cambuttonlabel.set_text("CAM")
+        self.cambuttonlabel.center()
+        self.cambutton.add_event_cb(self.cambutton_cb, lv.EVENT.CLICKED, None)
 
         if setting["key"] == "wallet_type":
             # Create container for radio buttons
-            self.radio_container = lv.obj(content)
+            self.radio_container = lv.obj(settings_screen_detail)
             self.radio_container.set_width(lv.pct(100))
             self.radio_container.set_height(lv.SIZE_CONTENT)
             self.radio_container.set_flex_flow(lv.FLEX_FLOW.COLUMN)
@@ -197,23 +209,16 @@ class SettingsScreen():
                     cb.add_state(lv.STATE.CHECKED)
         else:
             # Textarea for other settings
-            self.textarea = lv.textarea(content)
+            self.textarea = lv.textarea(settings_screen_detail)
             self.textarea.set_width(lv.pct(100))
             self.textarea.set_height(lv.SIZE_CONTENT)
             self.textarea.set_text(self.prefs.get_string(setting["key"], ""))
             self.textarea.add_event_cb(self.show_keyboard, lv.EVENT.CLICKED, None)
             self.textarea.add_event_cb(self.show_keyboard, lv.EVENT.FOCUSED, None)
             self.textarea.add_event_cb(self.hide_keyboard, lv.EVENT.DEFOCUSED, None)
-            # Camera for text
-            self.cambutton = lv.button(self.msgbox)
-            #self.cambutton.align(lv.ALIGN.TOP_RIGHT,0,0)
-            self.cambuttonlabel = lv.label(self.cambutton)
-            self.cambuttonlabel.set_text("CAM")
-            self.cambuttonlabel.center()
-            self.cambutton.add_event_cb(self.cambutton_cb, lv.EVENT.CLICKED, None)
-    
+
         # Button container
-        btn_cont = lv.obj(content)
+        btn_cont = lv.obj(settings_screen_detail)
         btn_cont.set_width(lv.pct(100))
         btn_cont.set_height(lv.SIZE_CONTENT)
         btn_cont.set_style_pad_all(5, 0)
@@ -226,9 +231,7 @@ class SettingsScreen():
         save_label = lv.label(save_btn)
         save_label.set_text("Save")
         save_label.center()
-        save_btn.add_event_cb(
-            lambda e, s=setting: self.save_setting(s), lv.EVENT.CLICKED, None
-        )
+        save_btn.add_event_cb(lambda e, s=setting: self.save_setting(s), lv.EVENT.CLICKED, None)
 
         # Cancel button
         cancel_btn = lv.button(btn_cont)
@@ -238,6 +241,8 @@ class SettingsScreen():
         cancel_label.center()
         cancel_btn.add_event_cb(self.close_popup, lv.EVENT.CLICKED, None)
 
+        mpos.ui.load_screen(settings_screen_detail)
+
     def save_setting(self, setting):
         if setting["key"] == "wallet_type" and self.radio_container:
             selected_idx = self.active_radio_index
@@ -246,21 +251,19 @@ class SettingsScreen():
             new_value = self.textarea.get_text()
         else:
             new_value = ""
-        
         editor = self.prefs.edit()
         editor.put_string(setting["key"], new_value)
         editor.commit()
         setting["value_label"].set_text(new_value if new_value else "Not set")
-        
         if setting["key"] == "wallet_type":
             self.update_setting_visibility()
-        
         self.close_popup(None)
 
     def close_popup(self, event):
-        if self.msgbox:
-            self.msgbox.close()
-            self.msgbox = None
+        global settings_screen_detail
+        mpos.ui.back_screen()
+        if settings_screen_detail:
+            settings_screen_detail.delete()
         if self.keyboard:
             self.hide_keyboard()
 
@@ -366,7 +369,7 @@ def janitor_cb(timer):
             wallet.start(redraw_balance_cb, redraw_payments_cb)
         else:
             print("ERROR: could not start any wallet!") # maybe call the error callback to show the error to the user
-    elif lv.screen_active() != main_screen and lv.screen_active() != settings_screen and lv.screen_active() != qr_screen:
+    elif lv.screen_active() != main_screen and lv.screen_active() != settings_screen and lv.screen_active() != qr_screen and lv.screen_active() != settings_screen_detail:
         print("app backgrounded, cleaning up...")
         janitor.delete()
         wallet.stop()
