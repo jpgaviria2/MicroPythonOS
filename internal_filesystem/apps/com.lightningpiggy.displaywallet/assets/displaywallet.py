@@ -10,6 +10,7 @@ main_screen = None
 settings_screen = None
 settings_screen_detail = None
 qr_screen = None
+qr_scanner_screen = None
 
 # widgets
 receive_qr = None
@@ -142,17 +143,18 @@ class SettingsScreen():
         cb.add_style(style_radio_chk, lv.PART.INDICATOR | lv.STATE.CHECKED)
         return cb
 
+    def gotqr_callback(self, success, data):
+        print(f"gotqr_callback {success}, {data}")
+        if success:
+            self.textarea.set_text(data)
+
     def cambutton_cb(self, event):
+        global qr_scanner_screen
         print("cambutton clicked!")
         import captureqr
-        print("after import captureqr")
-        #while True: this hangs the entire thing - not good...
-        clip = mpos.clipboard.get()
-        print(f"clip is: {clip}")
-        if clip and clip.startsWith("Result:"):
-            print("Got result from QR code scanner!")
-            #break
-        time.sleep(0.25)
+        qr_scanner_screen = captureqr.scanqr(self.gotqr_callback)
+        if qr_scanner_screen:
+            mpos.ui.load_screen(qr_scanner_screen)
 
     def open_edit_popup(self, setting):
         global settings_screen_detail
@@ -369,7 +371,7 @@ def janitor_cb(timer):
             wallet.start(redraw_balance_cb, redraw_payments_cb)
         else:
             print("ERROR: could not start any wallet!") # maybe call the error callback to show the error to the user
-    elif lv.screen_active() != main_screen and lv.screen_active() != settings_screen and lv.screen_active() != qr_screen and lv.screen_active() != settings_screen_detail:
+    elif lv.screen_active() != main_screen and lv.screen_active() != settings_screen and lv.screen_active() != qr_screen and lv.screen_active() != settings_screen_detail and lv.screen_active() != qr_scanner_screen:
         print("app backgrounded, cleaning up...")
         janitor.delete()
         wallet.stop()
