@@ -228,9 +228,11 @@ class LNBitsWallet(Wallet):
                 websocket_running = True
                 _thread.stack_size(mpos.apps.good_stack_size())
                 _thread.start_new_thread(self.websocket_thread, ())
-            if self.keep_running:
-                print("Sleeping a while before re-fetching balance...")
-                time.sleep(60)
+            print("Sleeping a while before re-fetching balance...")
+            for _ in range(120):
+                time.sleep(0.5)
+                if not self.keep_running:
+                    break
         print("wallet_manager_thread stopping")
         if self.ws:
             self.ws.close()
