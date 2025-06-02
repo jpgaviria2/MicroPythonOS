@@ -73,14 +73,15 @@ def qrdecode_one():
         if not result:
             status_label.set_text(status_label_text_searching)
         else:
+            stop_qr_decoding()
             result = remove_bom(result)
             result = print_qr_buffer(result)
             print(f"QR decoding found: {result}")
-            status_label.set_text(result)
-            stop_qr_decoding()
-            mpos.ui.back_screen()
             if scanqr_callback:
                 scanqr_callback(True,result)
+                mpos.ui.back_screen()
+            else:
+                status_label.set_text(result) # in the future, the status_label text should be copy-paste-able
     except ValueError as e:
         print("QR ValueError: ", e)
         status_label.set_text(status_label_text_searching)

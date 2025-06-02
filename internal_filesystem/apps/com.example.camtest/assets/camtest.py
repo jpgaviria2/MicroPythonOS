@@ -5,7 +5,14 @@
 # or in YUV format and discarding the U and V planes, but then the image will be gray (not great UX)
 # and the performance impact of converting RGB565 to grayscale is probably minimal anyway.
 
+import lvgl as lv
 import time
+
+try:
+    import webcam
+except Exception as e:
+    print(f"Info: could not import webcam module: {e}")
+
 
 import mpos.apps
 import mpos.ui
@@ -17,20 +24,24 @@ keepliveqrdecoding = False
 width = 240
 height = 240
 
+cam = None
 # Variable to hold the current memoryview to prevent garbage collection
 current_cam_buffer = None
 image_dsc = None
 image = None
 qr_label = None
+scanqr_callback = None
 
 use_webcam = False
 qr_button = None
 snap_button = None
 
+capture_timer = None
+
 status_label = None
 status_label_cont = None
 status_label_text = "No camera found."
-status_label_text_searching = "Searching QR codes..."
+status_label_text_searching = "Searching QR codes...\n\nHold still and make them big!\n10cm for simple QR codes,\n20cm for complex."
 status_label_text_found = "Decoding QR..."
 
 def print_qr_buffer(buffer):
@@ -54,18 +65,23 @@ def remove_bom(buffer):
     return buffer
 
 def qrdecode_one():
-    global status_label, status_label_text
+    global status_label, status_label_text, scanqr_callback
     try:
         import qrdecode
         result = qrdecode.qrdecode_rgb565(current_cam_buffer, width, height)
+        #result = bytearray("INSERT_QR_HERE", "utf-8")
         if not result:
             status_label.set_text(status_label_text_searching)
         else:
+            stop_qr_decoding()
             result = remove_bom(result)
             result = print_qr_buffer(result)
             print(f"QR decoding found: {result}")
-            status_label.set_text(result)
-            stop_qr_decoding()
+            if scanqr_callback:
+                scanqr_callback(True,result)
+                mpos.ui.back_screen()
+            else:
+                status_label.set_text(result) # in the future, the status_label text should be copy-paste-able
     except ValueError as e:
         print("QR ValueError: ", e)
         status_label.set_text(status_label_text_searching)
@@ -129,7 +145,7 @@ def qr_button_click(e):
 
 def try_capture(event):
     #print("capturing camera frame")
-    global current_cam_buffer, image_dsc, image, use_webcam
+    global current_cam_buffer, image_dsc, image, use_webcam, cam
     try:
         if use_webcam:
             current_cam_buffer = webcam.capture_frame(cam, "rgb565")
@@ -206,7 +222,6 @@ def build_ui():
     status_label.set_style_text_color(lv.color_white(), 0)
     status_label.set_width(lv.pct(100))
     status_label.center()
-    mpos.ui.load_screen(main_screen)
 
 
 def init_cam():
@@ -254,27 +269,38 @@ def check_running(timer):
         print("camtest.py cleanup done.")
 
 
+def init(scanqr_cb=None):
+    global scanqr_callback, cam, use_webcam, check_running_timer, status_label_cont, capture_timer, main_screen
+    scanqr_callback = scanqr_cb
+    build_ui()
+    cam = init_cam()
+    if cam:
+        image.set_rotation(900) # internal camera is rotated 90 degrees
+    else:
+        print("camtest.py: no internal camera found, trying webcam on /dev/video0")
+        try:
+            cam = webcam.init("/dev/video0")
+            use_webcam = True
+        except Exception as e:
+            print(f"camtest.py: webcam exception: {e}")
+    if cam:
+        print("Camera initialized, continuing...")
+        check_running_timer = lv.timer_create(check_running, 500, None)
+        capture_timer = lv.timer_create(try_capture, 100, None)
+        status_label_cont.add_flag(lv.obj.FLAG.HIDDEN)
+        if scanqr_callback:
+            start_qr_decoding()
+        else:
+            qr_button.remove_flag(lv.obj.FLAG.HIDDEN)
+            snap_button.remove_flag(lv.obj.FLAG.HIDDEN)
+        return main_screen
+    else:
+        print("No camera found, stopping camtest.py")
+        if scanqr_callback:
+            scanqr_callback(False,"")
+        return None
+    
 
-build_ui()
-
-cam = init_cam()
-if cam:
-    image.set_rotation(900) # internal camera is rotated 90 degrees
-else:
-    print("camtest.py: no internal camera found, trying webcam on /dev/video0")
-    try:
-        import webcam
-        cam = webcam.init("/dev/video0")
-        use_webcam = True
-    except Exception as e:
-        print(f"camtest.py: webcam exception: {e}")
-
-if cam:
-    print("Camera initialized, continuing...")
-    check_running_timer = lv.timer_create(check_running, 500, None)
-    qr_button.remove_flag(lv.obj.FLAG.HIDDEN)
-    snap_button.remove_flag(lv.obj.FLAG.HIDDEN)
-    status_label_cont.add_flag(lv.obj.FLAG.HIDDEN)
-    capture_timer = lv.timer_create(try_capture, 100, None)
-else:
-   print("No camera found, stopping camtest.py")
+if __name__ == '__main__':
+    print("camera started as __main__")
+    mpos.ui.load_screen(init())
