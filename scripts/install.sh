@@ -15,11 +15,11 @@ pushd internal_filesystem/
 
 if [ ! -z "$appname" ]; then
 	echo "Installing one app: $appname"
-	appdir="apps/com.example.$appname/"
+	appdir="apps/$appname/"
         target="apps/"
 	if [ ! -d "$appdir" ]; then
 		echo "$appdir doesn't exist so taking the builtin/"
-		appdir="builtin/apps/com.example.$appname/"
+		appdir="builtin/apps/$appname/"
                 target="builtin/apps/"
 		if [ ! -d "$appdir" ]; then
 			echo "$appdir also doesn't exist, exiting..."

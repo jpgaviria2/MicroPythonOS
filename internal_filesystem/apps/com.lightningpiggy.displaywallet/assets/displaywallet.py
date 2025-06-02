@@ -303,6 +303,7 @@ def build_main_ui():
     main_screen = lv.obj()
     main_screen.set_style_pad_all(10, 0)
     balance_label = lv.label(main_screen)
+    balance_label.set_text("")
     balance_label.align(lv.ALIGN.TOP_LEFT, 0, 0)
     balance_label.set_style_text_font(lv.font_montserrat_22, 0)
     receive_qr = lv.qrcode(main_screen)
@@ -323,6 +324,7 @@ def build_main_ui():
     balance_line.set_points([{'x':0,'y':35},{'x':200,'y':35}],2)
     balance_line.add_style(style_line, 0)
     payments_label = lv.label(main_screen)
+    payments_label.set_text("")
     payments_label.align_to(balance_line,lv.ALIGN.OUT_BOTTOM_LEFT,0,10)
     payments_label.set_style_text_font(lv.font_montserrat_16, 0)
     settings_button = lv.button(main_screen)
@@ -354,15 +356,15 @@ def janitor_cb(timer):
                 receive_qr_data = config.get_string("lnbits_static_receive_code")
                 wallet = LNBitsWallet(config.get_string("lnbits_url"), config.get_string("lnbits_readkey"))
             except Exception as e:
-                payments_label.set_text(f"Couldn't initialize LNBitsWallet because: {e}")
+                payments_label.set_text(f"Couldn't initialize LNBitsWallet\nbecause: {e}")
         elif wallet_type == "nwc":
             try:
                 wallet = NWCWallet(config.get_string("nwc_url"))
                 receive_qr_data = wallet.lud16
             except Exception as e:
-                payments_label.set_text(f"Couldn't initialize NWCWallet because: {e}")
+                payments_label.set_text(f"Couldn't initialize NWCWallet\nbecause: {e}")
         else:
-            payments_label.set_text(f"No or unsupported wallet type configured: '{wallet_type}'")
+            payments_label.set_text(f"No or unsupported wallet\ntype configured: '{wallet_type}'")
         if receive_qr_data:
             print(f"Setting static_receive_code: {receive_qr_data}")
             receive_qr.update(receive_qr_data, len(receive_qr_data))
@@ -372,13 +374,13 @@ def janitor_cb(timer):
         except Exception as e:
             can_check_network = False
         if can_check_network and not network.WLAN(network.STA_IF).isconnected():
-            payments_label.set_text("WiFi is not connected,\ncan't talk to {wallet_type} wallet backend...")
+            payments_label.set_text(f"WiFi is not connected, can't\ntalk to {wallet_type} backend.")
         else:
             if wallet:
-                payments_label.set_text("Connecting to {wallet_type} wallet backend...")
+                payments_label.set_text(f"Connecting to {wallet_type} backend...")
                 wallet.start(redraw_balance_cb, redraw_payments_cb)
             else:
-                payments_label.set_text("Could not start {wallet_type} wallet backend.")
+                payments_label.set_text(f"Could not start {wallet_type}  backend.")
     elif lv.screen_active() != main_screen and lv.screen_active() != settings_screen and lv.screen_active() != qr_screen and lv.screen_active() != settings_screen_detail and lv.screen_active() != qr_scanner_screen:
         print("app backgrounded, cleaning up...")
         janitor.delete()
