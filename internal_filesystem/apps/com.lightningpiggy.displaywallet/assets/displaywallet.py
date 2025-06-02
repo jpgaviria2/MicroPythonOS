@@ -344,7 +344,7 @@ def redraw_payments_cb():
     payments_label.set_text(str(wallet.payment_list))
 
 def janitor_cb(timer):
-    global wallet, config, receive_qr_data
+    global wallet, config, receive_qr_data, payments_label
     if lv.screen_active() == main_screen and (not wallet or not wallet.is_running()): # just started the app or just returned from settings_screen
         main_ui_set_defaults()
         config = mpos.config.SharedPreferences("com.lightningpiggy.displaywallet")
@@ -354,23 +354,31 @@ def janitor_cb(timer):
                 receive_qr_data = config.get_string("lnbits_static_receive_code")
                 wallet = LNBitsWallet(config.get_string("lnbits_url"), config.get_string("lnbits_readkey"))
             except Exception as e:
-                print(f"Couldn't initialize LNBitsWallet because: {e}")
+                payments_label.set_text(f"Couldn't initialize LNBitsWallet because: {e}")
         elif wallet_type == "nwc":
             try:
                 wallet = NWCWallet(config.get_string("nwc_url"))
                 receive_qr_data = wallet.lud16
             except Exception as e:
-                print(f"Couldn't initialize NWCWallet because: {e}")
+                payments_label.set_text(f"Couldn't initialize NWCWallet because: {e}")
         else:
-            print(f"No or unsupported wallet type configured: '{wallet_type}'")
+            payments_label.set_text(f"No or unsupported wallet type configured: '{wallet_type}'")
         if receive_qr_data:
             print(f"Setting static_receive_code: {receive_qr_data}")
             receive_qr.update(receive_qr_data, len(receive_qr_data))
-        if wallet:
-            print("Starting wallet...")
-            wallet.start(redraw_balance_cb, redraw_payments_cb)
+        can_check_network = True
+        try:
+            import network
+        except Exception as e:
+            can_check_network = False
+        if can_check_network and not network.WLAN(network.STA_IF).isconnected():
+            payments_label.set_text("WiFi is not connected,\ncan't talk to {wallet_type} wallet backend...")
         else:
-            print("ERROR: could not start any wallet!") # maybe call the error callback to show the error to the user
+            if wallet:
+                payments_label.set_text("Connecting to {wallet_type} wallet backend...")
+                wallet.start(redraw_balance_cb, redraw_payments_cb)
+            else:
+                payments_label.set_text("Could not start {wallet_type} wallet backend.")
     elif lv.screen_active() != main_screen and lv.screen_active() != settings_screen and lv.screen_active() != qr_screen and lv.screen_active() != settings_screen_detail and lv.screen_active() != qr_scanner_screen:
         print("app backgrounded, cleaning up...")
         janitor.delete()

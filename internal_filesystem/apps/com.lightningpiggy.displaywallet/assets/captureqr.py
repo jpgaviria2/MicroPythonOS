@@ -42,7 +42,7 @@ capture_timer = None
 status_label = None
 status_label_cont = None
 status_label_text = "No camera found."
-status_label_text_searching = "Searching QR codes..."
+status_label_text_searching = "Searching QR codes...\n\nTip: make them big!\n10cm for simple QR codes,\n20cm for complex."
 status_label_text_found = "Decoding QR..."
 
 def print_qr_buffer(buffer):
