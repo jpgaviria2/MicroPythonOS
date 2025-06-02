@@ -40,6 +40,13 @@ def execute_script(script_source, is_file, cwd=None):
         try:
             compiled_script = compile(script_source, compile_name, 'exec')
             exec(compiled_script, script_globals)
+            # Introspect globals
+            classes = {k: v for k, v in script_globals.items() if isinstance(v, type)}
+            functions = {k: v for k, v in script_globals.items() if callable(v) and not isinstance(v, type)}
+            variables = {k: v for k, v in script_globals.items() if not callable(v)}
+            print("Classes:", classes.keys())
+            print("Functions:", functions.keys())
+            print("Variables:", variables.keys())
         except Exception as e:
             print(f"Thread {thread_id}: exception during execution:")
             # Print stack trace with exception type, value, and traceback
