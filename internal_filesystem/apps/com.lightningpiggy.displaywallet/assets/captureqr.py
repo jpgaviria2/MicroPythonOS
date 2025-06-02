@@ -15,7 +15,6 @@ except Exception as e:
 
 
 import mpos.apps
-import mpos.clipboard
 import mpos.ui
 
 # screens:
@@ -79,9 +78,9 @@ def qrdecode_one():
             print(f"QR decoding found: {result}")
             status_label.set_text(result)
             stop_qr_decoding()
-            mpos.clipboard.add(f"Result: {result}")
             mpos.ui.back_screen()
-            scanqr_callback(True,result)
+            if scanqr_callback:
+                scanqr_callback(True,result)
     except ValueError as e:
         print("QR ValueError: ", e)
         status_label.set_text(status_label_text_searching)
@@ -269,7 +268,7 @@ def check_running(timer):
         print("camtest.py cleanup done.")
 
 
-def scanqr(scanqr_cb):
+def init(scanqr_cb=None):
     global scanqr_callback, cam, use_webcam, check_running_timer, status_label_cont, capture_timer, main_screen
     scanqr_callback = scanqr_cb
     build_ui()
@@ -286,14 +285,21 @@ def scanqr(scanqr_cb):
     if cam:
         print("Camera initialized, continuing...")
         check_running_timer = lv.timer_create(check_running, 500, None)
-        #qr_button.remove_flag(lv.obj.FLAG.HIDDEN)
-        #snap_button.remove_flag(lv.obj.FLAG.HIDDEN)
-        status_label_cont.add_flag(lv.obj.FLAG.HIDDEN)
         capture_timer = lv.timer_create(try_capture, 100, None)
-        start_qr_decoding()
+        status_label_cont.add_flag(lv.obj.FLAG.HIDDEN)
+        if scanqr_callback:
+            start_qr_decoding()
+        else:
+            qr_button.remove_flag(lv.obj.FLAG.HIDDEN)
+            snap_button.remove_flag(lv.obj.FLAG.HIDDEN)
         return main_screen
     else:
         print("No camera found, stopping camtest.py")
-        scanqr_callback(False,"")
+        if scanqr_callback:
+            scanqr_callback(False,"")
         return None
     
+
+if __name__ == '__main__':
+    print("camera started as __main__")
+    mpos.ui.load_screen(init())

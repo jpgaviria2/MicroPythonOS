@@ -152,7 +152,7 @@ class SettingsScreen():
         global qr_scanner_screen
         print("cambutton clicked!")
         import captureqr
-        qr_scanner_screen = captureqr.scanqr(self.gotqr_callback)
+        qr_scanner_screen = captureqr.init(self.gotqr_callback)
         if qr_scanner_screen:
             mpos.ui.load_screen(qr_scanner_screen)
 
