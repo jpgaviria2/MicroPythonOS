@@ -28,7 +28,7 @@ class SettingsScreen():
         self.settings = [
             {"title": "Wallet Type", "key": "wallet_type", "value_label": None, "cont": None},
             {"title": "LNBits URL", "key": "lnbits_url", "value_label": None, "cont": None},
-            {"title": "LNBits Read/Invoice Key", "key": "lnbits_readkey", "value_label": None, "cont": None},
+            {"title": "LNBits Read Key", "key": "lnbits_readkey", "value_label": None, "cont": None},
             {"title": "Static receive code", "key": "lnbits_static_receive_code", "value_label": None, "cont": None},
             {"title": "NWC URL", "key": "nwc_url", "value_label": None, "cont": None},
         ]
@@ -185,14 +185,15 @@ class SettingsScreen():
         setting_label.set_style_text_font(lv.font_montserrat_22, 0)
 
         # Camera for text
-        self.cambutton = lv.button(top_cont)
-        self.cambutton.align(lv.ALIGN.TOP_RIGHT,0,0)
-        self.cambuttonlabel = lv.label(self.cambutton)
-        self.cambuttonlabel.set_text("CAM")
-        self.cambuttonlabel.center()
-        self.cambutton.add_event_cb(self.cambutton_cb, lv.EVENT.CLICKED, None)
+        cambutton = lv.button(top_cont)
+        cambutton.align(lv.ALIGN.TOP_RIGHT,0,0)
+        cambuttonlabel = lv.label(cambutton)
+        cambuttonlabel.set_text("SCAN QR")
+        cambuttonlabel.center()
+        cambutton.add_event_cb(self.cambutton_cb, lv.EVENT.CLICKED, None)
 
         if setting["key"] == "wallet_type":
+            cambutton.add_flag(lv.obj.FLAG.HIDDEN)
             # Create container for radio buttons
             self.radio_container = lv.obj(settings_screen_detail)
             self.radio_container.set_width(lv.pct(100))
@@ -315,14 +316,14 @@ def build_main_ui():
     receive_qr.set_style_border_width(3, 0);
     receive_qr.add_flag(lv.obj.FLAG.CLICKABLE)
     receive_qr.add_event_cb(qr_clicked_cb,lv.EVENT.CLICKED,None)
-    style_line = lv.style_t()
-    style_line.init()
-    style_line.set_line_width(2)
-    style_line.set_line_color(lv.palette_main(lv.PALETTE.PINK))
-    style_line.set_line_rounded(True)
+    #style_line = lv.style_t()
+    #style_line.init()
+    #style_line.set_line_width(2)
+    #style_line.set_line_color(lv.palette_main(lv.PALETTE.PINK))
+    #style_line.set_line_rounded(True)
     balance_line = lv.line(main_screen)
     balance_line.set_points([{'x':0,'y':35},{'x':200,'y':35}],2)
-    balance_line.add_style(style_line, 0)
+    #balance_line.add_style(style_line, 0)
     payments_label = lv.label(main_screen)
     payments_label.set_text("")
     payments_label.align_to(balance_line,lv.ALIGN.OUT_BOTTOM_LEFT,0,10)
