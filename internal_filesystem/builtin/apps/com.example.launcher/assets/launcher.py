@@ -11,95 +11,98 @@
 
 import uos
 import lvgl as lv
+
 import mpos.apps
 import mpos.ui
 
-# Create a container for the grid
-main_screen = lv.obj()
-cont = lv.obj(main_screen)
-cont.set_style_border_width(0, 0)
-cont.set_style_radius(0, 0)
-cont.set_pos(0, mpos.ui.NOTIFICATION_BAR_HEIGHT) # leave some margin for the notification bar
-cont.set_size(lv.pct(100), lv.pct(100))
-cont.set_style_pad_all(10, 0)
-cont.set_flex_flow(lv.FLEX_FLOW.ROW_WRAP)
-mpos.ui.load_screen(main_screen)
+class MainActivity(mpos.apps.Activity):
 
-# Grid parameters
-icon_size = 64  # Adjust based on your display
-label_height = 24
-iconcont_width = icon_size + label_height
-iconcont_height = icon_size + label_height
+    def onCreate(self):
+        main_screen = lv.obj()
+        main_screen.set_style_border_width(0, 0)
+        main_screen.set_style_radius(0, 0)
+        main_screen.set_pos(0, mpos.ui.NOTIFICATION_BAR_HEIGHT) # leave some margin for the notification bar
+        main_screen.set_size(lv.pct(100), lv.pct(100))
+        main_screen.set_style_pad_all(10, 0)
+        main_screen.set_flex_flow(lv.FLEX_FLOW.ROW_WRAP)
+        mpos.ui.setContentView(self, main_screen)
 
-import time
-start = time.ticks_ms()
-
-def load_icon(icon_path):
-    with open(icon_path, 'rb') as f:
-        image_data = f.read()
-        image_dsc = lv.image_dsc_t({
-            'data_size': len(image_data),
-            'data': image_data
-        })
-    return image_dsc
-
-# Check and collect subdirectories from existing directories
-apps_dir = "apps"
-apps_dir_builtin = "builtin/apps"
-seen_base_names = set()
-app_list = []
-
-# Check and collect unique subdirectories
-for dir_path in [apps_dir, apps_dir_builtin]:
-    try:
-        if uos.stat(dir_path)[0] & 0x4000:  # Verify directory exists
-            for d in uos.listdir(dir_path):
-                full_path = f"{dir_path}/{d}"
-                #print(f"full_path: {full_path}")
-                if uos.stat(full_path)[0] & 0x4000:  # Check if it's a directory
-                    base_name = d
-                    if base_name not in seen_base_names:  # Avoid duplicates
-                        seen_base_names.add(base_name)
-                        app = mpos.apps.parse_manifest(f"{full_path}/META-INF/MANIFEST.JSON")
-                        if app.category != "launcher":  # Skip launchers
-                            app_list.append((app.name, full_path))
-    except OSError:
-        pass
-
-# Sort apps alphabetically by app.name
-app_list.sort(key=lambda x: x[0].lower())  # Case-insensitive sorting
-
-# Create UI for each app
-for app_name, app_dir_fullpath in app_list:
-    #print(f"Adding app {app_name} from {app_dir_fullpath}")
-    # Create container for each app (icon + label)
-    app_cont = lv.obj(cont)
-    app_cont.set_size(iconcont_width, iconcont_height)
-    app_cont.set_style_border_width(0, 0)
-    app_cont.set_style_pad_all(0, 0)
-    # Load and display icon
-    icon_path = f"{app_dir_fullpath}/res/mipmap-mdpi/icon_64x64.png"
-    image = lv.image(app_cont)
-    try:
-        image.set_src(load_icon(icon_path))
-    except Exception as e:
-        print(f"Error loading icon {icon_path}: {e} - loading default icon")
-        icon_path = "builtin/res/mipmap-mdpi/default_icon_64x64.png"
-        try:
-            image.set_src(load_icon(icon_path))
-        except Exception as e:
-            print(f"Error loading default icon {icon_path}: {e} - using symbol")
-            image.set_src(lv.SYMBOL.STOP)
-    image.align(lv.ALIGN.TOP_MID, 0, 0)
-    image.set_size(icon_size, icon_size)
-    label = lv.label(app_cont)
-    label.set_text(app_name)  # Use app_name directly
-    label.set_long_mode(lv.label.LONG.WRAP)
-    label.set_width(iconcont_width)
-    label.align(lv.ALIGN.BOTTOM_MID, 0, 0)
-    label.set_style_text_align(lv.TEXT_ALIGN.CENTER, 0)
-    app_cont.add_event_cb(lambda e, path=app_dir_fullpath: mpos.apps.start_app(path), lv.EVENT.CLICKED, None)
-
-end = time.ticks_ms()
-print(f"Displaying all icons took: {end-start}ms")
-
+    def onResume(self, main_screen):
+        # Grid parameters
+        icon_size = 64  # Adjust based on your display
+        label_height = 24
+        iconcont_width = icon_size + label_height
+        iconcont_height = icon_size + label_height
+        
+        import time
+        start = time.ticks_ms()
+        
+        def load_icon(icon_path):
+            with open(icon_path, 'rb') as f:
+                image_data = f.read()
+                image_dsc = lv.image_dsc_t({
+                    'data_size': len(image_data),
+                    'data': image_data
+                })
+            return image_dsc
+        
+        # Check and collect subdirectories from existing directories
+        apps_dir = "apps"
+        apps_dir_builtin = "builtin/apps"
+        seen_base_names = set()
+        app_list = []
+        
+        # Check and collect unique subdirectories
+        for dir_path in [apps_dir, apps_dir_builtin]:
+            try:
+                if uos.stat(dir_path)[0] & 0x4000:  # Verify directory exists
+                    for d in uos.listdir(dir_path):
+                        full_path = f"{dir_path}/{d}"
+                        #print(f"full_path: {full_path}")
+                        if uos.stat(full_path)[0] & 0x4000:  # Check if it's a directory
+                            base_name = d
+                            if base_name not in seen_base_names:  # Avoid duplicates
+                                seen_base_names.add(base_name)
+                                app = mpos.apps.parse_manifest(f"{full_path}/META-INF/MANIFEST.JSON")
+                                if app.category != "launcher":  # Skip launchers
+                                    app_list.append((app.name, full_path))
+            except OSError:
+                pass
+        
+        # Sort apps alphabetically by app.name
+        app_list.sort(key=lambda x: x[0].lower())  # Case-insensitive sorting
+        
+        # Create UI for each app
+        for app_name, app_dir_fullpath in app_list:
+            #print(f"Adding app {app_name} from {app_dir_fullpath}")
+            # Create container for each app (icon + label)
+            app_cont = lv.obj(main_screen)
+            app_cont.set_size(iconcont_width, iconcont_height)
+            app_cont.set_style_border_width(0, 0)
+            app_cont.set_style_pad_all(0, 0)
+            app_cont.set_style_bg_opa(lv.OPA.TRANSP,0) # prevent default style from adding slight gray to this container
+            # Load and display icon
+            icon_path = f"{app_dir_fullpath}/res/mipmap-mdpi/icon_64x64.png"
+            image = lv.image(app_cont)
+            try:
+                image.set_src(load_icon(icon_path))
+            except Exception as e:
+                print(f"Error loading icon {icon_path}: {e} - loading default icon")
+                icon_path = "builtin/res/mipmap-mdpi/default_icon_64x64.png"
+                try:
+                    image.set_src(load_icon(icon_path))
+                except Exception as e:
+                    print(f"Error loading default icon {icon_path}: {e} - using symbol")
+                    image.set_src(lv.SYMBOL.STOP)
+            image.align(lv.ALIGN.TOP_MID, 0, 0)
+            image.set_size(icon_size, icon_size)
+            label = lv.label(app_cont)
+            label.set_text(app_name)  # Use app_name directly
+            label.set_long_mode(lv.label.LONG.WRAP)
+            label.set_width(iconcont_width)
+            label.align(lv.ALIGN.BOTTOM_MID, 0, 0)
+            label.set_style_text_align(lv.TEXT_ALIGN.CENTER, 0)
+            app_cont.add_event_cb(lambda e, path=app_dir_fullpath: mpos.apps.start_app(path), lv.EVENT.CLICKED, None)
+        
+        end = time.ticks_ms()
+        print(f"Displaying all icons took: {end-start}ms")

@@ -47,6 +47,10 @@ def execute_script(script_source, is_file, cwd=None):
             print("Classes:", classes.keys())
             print("Functions:", functions.keys())
             print("Variables:", variables.keys())
+            MainActivity = script_globals.get("MainActivity")
+            if MainActivity:
+                loaded_activity = MainActivity()
+                loaded_activity.onCreate()  # Call lifecycle method
         except Exception as e:
             print(f"Thread {thread_id}: exception during execution:")
             # Print stack trace with exception type, value, and traceback
@@ -186,3 +190,18 @@ def auto_connect():
         except Exception as e:
             print("Couldn't execute {builtin_auto_connect} because exception {e}, continuing...")
     
+
+class Activity:
+
+    def onCreate(self):
+        pass
+    def onStart(self, screen):
+        pass
+    def onResume(self, screen):
+        pass
+    def onPause(self, screen):
+        pass
+    def onStop(self, screen):
+        pass
+    def onDestroy(self, screen):
+        pass

@@ -456,50 +456,64 @@ def close_top_layer_msgboxes():
     else:
         print(f"Top layer still has {child_count} children")
 
-def clean_top_layer():
-    print("Cleaning top layer")
-    timer1.delete()
-    timer2.delete()
-    timer3.delete()
-    timer4.delete()
-    lv.layer_top().clean()
 
-screen_stack = []
+screen_stack = [] # Stack of (activity, screen) tuples
 
 def empty_screen_stack():
     global screen_stack
     screen_stack.clear()
 
+
 def load_screen(screen):
+    setContentView(None, screen) # for compatibility with old apps
+
+# new_activity might be None for compatibility, can be removed if compatibility is no longer needed
+def setContentView(new_activity, new_screen):
     global screen_stack
-    topscreen = None
+
+    # Get current activity and screen
+    current_activity, current_screen = None, None
     if len(screen_stack) > 0:
-        topscreen = screen_stack[-1]
-    if not topscreen or screen != topscreen:
-        print("Appending screen to screen_stack")
-        screen_stack.append(screen)
-    else:
-        print("Warning: not adding new screen to screen_stack because it's already there, just bringing to foreground.")
+        current_activity, current_screen = screen_stack[-1]
+
+    if current_activity and current_screen:
+        # Notify current activity it's being backgrounded:
+        current_activity.onPause(current_screen)
+        current_activity.onStop(current_screen)
+
+    # Start the new one:
+    print("Appending screen to screen_stack")
+    screen_stack.append((new_activity, new_screen))
     close_top_layer_msgboxes() # otherwise they remain
-    lv.screen_load(screen)
+    if new_activity:
+        new_activity.onStart(new_screen)  # Initialize UI elements
+    lv.screen_load(new_screen)
+    if new_activity:
+        new_activity.onResume(new_screen)  # Screen is now active
+
 
 def back_screen():
     global screen_stack
-    if len(screen_stack) > 1:
-        #clean_top_layer()
-        #print("Adding notification bar and drawer to top layer")
-        #mpos.ui.create_notification_bar()
-        #mpos.ui.create_drawer()
-        #close_top_layer_msgboxes() # would be nicer to "cancel" all input events
-        
-        print("Loading previous screen")
-        screen_stack.pop()  # Remove current screen
-        prevscreen = screen_stack[-1] # load previous screen
-        lv.screen_load(prevscreen)
-        if len(screen_stack) == 1:
-            open_bar()
-    else:
+    if len(screen_stack) <= 1:
         print("Warning: can't go back because screen_stack is empty.")
+        return False  # No previous screen
+    #close_top_layer_msgboxes() # would be nicer to "cancel" all input events
+    print("Loading previous screen")
+    current_activity, current_screen = screen_stack.pop()  # Remove current screen
+    if current_activity:
+        current_activity.onPause(current_screen)
+        current_activity.onStop(current_screen)
+        current_activity.onDestroy(current_screen)
+    # System deletes the screen
+    if current_screen:
+        current_screen.delete()
+        current_screen = None
+    prev_activity, prev_screen = screen_stack[-1] # load previous screen
+    lv.screen_load(prev_screen)
+    if prev_activity:
+        prev_activity.onResume(prev_screen)
+    if len(screen_stack) == 1:
+        open_bar()
 
 
 
