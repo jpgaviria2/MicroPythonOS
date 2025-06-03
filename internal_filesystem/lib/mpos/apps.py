@@ -7,7 +7,6 @@ import uos
 import _thread
 import traceback
 
-import mpos.apps
 import mpos.info
 import mpos.ui
 
@@ -41,16 +40,23 @@ def execute_script(script_source, is_file, cwd=None):
             compiled_script = compile(script_source, compile_name, 'exec')
             exec(compiled_script, script_globals)
             # Introspect globals
-            classes = {k: v for k, v in script_globals.items() if isinstance(v, type)}
-            functions = {k: v for k, v in script_globals.items() if callable(v) and not isinstance(v, type)}
-            variables = {k: v for k, v in script_globals.items() if not callable(v)}
-            print("Classes:", classes.keys())
-            print("Functions:", functions.keys())
-            print("Variables:", variables.keys())
-            MainActivity = script_globals.get("MainActivity")
-            if MainActivity:
-                loaded_activity = MainActivity()
-                loaded_activity.onCreate()  # Call lifecycle method
+            #classes = {k: v for k, v in script_globals.items() if isinstance(v, type)}
+            #functions = {k: v for k, v in script_globals.items() if callable(v) and not isinstance(v, type)}
+            #variables = {k: v for k, v in script_globals.items() if not callable(v)}
+            #print("Classes:", classes.keys())
+            #print("Functions:", functions.keys())
+            #print("Variables:", variables.keys())
+            main_activity = script_globals.get("MainActivity")
+            if not main_activity: # Fallback to taking the first non-generic Activity class, but that's slower
+                for k, v in script_globals.items():
+                    if k != "Activity" and isinstance(v, type):
+                        main_activity = v # first one is the 'Activity' from which it inherits so take the second one
+                        break
+                print(f"Got main_activity: {main_activity}")
+            if main_activity:
+                Activity.startActivity(None, Intent(activity_class=main_activity))
+            else:
+                print("Warning: could not find main_activity")
         except Exception as e:
             print(f"Thread {thread_id}: exception during execution:")
             # Print stack trace with exception type, value, and traceback
