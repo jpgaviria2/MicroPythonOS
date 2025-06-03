@@ -15,31 +15,6 @@ class MainActivity(Activity):
         self.receive_qr = None
         self.payments_label = None
 
-    def settings_button_tap(self, event):
-        settings_activity = SettingsActivity()
-        settings_activity.onCreate()
-    
-    def main_ui_set_defaults(self):
-        self.balance_label.set_text(lv.SYMBOL.REFRESH)
-        self.payments_label.set_text(lv.SYMBOL.REFRESH)
-        self.receive_qr.update("EMPTY", len("EMPTY"))
-    
-    def qr_clicked_cb(self, event):
-        if not self.receive_qr_data:
-            return
-        print("QR clicked")
-        qr_screen = lv.obj()
-        big_receive_qr = lv.qrcode(qr_screen)
-        big_receive_qr.set_size(240) # TODO: make this dynamic
-        big_receive_qr.set_dark_color(lv.color_black())
-        big_receive_qr.set_light_color(lv.color_white())
-        big_receive_qr.center()
-        big_receive_qr.set_style_border_color(lv.color_white(), 0)
-        big_receive_qr.set_style_border_width(3, 0);
-        big_receive_qr.update(self.receive_qr_data, len(self.receive_qr_data))
-        mpos.ui.load_screen(qr_screen)
-    
-    
     def onCreate(self):
         main_screen = lv.obj()
         main_screen.set_style_pad_all(10, 0)
@@ -69,14 +44,6 @@ class MainActivity(Activity):
         snap_label.center()
         settings_button.add_event_cb(self.settings_button_tap,lv.EVENT.CLICKED,None)
         mpos.ui.setContentView(self, main_screen)
-    
-    def redraw_balance_cb(self):
-        # this gets called from another thread (the wallet) so make sure it happens in the LVGL thread using lv.async_call():
-        lv.async_call(lambda l: self.balance_label.set_text(str(self.wallet.last_known_balance)), None)
-    
-    def redraw_payments_cb(self):
-        # this gets called from another thread (the wallet) so make sure it happens in the LVGL thread using lv.async_call():
-        lv.async_call(lambda l: self.payments_label.set_text(str(self.wallet.payment_list)), None)
 
     def onStart(self, main_screen):
         self.main_ui_set_defaults()
@@ -120,6 +87,38 @@ class MainActivity(Activity):
         if self.wallet:
             self.wallet.stop()
 
+    def redraw_balance_cb(self):
+        # this gets called from another thread (the wallet) so make sure it happens in the LVGL thread using lv.async_call():
+        lv.async_call(lambda l: self.balance_label.set_text(str(self.wallet.last_known_balance)), None)
+    
+    def redraw_payments_cb(self):
+        # this gets called from another thread (the wallet) so make sure it happens in the LVGL thread using lv.async_call():
+        lv.async_call(lambda l: self.payments_label.set_text(str(self.wallet.payment_list)), None)
+
+
+    def settings_button_tap(self, event):
+        settings_activity = SettingsActivity()
+        settings_activity.onCreate()
+    
+    def main_ui_set_defaults(self):
+        self.balance_label.set_text(lv.SYMBOL.REFRESH)
+        self.payments_label.set_text(lv.SYMBOL.REFRESH)
+        self.receive_qr.update("EMPTY", len("EMPTY"))
+    
+    def qr_clicked_cb(self, event):
+        if not self.receive_qr_data:
+            return
+        print("QR clicked")
+        qr_screen = lv.obj()
+        big_receive_qr = lv.qrcode(qr_screen)
+        big_receive_qr.set_size(240) # TODO: make this dynamic
+        big_receive_qr.set_dark_color(lv.color_black())
+        big_receive_qr.set_light_color(lv.color_white())
+        big_receive_qr.center()
+        big_receive_qr.set_style_border_color(lv.color_white(), 0)
+        big_receive_qr.set_style_border_width(3, 0);
+        big_receive_qr.update(self.receive_qr_data, len(self.receive_qr_data))
+        mpos.ui.load_screen(qr_screen)
 
 # Used to list and edit all settings:
 class SettingsActivity(Activity):
@@ -175,10 +174,6 @@ class SettingsActivity(Activity):
             )
         mpos.ui.setContentView(self, screen)
 
-    def startSettingActivity(self, setting):
-        sa = SettingActivity(setting)
-        sa.onCreate()
-
     def onResume(self, screen):
         wallet_type = self.prefs.get_string("wallet_type", "lnbits")
         # update setting visibility based on wallet_type:
@@ -194,6 +189,9 @@ class SettingsActivity(Activity):
                 else:
                     setting["cont"].remove_flag(lv.obj.FLAG.HIDDEN)
 
+    def startSettingActivity(self, setting):
+        sa = SettingActivity(setting)
+        sa.onCreate()
 
 
 # Used to edit one setting:
@@ -204,14 +202,6 @@ class SettingActivity(Activity):
         self.setting = setting
 
     def onCreate(self):
-        # Initialize keyboard (hidden initially)
-        self.keyboard = lv.keyboard(lv.layer_sys())
-        self.keyboard.set_size(lv.pct(100), lv.pct(40))
-        self.keyboard.align(lv.ALIGN.BOTTOM_MID, 0, 0)
-        self.keyboard.add_flag(lv.obj.FLAG.HIDDEN)
-        self.keyboard.add_event_cb(self.keyboard_cb, lv.EVENT.READY, None)
-        self.keyboard.add_event_cb(self.keyboard_cb, lv.EVENT.CANCEL, None)
-        
         settings_screen_detail = lv.obj()
         settings_screen_detail.set_style_pad_all(10, 0)
         settings_screen_detail.set_flex_flow(lv.FLEX_FLOW.COLUMN)
@@ -263,6 +253,15 @@ class SettingActivity(Activity):
             self.textarea.add_event_cb(self.show_keyboard, lv.EVENT.CLICKED, None)
             self.textarea.add_event_cb(self.show_keyboard, lv.EVENT.FOCUSED, None)
             self.textarea.add_event_cb(self.hide_keyboard, lv.EVENT.DEFOCUSED, None)
+            # Initialize keyboard (hidden initially)
+            self.keyboard = lv.keyboard(lv.layer_sys())
+            self.keyboard.set_size(lv.pct(100), lv.pct(40))
+            self.keyboard.align(lv.ALIGN.BOTTOM_MID, 0, 0)
+            self.keyboard.add_flag(lv.obj.FLAG.HIDDEN)
+            self.keyboard.add_event_cb(self.keyboard_cb, lv.EVENT.READY, None)
+            self.keyboard.add_event_cb(self.keyboard_cb, lv.EVENT.CANCEL, None)
+            self.keyboard.set_textarea(self.textarea)
+
         # Button container
         btn_cont = lv.obj(settings_screen_detail)
         btn_cont.set_width(lv.pct(100))
@@ -283,7 +282,7 @@ class SettingActivity(Activity):
         cancel_label = lv.label(cancel_btn)
         cancel_label.set_text("Cancel")
         cancel_label.center()
-        cancel_btn.add_event_cb(self.close_popup, lv.EVENT.CLICKED, None)
+        cancel_btn.add_event_cb(lambda e: mpos.ui.back_screen(), lv.EVENT.CLICKED, None)
         mpos.ui.setContentView(self, settings_screen_detail)
 
     def hide_keyboard(self, event=None):
@@ -293,7 +292,6 @@ class SettingActivity(Activity):
     def show_keyboard(self, event):
         print("showing keyboard")
         self.keyboard.remove_flag(lv.obj.FLAG.HIDDEN)
-        self.keyboard.set_textarea(self.textarea)
 
     def keyboard_cb(self, event=None):
         print("keyboard_cb: Keyboard event triggered")
@@ -354,10 +352,5 @@ class SettingActivity(Activity):
         editor.put_string(setting["key"], new_value)
         editor.commit()
         setting["value_label"].set_text(new_value if new_value else "Not set")
-        self.close_popup(None)
-
-    def close_popup(self, event):
-        if self.keyboard:
-            self.hide_keyboard()
         mpos.ui.back_screen()
 
