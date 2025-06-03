@@ -205,3 +205,9 @@ class Activity:
         pass
     def onDestroy(self, screen):
         pass
+
+    def setContentView(self, screen):
+        mpos.ui.setContentView(self, screen)
+
+    def finish(self):
+        mpos.ui.back_screen()

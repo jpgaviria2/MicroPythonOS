@@ -43,7 +43,7 @@ class MainActivity(Activity):
         snap_label.set_text(lv.SYMBOL.SETTINGS)
         snap_label.center()
         settings_button.add_event_cb(self.settings_button_tap,lv.EVENT.CLICKED,None)
-        mpos.ui.setContentView(self, main_screen)
+        self.setContentView(main_screen)
 
     def onStart(self, main_screen):
         self.main_ui_set_defaults()
@@ -172,7 +172,7 @@ class SettingsActivity(Activity):
             setting_cont.add_event_cb(
                 lambda e, s=setting: self.startSettingActivity(s), lv.EVENT.CLICKED, None
             )
-        mpos.ui.setContentView(self, screen)
+        self.setContentView(screen)
 
     def onResume(self, screen):
         wallet_type = self.prefs.get_string("wallet_type", "lnbits")
@@ -282,8 +282,8 @@ class SettingActivity(Activity):
         cancel_label = lv.label(cancel_btn)
         cancel_label.set_text("Cancel")
         cancel_label.center()
-        cancel_btn.add_event_cb(lambda e: mpos.ui.back_screen(), lv.EVENT.CLICKED, None)
-        mpos.ui.setContentView(self, settings_screen_detail)
+        cancel_btn.add_event_cb(lambda e: self.finish(), lv.EVENT.CLICKED, None)
+        self.setContentView(settings_screen_detail)
 
     def hide_keyboard(self, event=None):
         print("hide_keyboard: hiding keyboard")
@@ -352,5 +352,5 @@ class SettingActivity(Activity):
         editor.put_string(setting["key"], new_value)
         editor.commit()
         setting["value_label"].set_text(new_value if new_value else "Not set")
-        mpos.ui.back_screen()
+        self.finish()
 

@@ -25,7 +25,7 @@ class MainActivity(mpos.apps.Activity):
         main_screen.set_size(lv.pct(100), lv.pct(100))
         main_screen.set_style_pad_all(10, 0)
         main_screen.set_flex_flow(lv.FLEX_FLOW.ROW_WRAP)
-        mpos.ui.setContentView(self, main_screen)
+        self.setContentView(main_screen)
 
     def onResume(self, main_screen):
         # Grid parameters
