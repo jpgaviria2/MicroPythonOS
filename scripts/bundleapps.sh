@@ -1,12 +1,17 @@
-output=appstore_backend/bundled_apps/
-outputjson=appstore_backend/apps.json
+output=/home/user/projects/MicroPythonOS/apps/
+outputjson="$output"/app_index.json
 output=$(readlink -f "$output")
 outputjson=$(readlink -f "$outputjson")
 
-mkdir -p "$output"
+#mpks="$output"/mpks/
+#icons="$output"/icons/
 
-rm "$output"/*.mpk
-rm "$output"/*.png
+mkdir -p "$output"
+#mkdir -p "$mpks"
+#mkdir -p "$icons"
+
+#rm "$output"/*.mpk
+#rm "$output"/*.png
 rm "$outputjson"
 
 echo "[" | tee -a "$outputjson"
@@ -20,10 +25,14 @@ for apprepo in internal_filesystem/apps internal_filesystem/builtin/apps; do
 	    version=$( jq -r '.version' "$manifest" )
             cat "$manifest" | tee -a "$outputjson"
 	    echo -n "," | tee -a "$outputjson"
-	    mpkname="$output"/"$appdir"_"$version".mpk
+            thisappdir="$output"/"$appdir"
+            mkdir -p "$thisappdir"
+            mkdir -p "$thisappdir"/mpks
+            mkdir -p "$thisappdir"/icons
+	    mpkname="$thisappdir"/mpks/"$appdir"_"$version".mpk
 	    echo "Creating $mpkname"
 	    zip -r0 "$mpkname" .
-	    cp res/mipmap-mdpi/icon_64x64.png "$mpkname"_icon_64x64.png
+	    cp res/mipmap-mdpi/icon_64x64.png "$thisappdir"/icons/"$appdir"_"$version"_64x64.png
 	    popd
 	done
 done

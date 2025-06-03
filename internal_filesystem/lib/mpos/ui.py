@@ -480,6 +480,7 @@ def setContentView(new_activity, new_screen):
         # Notify current activity that it's being backgrounded:
         current_activity.onPause(current_screen)
         current_activity.onStop(current_screen)
+        # don't destroy because the user might go back to it
 
     # Start the new one:
     print("Appending screen to screen_stack")
