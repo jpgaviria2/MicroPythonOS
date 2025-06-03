@@ -18,7 +18,7 @@ def good_stack_size():
     return stacksize
 
 # Run the script in the current thread:
-def execute_script(script_source, is_file, cwd=None):
+def execute_script(script_source, is_file, cwd=None, classname=None):
     thread_id = _thread.get_ident()
     compile_name = 'script' if not is_file else script_source
     print(f"Thread {thread_id}: executing script with cwd: {cwd}")
@@ -46,17 +46,12 @@ def execute_script(script_source, is_file, cwd=None):
             #print("Classes:", classes.keys())
             #print("Functions:", functions.keys())
             #print("Variables:", variables.keys())
-            main_activity = script_globals.get("MainActivity")
-            if not main_activity: # Fallback to taking the first non-generic Activity class, but that's slower
-                for k, v in script_globals.items():
-                    if k != "Activity" and isinstance(v, type):
-                        main_activity = v # first one is the 'Activity' from which it inherits so take the second one
-                        break
-                print(f"Got main_activity: {main_activity}")
-            if main_activity:
-                Activity.startActivity(None, Intent(activity_class=main_activity))
-            else:
-                print("Warning: could not find main_activity")
+            if classname:
+                main_activity = script_globals.get(classname)
+                if main_activity:
+                    Activity.startActivity(None, Intent(activity_class=main_activity))
+                else:
+                    print("Warning: could not find main_activity")
         except Exception as e:
             print(f"Thread {thread_id}: exception during execution:")
             # Print stack trace with exception type, value, and traceback
@@ -110,9 +105,13 @@ def start_app(app_dir, is_launcher=False):
     mpos.ui.set_foreground_app(app_dir) # would be better to store only the app name...
     manifest_path = f"{app_dir}/META-INF/MANIFEST.JSON"
     app = mpos.apps.parse_manifest(manifest_path)
-    start_script_fullpath = f"{app_dir}/{app.entrypoint}"
-    #execute_script_new_thread(start_script_fullpath, True, is_launcher, True) # Starting (GUI?) apps in a new thread can cause hangs (GIL lock?)
-    execute_script(start_script_fullpath, True, app_dir + "/assets/")
+    print(f"start_app parsed manifest and got: {str(app)}")
+    main_launcher_activity = find_main_launcher_activity(app)
+    if not main_launcher_activity:
+        print(f"WARNING: can't start {app_dir} because no main_launcher_activity was found.")
+        return
+    start_script_fullpath = f"{app_dir}/{main_launcher_activity.get('entrypoint')}"
+    execute_script(start_script_fullpath, True, app_dir + "/assets/", main_launcher_activity.get("classname"))
     # Launchers have the bar, other apps don't have it
     if is_launcher:
         mpos.ui.open_bar()
@@ -122,8 +121,22 @@ def start_app(app_dir, is_launcher=False):
 def restart_launcher():
     mpos.ui.empty_screen_stack()
     # No need to stop the other launcher first, because it exits after building the screen
-    start_app_by_name("com.example.launcher", True)
+    start_app_by_name("com.micropythonos.launcher", True) # Would be better to query the PackageManager for Activities that are launchers
 
+def find_main_launcher_activity(app):
+    result = None
+    for activity in app.activities:
+        if not activity.get("entrypoint") or not activity.get("classname"):
+            print(f"Warning: activity {activity} has no entrypoint and classname, skipping...")
+            continue
+        print("checking activity's intent_filters...")
+        for intent_filter in activity.get("intent_filters"):
+            print("checking intent_filter...")
+            if intent_filter.get("action") == "main" and intent_filter.get("category") == "launcher":
+                print("found main_launcher!")
+                result = activity
+                break
+    return result
 
 def is_launcher(app_name):
     print(f"checking is_launcher for {app_name}")
@@ -132,7 +145,7 @@ def is_launcher(app_name):
 
 
 class App:
-    def __init__(self, name, publisher, short_description, long_description, icon_url, download_url, fullname, version, entrypoint, category):
+    def __init__(self, name, publisher, short_description, long_description, icon_url, download_url, fullname, version, category, activities):
         self.name = name
         self.publisher = publisher
         self.short_description = short_description
@@ -141,10 +154,18 @@ class App:
         self.download_url = download_url
         self.fullname = fullname
         self.version = version
-        self.entrypoint = entrypoint
         self.category = category
         self.image = None
         self.image_dsc = None
+        self.activities = activities
+
+    def __str__(self):
+        return (f"App(name='{self.name}', "
+                f"publisher='{self.publisher}', "
+                f"short_description='{self.short_description}', "
+                f"version='{self.version}', "
+                f"category='{self.category}', "
+                f"activities={self.activities})")
 
 def parse_manifest(manifest_path):
     # Default values for App object
@@ -157,12 +178,13 @@ def parse_manifest(manifest_path):
         download_url="",
         fullname="Unknown",
         version="0.0.0",
-        entrypoint="assets/start.py",
-        category=""
+        category="",
+        activities=[]
     )
     try:
         with open(manifest_path, 'r') as f:
             app_info = ujson.load(f)
+            #print(f"parsed app: {app_info}")
             # Create App object with values from manifest, falling back to defaults
             return App(
                 name=app_info.get("name", default_app.name),
@@ -173,12 +195,14 @@ def parse_manifest(manifest_path):
                 download_url=app_info.get("download_url", default_app.download_url),
                 fullname=app_info.get("fullname", default_app.fullname),
                 version=app_info.get("version", default_app.version),
-                entrypoint=app_info.get("entrypoint", default_app.entrypoint),
-                category=app_info.get("category", default_app.category)
+                category=app_info.get("category", default_app.category),
+                activities=app_info.get("activities", default_app.activities)
             )
     except OSError:
         print(f"parse_manifest: error loading manifest_path: {manifest_path}")
         return default_app
+        
+
 
 def auto_connect():
     # A generic "start at boot" mechanism hasn't been implemented yet, so do it like this:
@@ -201,6 +225,8 @@ class Activity:
 
     def __init__(self):
         self.intent = None  # Store the intent that launched this activity
+        self.result = None
+        self._result_callback = None
 
     def getIntent(self):
         return self.intent
@@ -221,8 +247,15 @@ class Activity:
     def setContentView(self, screen):
         mpos.ui.setContentView(self, screen)
 
+    def setResult(self, result_code, data=None):
+        """Set the result to be returned when the activity finishes."""
+        self.result = {"result_code": result_code, "data": data or {}}
+
     def finish(self):
         mpos.ui.back_screen()
+        if self._result_callback and self.result:
+            self._result_callback(self.result)
+            self._result_callback = None  # Clean up
 
     def startActivity(self, intent):
         ActivityNavigator.startActivity(intent)

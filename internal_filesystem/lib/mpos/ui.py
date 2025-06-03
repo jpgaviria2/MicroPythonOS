@@ -464,8 +464,8 @@ def empty_screen_stack():
     screen_stack.clear()
 
 
-def load_screen(screen):
-    setContentView(None, screen) # for compatibility with old apps
+#def load_screen(screen):
+#    setContentView(None, screen) # for compatibility with old apps
 
 # new_activity might be None for compatibility, can be removed if compatibility is no longer needed
 def setContentView(new_activity, new_screen):
@@ -477,7 +477,7 @@ def setContentView(new_activity, new_screen):
         current_activity, current_screen = screen_stack[-1]
 
     if current_activity and current_screen:
-        # Notify current activity it's being backgrounded:
+        # Notify current activity that it's being backgrounded:
         current_activity.onPause(current_screen)
         current_activity.onStop(current_screen)
 

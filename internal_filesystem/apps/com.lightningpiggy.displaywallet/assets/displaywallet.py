@@ -1,9 +1,8 @@
 from mpos.apps import Activity, Intent
 import mpos.config
-import mpos.ui
 
 from wallet import LNBitsWallet, NWCWallet
-from captureqr import CameraActivity
+from captureqr import Camera
 
 class MainActivity(Activity):
     
@@ -328,7 +327,7 @@ class SettingActivity(Activity):
 
     def cambutton_cb(self, event):
         print("cambutton clicked!")
-        self.startActivity(Intent(activity_class=CameraActivity).putExtra("scanqr_callback", self.gotqr_callback))
+        self.startActivity(Intent(activity_class=Camera).putExtra("scanqr_callback", self.gotqr_callback))
 
     def save_setting(self, setting):
         if setting["key"] == "wallet_type" and self.radio_container:
@@ -344,9 +343,7 @@ class SettingActivity(Activity):
         setting["value_label"].set_text(new_value if new_value else "Not set")
         self.finish()
 
-
 class FullscreenQR(Activity):
-
     def onCreate(self):
         receive_qr_data = self.getIntent().extras.get("receive_qr_data")
         qr_screen = lv.obj()

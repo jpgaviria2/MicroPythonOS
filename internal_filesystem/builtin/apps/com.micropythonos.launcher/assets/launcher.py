@@ -18,6 +18,7 @@ import mpos.ui
 class MainActivity(mpos.apps.Activity):
 
     def onCreate(self):
+        print("launcher.py onCreate()")
         main_screen = lv.obj()
         main_screen.set_style_border_width(0, 0)
         main_screen.set_style_radius(0, 0)
@@ -27,7 +28,6 @@ class MainActivity(mpos.apps.Activity):
         main_screen.set_flex_flow(lv.FLEX_FLOW.ROW_WRAP)
         self.setContentView(main_screen)
 
-    def onResume(self, main_screen):
         # Grid parameters
         icon_size = 64  # Adjust based on your display
         label_height = 24
@@ -63,9 +63,12 @@ class MainActivity(mpos.apps.Activity):
                             base_name = d
                             if base_name not in seen_base_names:  # Avoid duplicates
                                 seen_base_names.add(base_name)
+                                #print(f"seen_base_names: {seen_base_names}")
                                 app = mpos.apps.parse_manifest(f"{full_path}/META-INF/MANIFEST.JSON")
                                 if app.category != "launcher":  # Skip launchers
-                                    app_list.append((app.name, full_path))
+                                    main_launcher = mpos.apps.find_main_launcher_activity(app)
+                                    if main_launcher:
+                                        app_list.append((app.name, full_path))
             except OSError:
                 pass
         
@@ -74,7 +77,7 @@ class MainActivity(mpos.apps.Activity):
         
         # Create UI for each app
         for app_name, app_dir_fullpath in app_list:
-            #print(f"Adding app {app_name} from {app_dir_fullpath}")
+            print(f"Adding app {app_name} from {app_dir_fullpath}")
             # Create container for each app (icon + label)
             app_cont = lv.obj(main_screen)
             app_cont.set_size(iconcont_width, iconcont_height)

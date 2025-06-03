@@ -21,9 +21,10 @@ status_label_text = "No camera found."
 status_label_text_searching = "Searching QR codes...\n\nHold still and make them big!\n10cm for simple QR codes,\n20cm for complex."
 status_label_text_found = "Decoding QR..."
 
-class CameraActivity(Activity):
+class Camera(Activity):
 
     def __init__(self):
+        super().__init__()
         self.cam = None
         self.current_cam_buffer = None # Variable to hold the current memoryview to prevent garbage collection
         self.image_dsc = None

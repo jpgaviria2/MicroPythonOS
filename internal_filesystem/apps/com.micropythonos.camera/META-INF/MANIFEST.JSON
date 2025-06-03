@@ -1,0 +1,28 @@
+{
+"name": "Camera",
+"publisher": "MicroPythonOS",
+"short_description": "Camera with QR decoding",
+"long_description": "Camera for both internal camera's and webcams, that includes QR decoding.",
+"icon_url": "https://apps.micropythonos.com/com.micropython.camera_0.0.3.mpk_icon_64x64.png",
+"download_url": "https://apps.micropythonos.com/com.micropython.camera_0.0.3.mpk",
+"fullname": "com.micropython.camera",
+"version": "0.0.3",
+"category": "camera",
+"activities": [
+    {
+      "entrypoint": "assets/camera.py",
+      "classname": "Camera",
+      "intent_filters": [
+        {
+          "action": "main",
+          "category": "launcher"
+        },
+        {
+          "action": "scan_qr_code",
+          "category": "default"
+        }
+      ]
+    }
+  ]
+}
+
