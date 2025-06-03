@@ -1,11 +1,202 @@
-import time
-
 from mpos.apps import Activity
 import mpos.config
 import mpos.ui
 
 from wallet import LNBitsWallet, NWCWallet
 
+
+class MainActivity(Activity):
+    
+    def __init__(self):
+        self.wallet = None
+        self.receive_qr_data = None
+        # widgets
+        self.balance_label = None
+        self.receive_qr = None
+        self.payments_label = None
+
+    def settings_button_tap(self, event):
+        settings_activity = SettingsActivity()
+        settings_activity.onCreate()
+    
+    def main_ui_set_defaults(self):
+        self.balance_label.set_text(lv.SYMBOL.REFRESH)
+        self.payments_label.set_text(lv.SYMBOL.REFRESH)
+        self.receive_qr.update("EMPTY", len("EMPTY"))
+    
+    def qr_clicked_cb(self, event):
+        if not self.receive_qr_data:
+            return
+        print("QR clicked")
+        qr_screen = lv.obj()
+        big_receive_qr = lv.qrcode(qr_screen)
+        big_receive_qr.set_size(240) # TODO: make this dynamic
+        big_receive_qr.set_dark_color(lv.color_black())
+        big_receive_qr.set_light_color(lv.color_white())
+        big_receive_qr.center()
+        big_receive_qr.set_style_border_color(lv.color_white(), 0)
+        big_receive_qr.set_style_border_width(3, 0);
+        big_receive_qr.update(self.receive_qr_data, len(self.receive_qr_data))
+        mpos.ui.load_screen(qr_screen)
+    
+    
+    def onCreate(self):
+        main_screen = lv.obj()
+        main_screen.set_style_pad_all(10, 0)
+        self.balance_label = lv.label(main_screen)
+        self.balance_label.set_text("")
+        self.balance_label.align(lv.ALIGN.TOP_LEFT, 0, 0)
+        self.balance_label.set_style_text_font(lv.font_montserrat_22, 0)
+        self.receive_qr = lv.qrcode(main_screen)
+        self.receive_qr.set_size(50)
+        self.receive_qr.set_dark_color(lv.color_black())
+        self.receive_qr.set_light_color(lv.color_white())
+        self.receive_qr.align(lv.ALIGN.TOP_RIGHT,0,0)
+        self.receive_qr.set_style_border_color(lv.color_white(), 0)
+        self.receive_qr.set_style_border_width(3, 0);
+        self.receive_qr.add_flag(lv.obj.FLAG.CLICKABLE)
+        self.receive_qr.add_event_cb(self.qr_clicked_cb,lv.EVENT.CLICKED,None)
+        balance_line = lv.line(main_screen)
+        balance_line.set_points([{'x':0,'y':35},{'x':200,'y':35}],2)
+        self.payments_label = lv.label(main_screen)
+        self.payments_label.set_text("")
+        self.payments_label.align_to(balance_line,lv.ALIGN.OUT_BOTTOM_LEFT,0,10)
+        self.payments_label.set_style_text_font(lv.font_montserrat_16, 0)
+        settings_button = lv.button(main_screen)
+        settings_button.align(lv.ALIGN.BOTTOM_RIGHT, 0, 0)
+        snap_label = lv.label(settings_button)
+        snap_label.set_text(lv.SYMBOL.SETTINGS)
+        snap_label.center()
+        settings_button.add_event_cb(self.settings_button_tap,lv.EVENT.CLICKED,None)
+        mpos.ui.setContentView(self, main_screen)
+    
+    def redraw_balance_cb(self):
+        # this gets called from another thread (the wallet) so make sure it happens in the LVGL thread using lv.async_call():
+        lv.async_call(lambda l: self.balance_label.set_text(str(self.wallet.last_known_balance)), None)
+    
+    def redraw_payments_cb(self):
+        # this gets called from another thread (the wallet) so make sure it happens in the LVGL thread using lv.async_call():
+        lv.async_call(lambda l: self.payments_label.set_text(str(self.wallet.payment_list)), None)
+
+    def onStart(self, main_screen):
+        self.main_ui_set_defaults()
+    
+    def onResume(self, main_screen):
+        if not self.wallet or not self.wallet.is_running(): # just started the app or just returned from settings_screen
+            config = mpos.config.SharedPreferences("com.lightningpiggy.displaywallet")
+            wallet_type = config.get_string("wallet_type")
+            if wallet_type == "lnbits":
+                try:
+                    self.receive_qr_data = config.get_string("lnbits_static_receive_code")
+                    self.wallet = LNBitsWallet(config.get_string("lnbits_url"), config.get_string("lnbits_readkey"))
+                except Exception as e:
+                    self.payments_label.set_text(f"Couldn't initialize LNBitsWallet\nbecause: {e}")
+            elif wallet_type == "nwc":
+                try:
+                    self.wallet = NWCWallet(config.get_string("nwc_url"))
+                    self.receive_qr_data = wallet.lud16
+                except Exception as e:
+                    self.payments_label.set_text(f"Couldn't initialize NWCWallet\nbecause: {e}")
+            else:
+                self.payments_label.set_text(f"No or unsupported wallet\ntype configured: '{wallet_type}'")
+            if self.receive_qr_data:
+                print(f"Setting static_receive_code: {self.receive_qr_data}")
+                self.receive_qr.update(self.receive_qr_data, len(self.receive_qr_data))
+            can_check_network = True
+            try:
+                import network
+            except Exception as e:
+                can_check_network = False
+            if can_check_network and not network.WLAN(network.STA_IF).isconnected():
+                self.payments_label.set_text(f"WiFi is not connected, can't\ntalk to {wallet_type} backend.")
+            else:
+                if self.wallet:
+                    self.payments_label.set_text(f"Connecting to {wallet_type} backend...")
+                    self.wallet.start(self.redraw_balance_cb, self.redraw_payments_cb)
+                else:
+                    self.payments_label.set_text(f"Could not start {wallet_type}  backend.")
+
+    def onStop(self, main_screen):
+        if self.wallet:
+            self.wallet.stop()
+
+
+# Used to list and edit all settings:
+class SettingsActivity(Activity):
+    def __init__(self):
+        self.prefs = mpos.config.SharedPreferences("com.lightningpiggy.displaywallet")
+        self.settings = [
+            {"title": "Wallet Type", "key": "wallet_type", "value_label": None, "cont": None},
+            {"title": "LNBits URL", "key": "lnbits_url", "value_label": None, "cont": None},
+            {"title": "LNBits Read Key", "key": "lnbits_readkey", "value_label": None, "cont": None},
+            {"title": "Static receive code", "key": "lnbits_static_receive_code", "value_label": None, "cont": None},
+            {"title": "NWC URL", "key": "nwc_url", "value_label": None, "cont": None},
+        ]
+        self.keyboard = None
+        self.textarea = None
+        self.radio_container = None
+        self.active_radio_index = 0  # Track active radio button index
+
+    def onCreate(self):
+        screen = lv.obj()
+        print("creating SettingsActivity ui...")
+        screen.set_size(lv.pct(100), lv.pct(100))
+        screen.set_style_pad_all(10, 0)
+        screen.set_flex_flow(lv.FLEX_FLOW.COLUMN)
+        screen.set_style_border_width(0, 0)
+        
+        # Create settings entries
+        for setting in self.settings:
+            # Container for each setting
+            setting_cont = lv.obj(screen)
+            setting_cont.set_width(lv.pct(100))
+            setting_cont.set_height(lv.SIZE_CONTENT)
+            setting_cont.set_style_border_width(1, 0)
+            setting_cont.set_style_border_side(lv.BORDER_SIDE.BOTTOM, 0)
+            setting_cont.set_style_pad_all(8, 0)
+            setting_cont.add_flag(lv.obj.FLAG.CLICKABLE)
+            setting["cont"] = setting_cont  # Store container reference for visibility control
+
+            # Title label (bold, larger)
+            title = lv.label(setting_cont)
+            title.set_text(setting["title"])
+            title.set_style_text_font(lv.font_montserrat_16, 0)
+            title.set_pos(0, 0)
+
+            # Value label (smaller, below title)
+            value = lv.label(setting_cont)
+            value.set_text(self.prefs.get_string(setting["key"], "Not set"))
+            value.set_style_text_font(lv.font_montserrat_12, 0)
+            value.set_style_text_color(lv.color_hex(0x666666), 0)
+            value.set_pos(0, 20)
+            setting["value_label"] = value  # Store reference for updating
+            setting_cont.add_event_cb(
+                lambda e, s=setting: self.startSettingActivity(s), lv.EVENT.CLICKED, None
+            )
+        mpos.ui.setContentView(self, screen)
+
+    def startSettingActivity(self, setting):
+        sa = SettingActivity(setting)
+        sa.onCreate()
+
+    def onResume(self, screen):
+        wallet_type = self.prefs.get_string("wallet_type", "lnbits")
+        # update setting visibility based on wallet_type:
+        for setting in self.settings:
+            if setting["key"].startswith("lnbits_"):
+                if wallet_type != "lnbits":
+                    setting["cont"].add_flag(lv.obj.FLAG.HIDDEN)
+                else:
+                    setting["cont"].remove_flag(lv.obj.FLAG.HIDDEN)
+            elif setting["key"].startswith("nwc_"):
+                if wallet_type != "nwc":
+                    setting["cont"].add_flag(lv.obj.FLAG.HIDDEN)
+                else:
+                    setting["cont"].remove_flag(lv.obj.FLAG.HIDDEN)
+
+
+
+# Used to edit one setting:
 class SettingActivity(Activity):
     def __init__(self, setting):
         super().__init__()
@@ -169,193 +360,4 @@ class SettingActivity(Activity):
         if self.keyboard:
             self.hide_keyboard()
         mpos.ui.back_screen()
-
-
-class SettingsActivity(Activity):
-    def __init__(self):
-        self.prefs = mpos.config.SharedPreferences("com.lightningpiggy.displaywallet")
-        self.settings = [
-            {"title": "Wallet Type", "key": "wallet_type", "value_label": None, "cont": None},
-            {"title": "LNBits URL", "key": "lnbits_url", "value_label": None, "cont": None},
-            {"title": "LNBits Read Key", "key": "lnbits_readkey", "value_label": None, "cont": None},
-            {"title": "Static receive code", "key": "lnbits_static_receive_code", "value_label": None, "cont": None},
-            {"title": "NWC URL", "key": "nwc_url", "value_label": None, "cont": None},
-        ]
-        self.keyboard = None
-        self.textarea = None
-        self.radio_container = None
-        self.active_radio_index = 0  # Track active radio button index
-
-    def onCreate(self):
-        screen = lv.obj()
-        print("creating SettingsActivity ui...")
-        screen.set_size(lv.pct(100), lv.pct(100))
-        screen.set_style_pad_all(10, 0)
-        screen.set_flex_flow(lv.FLEX_FLOW.COLUMN)
-        screen.set_style_border_width(0, 0)
-        
-        # Create settings entries
-        for setting in self.settings:
-            # Container for each setting
-            setting_cont = lv.obj(screen)
-            setting_cont.set_width(lv.pct(100))
-            setting_cont.set_height(lv.SIZE_CONTENT)
-            setting_cont.set_style_border_width(1, 0)
-            setting_cont.set_style_border_side(lv.BORDER_SIDE.BOTTOM, 0)
-            setting_cont.set_style_pad_all(8, 0)
-            setting_cont.add_flag(lv.obj.FLAG.CLICKABLE)
-            setting["cont"] = setting_cont  # Store container reference for visibility control
-
-            # Title label (bold, larger)
-            title = lv.label(setting_cont)
-            title.set_text(setting["title"])
-            title.set_style_text_font(lv.font_montserrat_16, 0)
-            title.set_pos(0, 0)
-
-            # Value label (smaller, below title)
-            value = lv.label(setting_cont)
-            value.set_text(self.prefs.get_string(setting["key"], "Not set"))
-            value.set_style_text_font(lv.font_montserrat_12, 0)
-            value.set_style_text_color(lv.color_hex(0x666666), 0)
-            value.set_pos(0, 20)
-            setting["value_label"] = value  # Store reference for updating
-            setting_cont.add_event_cb(
-                lambda e, s=setting: self.startSettingActivity(s), lv.EVENT.CLICKED, None
-            )
-        mpos.ui.setContentView(self, screen)
-
-    def startSettingActivity(self, setting):
-        sa = SettingActivity(setting)
-        sa.onCreate()
-
-    def onResume(self, screen):
-        wallet_type = self.prefs.get_string("wallet_type", "lnbits")
-        # update setting visibility based on wallet_type:
-        for setting in self.settings:
-            if setting["key"].startswith("lnbits_"):
-                if wallet_type != "lnbits":
-                    setting["cont"].add_flag(lv.obj.FLAG.HIDDEN)
-                else:
-                    setting["cont"].remove_flag(lv.obj.FLAG.HIDDEN)
-            elif setting["key"].startswith("nwc_"):
-                if wallet_type != "nwc":
-                    setting["cont"].add_flag(lv.obj.FLAG.HIDDEN)
-                else:
-                    setting["cont"].remove_flag(lv.obj.FLAG.HIDDEN)
-
-
-class MainActivity(Activity):
-    
-    def __init__(self):
-        self.wallet = None
-        self.receive_qr_data = None
-        # widgets
-        self.balance_label = None
-        self.receive_qr = None
-        self.payments_label = None
-
-    def settings_button_tap(self, event):
-        settings_activity = SettingsActivity()
-        settings_activity.onCreate()
-    
-    def main_ui_set_defaults(self):
-        self.balance_label.set_text(lv.SYMBOL.REFRESH)
-        self.payments_label.set_text(lv.SYMBOL.REFRESH)
-        self.receive_qr.update("EMPTY", len("EMPTY"))
-    
-    def qr_clicked_cb(self, event):
-        if not self.receive_qr_data:
-            return
-        print("QR clicked")
-        qr_screen = lv.obj()
-        big_receive_qr = lv.qrcode(qr_screen)
-        big_receive_qr.set_size(240) # TODO: make this dynamic
-        big_receive_qr.set_dark_color(lv.color_black())
-        big_receive_qr.set_light_color(lv.color_white())
-        big_receive_qr.center()
-        big_receive_qr.set_style_border_color(lv.color_white(), 0)
-        big_receive_qr.set_style_border_width(3, 0);
-        big_receive_qr.update(self.receive_qr_data, len(self.receive_qr_data))
-        mpos.ui.load_screen(qr_screen)
-    
-    
-    def onCreate(self):
-        main_screen = lv.obj()
-        main_screen.set_style_pad_all(10, 0)
-        self.balance_label = lv.label(main_screen)
-        self.balance_label.set_text("")
-        self.balance_label.align(lv.ALIGN.TOP_LEFT, 0, 0)
-        self.balance_label.set_style_text_font(lv.font_montserrat_22, 0)
-        self.receive_qr = lv.qrcode(main_screen)
-        self.receive_qr.set_size(50)
-        self.receive_qr.set_dark_color(lv.color_black())
-        self.receive_qr.set_light_color(lv.color_white())
-        self.receive_qr.align(lv.ALIGN.TOP_RIGHT,0,0)
-        self.receive_qr.set_style_border_color(lv.color_white(), 0)
-        self.receive_qr.set_style_border_width(3, 0);
-        self.receive_qr.add_flag(lv.obj.FLAG.CLICKABLE)
-        self.receive_qr.add_event_cb(self.qr_clicked_cb,lv.EVENT.CLICKED,None)
-        balance_line = lv.line(main_screen)
-        balance_line.set_points([{'x':0,'y':35},{'x':200,'y':35}],2)
-        self.payments_label = lv.label(main_screen)
-        self.payments_label.set_text("")
-        self.payments_label.align_to(balance_line,lv.ALIGN.OUT_BOTTOM_LEFT,0,10)
-        self.payments_label.set_style_text_font(lv.font_montserrat_16, 0)
-        settings_button = lv.button(main_screen)
-        settings_button.align(lv.ALIGN.BOTTOM_RIGHT, 0, 0)
-        snap_label = lv.label(settings_button)
-        snap_label.set_text(lv.SYMBOL.SETTINGS)
-        snap_label.center()
-        settings_button.add_event_cb(self.settings_button_tap,lv.EVENT.CLICKED,None)
-        mpos.ui.setContentView(self, main_screen)
-    
-    def redraw_balance_cb(self):
-        # this gets called from another thread (the wallet) so make sure it happens in the LVGL thread using lv.async_call():
-        lv.async_call(lambda l: self.balance_label.set_text(str(self.wallet.last_known_balance)), None)
-    
-    def redraw_payments_cb(self):
-        # this gets called from another thread (the wallet) so make sure it happens in the LVGL thread using lv.async_call():
-        lv.async_call(lambda l: self.payments_label.set_text(str(self.wallet.payment_list)), None)
-
-    def onStart(self, main_screen):
-        self.main_ui_set_defaults()
-    
-    def onResume(self, main_screen):
-        if not self.wallet or not self.wallet.is_running(): # just started the app or just returned from settings_screen
-            config = mpos.config.SharedPreferences("com.lightningpiggy.displaywallet")
-            wallet_type = config.get_string("wallet_type")
-            if wallet_type == "lnbits":
-                try:
-                    self.receive_qr_data = config.get_string("lnbits_static_receive_code")
-                    self.wallet = LNBitsWallet(config.get_string("lnbits_url"), config.get_string("lnbits_readkey"))
-                except Exception as e:
-                    self.payments_label.set_text(f"Couldn't initialize LNBitsWallet\nbecause: {e}")
-            elif wallet_type == "nwc":
-                try:
-                    self.wallet = NWCWallet(config.get_string("nwc_url"))
-                    self.receive_qr_data = wallet.lud16
-                except Exception as e:
-                    self.payments_label.set_text(f"Couldn't initialize NWCWallet\nbecause: {e}")
-            else:
-                self.payments_label.set_text(f"No or unsupported wallet\ntype configured: '{wallet_type}'")
-            if self.receive_qr_data:
-                print(f"Setting static_receive_code: {self.receive_qr_data}")
-                self.receive_qr.update(self.receive_qr_data, len(self.receive_qr_data))
-            can_check_network = True
-            try:
-                import network
-            except Exception as e:
-                can_check_network = False
-            if can_check_network and not network.WLAN(network.STA_IF).isconnected():
-                self.payments_label.set_text(f"WiFi is not connected, can't\ntalk to {wallet_type} backend.")
-            else:
-                if self.wallet:
-                    self.payments_label.set_text(f"Connecting to {wallet_type} backend...")
-                    self.wallet.start(self.redraw_balance_cb, self.redraw_payments_cb)
-                else:
-                    self.payments_label.set_text(f"Could not start {wallet_type}  backend.")
-
-    def onStop(self, main_screen):
-        if self.wallet:
-            self.wallet.stop()
 
