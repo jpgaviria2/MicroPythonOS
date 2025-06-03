@@ -1,13 +1,24 @@
 {
-"name": "Update",
-"publisher": "ACME Inc",
+"name": "OS Update",
+"publisher": "MicroPythonOS",
 "short_description": "Operating System Updater",
 "long_description": "",
-"icon_url": "http://demo.lnpiggy.com:2121/apps/com.example.osupdate_0.0.2.mpk_icon_64x64.png",
-"download_url": "http://demo.lnpiggy.com:2121/apps/com.example.osupdate_0.0.2.mpk",
-"fullname": "com.example.osupdate",
+"icon_url": "https://apps.micropythonos.com/apps/com.micropythonos.osupdate/icons/com.micropythonos.osupdate_0.0.2_64x64.png",
+"download_url": "https://apps.micropythonos.com/apps/com.micropythonos.osupdate/mpks/com.micropythonos.osupdate_0.0.2.mpk",
+"fullname": "com.micropythonos.osupdate",
 "version": "0.0.2",
-"entrypoint": "assets/osupdate.py",
-"category": "osupdate"
+"category": "osupdate",
+"activities": [
+    {
+      "entrypoint": "assets/osupdate.py",
+      "classname": "OSUpdate",
+      "intent_filters": [
+        {
+          "action": "main",
+          "category": "launcher"
+        }
+      ]
+    }
+  ]
 }
 

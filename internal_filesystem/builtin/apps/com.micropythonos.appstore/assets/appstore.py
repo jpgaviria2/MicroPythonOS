@@ -69,7 +69,7 @@ class MainActivity(Activity):
             self.apps.sort(key=lambda x: x.name.lower())  # Use .lower() for case-insensitive sorting
             self.please_wait_label.add_flag(lv.obj.FLAG.HIDDEN)
             lv.async_call(lambda l: self.create_apps_list(), None)
-    
+
     def create_apps_list(self):
         print("create_apps_list")
         default_icon_dsc = load_icon("builtin/res/mipmap-mdpi/default_icon_64x64.png")
