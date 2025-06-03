@@ -228,9 +228,6 @@ class Activity:
         self.result = None
         self._result_callback = None
 
-    def getIntent(self):
-        return self.intent
-
     def onCreate(self):
         pass
     def onStart(self, screen):
@@ -247,18 +244,33 @@ class Activity:
     def setContentView(self, screen):
         mpos.ui.setContentView(self, screen)
 
+    def startActivity(self, intent):
+        ActivityNavigator.startActivity(intent)
+
+    def initError(self, e):
+        print(f"WARNING: You might have inherited from Activity with a custom __init__() without calling super().__init__(). Got AttributeError: {e}")
+
+    def getIntent(self):
+        try:
+            return self.intent
+        except AttributeError as e:
+            self.initError(e)
+
     def setResult(self, result_code, data=None):
         """Set the result to be returned when the activity finishes."""
-        self.result = {"result_code": result_code, "data": data or {}}
+        try:
+            self.result = {"result_code": result_code, "data": data or {}}
+        except AttributeError as e:
+            self.initError(e)
 
     def finish(self):
         mpos.ui.back_screen()
-        if self._result_callback and self.result:
-            self._result_callback(self.result)
-            self._result_callback = None  # Clean up
-
-    def startActivity(self, intent):
-        ActivityNavigator.startActivity(intent)
+        try:
+            if self._result_callback and self.result:
+                self._result_callback(self.result)
+                self._result_callback = None  # Clean up
+        except AttributeError as e:
+            self.initError(e)
 
 class Intent:
     def __init__(self, activity_class=None, action=None, data=None, extras=None):

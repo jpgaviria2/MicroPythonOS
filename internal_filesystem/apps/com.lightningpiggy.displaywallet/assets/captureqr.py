@@ -143,6 +143,7 @@ class Camera(Activity):
             if not result:
                 self.status_label.set_text(status_label_text_searching)
             else:
+                
                 self.stop_qr_decoding()
                 result = remove_bom(result)
                 result = print_qr_buffer(result)

@@ -7,6 +7,7 @@ from captureqr import Camera
 class MainActivity(Activity):
     
     def __init__(self):
+        super().__init__()
         self.wallet = None
         self.receive_qr_data = None
         self.destination = None
@@ -114,6 +115,7 @@ class MainActivity(Activity):
 # Used to list and edit all settings:
 class SettingsActivity(Activity):
     def __init__(self):
+        super().__init__()
         self.prefs = mpos.config.SharedPreferences("com.lightningpiggy.displaywallet")
         self.settings = [
             {"title": "Wallet Type", "key": "wallet_type", "value_label": None, "cont": None},
@@ -344,6 +346,8 @@ class SettingActivity(Activity):
         self.finish()
 
 class FullscreenQR(Activity):
+    # No __init__() so super.__init__() will be called automatically
+
     def onCreate(self):
         receive_qr_data = self.getIntent().extras.get("receive_qr_data")
         qr_screen = lv.obj()
