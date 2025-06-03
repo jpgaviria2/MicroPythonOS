@@ -193,6 +193,12 @@ def auto_connect():
 
 class Activity:
 
+    def __init__(self):
+        self.intent = None  # Store the intent that launched this activity
+
+    def getIntent(self):
+        return self.intent
+
     def onCreate(self):
         pass
     def onStart(self, screen):
@@ -211,3 +217,153 @@ class Activity:
 
     def finish(self):
         mpos.ui.back_screen()
+
+    def startActivity(self, intent):
+        ActivityNavigator.startActivity(intent)
+
+class Intent:
+    def __init__(self, activity_class=None, action=None, data=None, extras=None):
+        self.activity_class = activity_class  # Explicit target (e.g., SettingsActivity)
+        self.action = action  # Action string (e.g., "view", "share")
+        self.data = data  # Single data item (e.g., URL)
+        self.extras = extras or {}  # Dictionary for additional data
+        self.flags = {}  # Simplified flags: {"clear_top": bool, "no_history": bool, "no_animation": bool}
+
+    def addFlag(self, flag, value=True):
+        self.flags[flag] = value
+        return self
+
+    def putExtra(self, key, value):
+            self.extras[key] = value
+            return self
+
+
+class ActivityNavigator:
+
+    def startActivity(intent):
+        if not isinstance(intent, Intent):
+            raise ValueError("Must provide an Intent")
+        if intent.action: # Implicit intent: resolve handlers
+            handlers = APP_REGISTRY.get(intent.action, [])
+            if len(handlers) == 1:
+                intent.activity_class = handlers[0]
+                ActivityNavigator._launch_activity(intent)
+            elif handlers:
+                _show_chooser(intent, handlers)
+            else:
+                raise ValueError(f"No handlers for action: {intent.action}")
+        else:
+            # Explicit intent
+            ActivityNavigator._launch_activity(intent)
+
+    def _launch_activity(intent):
+        activity = intent.activity_class()
+        activity.intent = intent
+        activity.onCreate()
+
+    def _show_chooser(intent, handlers):
+        chooser_intent = Intent(ChooserActivity, extras={"original_intent": intent, "handlers": [h.__name__ for h in handlers]})
+        _launch_activity(chooser_intent)
+
+
+class ChooserActivity(Activity):
+    def __init__(self):
+        super().__init__()
+
+    def onCreate(self):
+        screen = lv.obj()
+        # Get handlers from intent extras
+        original_intent = self.getIntent().extras.get("original_intent")
+        handlers = self.getIntent().extras.get("handlers", [])
+        label = lv.label(screen)
+        label.set_text("Choose an app")
+        label.set_pos(10, 10)
+
+        for i, handler_name in enumerate(handlers):
+            btn = lv.btn(screen)
+            btn.set_user_data(f"handler_{i}")
+            btn_label = lv.label(btn)
+            btn_label.set_text(handler_name)
+            btn.set_pos(10, 50 * (i + 1) + 10)
+            btn.add_event_cb(lambda e, h=handler_name, oi=original_intent: self._select_handler(h, oi), lv.EVENT.CLICKED)
+        self.setContentView(screen)
+
+    def _select_handler(self, handler_name, original_intent):
+        for handler in APP_REGISTRY.get(original_intent.action, []):
+            if handler.__name__ == handler_name:
+                original_intent.activity_class = handler
+                navigator.startActivity(original_intent)
+                break
+        navigator.finish()  # Close chooser
+
+    def onStop(self, screen):
+        if self.getIntent() and self.getIntent().getStringExtra("destination") == "ChooserActivity":
+            print("Stopped for Chooser")
+        else:
+            print("Stopped for other screen")
+
+
+class ViewActivity(Activity):
+    def __init__(self):
+        super().__init__()
+
+    def onCreate(self):
+        screen = lv.obj()
+        # Get content from intent (prefer extras.url, fallback to data)
+        content = self.getIntent().extras.get("url", self.getIntent().data or "No content")
+        label = lv.label(screen)
+        label.set_user_data("content_label")
+        label.set_text(f"Viewing: {content}")
+        label.center()
+        self.setContentView(screen)
+
+    def onStart(self, screen):
+        content = self.getIntent().extras.get("url", self.getIntent().data or "No content")
+        for i in range(screen.get_child_cnt()):
+            if screen.get_child(i).get_user_data() == "content_label":
+                screen.get_child(i).set_text(f"Viewing: {content}")
+
+    def onStop(self, screen):
+        if self.getIntent() and self.getIntent().getStringExtra("destination") == "ViewActivity":
+            print("Stopped for View")
+        else:
+            print("Stopped for other screen")
+
+class ShareActivity(Activity):
+    def __init__(self):
+        super().__init__()
+
+    def onCreate(self):
+        screen = lv.obj()
+        # Get text from intent (prefer extras.text, fallback to data)
+        text = self.getIntent().extras.get("text", self.getIntent().data or "No text")
+        label = lv.label(screen)
+        label.set_user_data("share_label")
+        label.set_text(f"Share: {text}")
+        label.set_pos(10, 10)
+
+        btn = lv.btn(screen)
+        btn.set_user_data("share_btn")
+        btn_label = lv.label(btn)
+        btn_label.set_text("Share")
+        btn.set_pos(10, 50)
+        btn.add_event_cb(lambda e: self._share_content(text), lv.EVENT.CLICKED)
+        self.setContentView(screen)
+
+    def _share_content(self, text):
+        # Dispatch to another app (e.g., MessagingActivity) or simulate sharing
+        print(f"Sharing: {text}")  # Placeholder for actual sharing
+        # Example: Launch another share handler
+        navigator.startActivity(Intent(action="share", data=text))
+        navigator.finish()  # Close ShareActivity
+
+    def onStop(self, screen):
+        if self.getIntent() and self.getIntent().getStringExtra("destination") == "ShareActivity":
+            print("Stopped for Share")
+        else:
+            print("Stopped for other screen")
+
+APP_REGISTRY = { # This should be handled by a new class PackageManager:
+    "view": [ViewActivity],  # Hypothetical activities
+    "share": [ShareActivity]
+}

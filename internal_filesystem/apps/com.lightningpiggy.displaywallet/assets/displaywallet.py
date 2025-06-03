@@ -1,4 +1,4 @@
-from mpos.apps import Activity
+from mpos.apps import Activity, Intent
 import mpos.config
 import mpos.ui
 
@@ -10,6 +10,7 @@ class MainActivity(Activity):
     def __init__(self):
         self.wallet = None
         self.receive_qr_data = None
+        self.destination = None
         # widgets
         self.balance_label = None
         self.receive_qr = None
@@ -84,8 +85,9 @@ class MainActivity(Activity):
                     self.payments_label.set_text(f"Could not start {wallet_type}  backend.")
 
     def onStop(self, main_screen):
-        if self.wallet:
+        if self.wallet and self.destination != FullscreenQR:
             self.wallet.stop()
+        self.destination = None
 
     def redraw_balance_cb(self):
         # this gets called from another thread (the wallet) so make sure it happens in the LVGL thread using lv.async_call():
@@ -95,30 +97,20 @@ class MainActivity(Activity):
         # this gets called from another thread (the wallet) so make sure it happens in the LVGL thread using lv.async_call():
         lv.async_call(lambda l: self.payments_label.set_text(str(self.wallet.payment_list)), None)
 
-
     def settings_button_tap(self, event):
-        settings_activity = SettingsActivity()
-        settings_activity.onCreate()
+        self.startActivity(Intent(activity_class=SettingsActivity))
     
     def main_ui_set_defaults(self):
         self.balance_label.set_text(lv.SYMBOL.REFRESH)
         self.payments_label.set_text(lv.SYMBOL.REFRESH)
-        self.receive_qr.update("EMPTY", len("EMPTY"))
+        self.receive_qr.update("EMPTY PLACEHOLDER", len("EMPTY PLACEHOLDER"))
     
     def qr_clicked_cb(self, event):
+        print("QR clicked")
         if not self.receive_qr_data:
             return
-        print("QR clicked")
-        qr_screen = lv.obj()
-        big_receive_qr = lv.qrcode(qr_screen)
-        big_receive_qr.set_size(240) # TODO: make this dynamic
-        big_receive_qr.set_dark_color(lv.color_black())
-        big_receive_qr.set_light_color(lv.color_white())
-        big_receive_qr.center()
-        big_receive_qr.set_style_border_color(lv.color_white(), 0)
-        big_receive_qr.set_style_border_width(3, 0);
-        big_receive_qr.update(self.receive_qr_data, len(self.receive_qr_data))
-        mpos.ui.load_screen(qr_screen)
+        self.destination = FullscreenQR
+        self.startActivity(Intent(activity_class=FullscreenQR).putExtra("receive_qr_data", self.receive_qr_data))
 
 # Used to list and edit all settings:
 class SettingsActivity(Activity):
@@ -190,18 +182,19 @@ class SettingsActivity(Activity):
                     setting["cont"].remove_flag(lv.obj.FLAG.HIDDEN)
 
     def startSettingActivity(self, setting):
-        sa = SettingActivity(setting)
-        sa.onCreate()
-
+        intent = Intent(activity_class=SettingActivity)
+        intent.putExtra("setting", setting)
+        self.startActivity(intent)
 
 # Used to edit one setting:
 class SettingActivity(Activity):
-    def __init__(self, setting):
+    def __init__(self):
         super().__init__()
         self.prefs = mpos.config.SharedPreferences("com.lightningpiggy.displaywallet")
-        self.setting = setting
+        self.setting = None
 
     def onCreate(self):
+        setting = self.getIntent().extras.get("setting")
         settings_screen_detail = lv.obj()
         settings_screen_detail.set_style_pad_all(10, 0)
         settings_screen_detail.set_flex_flow(lv.FLEX_FLOW.COLUMN)
@@ -214,7 +207,7 @@ class SettingActivity(Activity):
         top_cont.set_style_flex_main_place(lv.FLEX_ALIGN.SPACE_BETWEEN, 0)
 
         setting_label = lv.label(top_cont)
-        setting_label.set_text(self.setting["title"])
+        setting_label.set_text(setting["title"])
         setting_label.align(lv.ALIGN.TOP_LEFT,0,0)
         setting_label.set_style_text_font(lv.font_montserrat_22, 0)
 
@@ -226,7 +219,7 @@ class SettingActivity(Activity):
         cambuttonlabel.center()
         cambutton.add_event_cb(self.cambutton_cb, lv.EVENT.CLICKED, None)
 
-        if self.setting["key"] == "wallet_type":
+        if setting["key"] == "wallet_type":
             cambutton.add_flag(lv.obj.FLAG.HIDDEN)
             # Create container for radio buttons
             self.radio_container = lv.obj(settings_screen_detail)
@@ -249,7 +242,7 @@ class SettingActivity(Activity):
             self.textarea = lv.textarea(settings_screen_detail)
             self.textarea.set_width(lv.pct(100))
             self.textarea.set_height(lv.SIZE_CONTENT)
-            self.textarea.set_text(self.prefs.get_string(self.setting["key"], ""))
+            self.textarea.set_text(self.prefs.get_string(setting["key"], ""))
             self.textarea.add_event_cb(self.show_keyboard, lv.EVENT.CLICKED, None)
             self.textarea.add_event_cb(self.show_keyboard, lv.EVENT.FOCUSED, None)
             self.textarea.add_event_cb(self.hide_keyboard, lv.EVENT.DEFOCUSED, None)
@@ -275,7 +268,7 @@ class SettingActivity(Activity):
         save_label = lv.label(save_btn)
         save_label.set_text("Save")
         save_label.center()
-        save_btn.add_event_cb(lambda e, s=self.setting: self.save_setting(s), lv.EVENT.CLICKED, None)
+        save_btn.add_event_cb(lambda e, s=setting: self.save_setting(s), lv.EVENT.CLICKED, None)
         # Cancel button
         cancel_btn = lv.button(btn_cont)
         cancel_btn.set_size(lv.pct(45), lv.SIZE_CONTENT)
@@ -354,3 +347,18 @@ class SettingActivity(Activity):
         setting["value_label"].set_text(new_value if new_value else "Not set")
         self.finish()
 
+
+class FullscreenQR(Activity):
+
+    def onCreate(self):
+        receive_qr_data = self.getIntent().extras.get("receive_qr_data")
+        qr_screen = lv.obj()
+        big_receive_qr = lv.qrcode(qr_screen)
+        big_receive_qr.set_size(240) # TODO: make this dynamic
+        big_receive_qr.set_dark_color(lv.color_black())
+        big_receive_qr.set_light_color(lv.color_white())
+        big_receive_qr.center()
+        big_receive_qr.set_style_border_color(lv.color_white(), 0)
+        big_receive_qr.set_style_border_width(3, 0);
+        big_receive_qr.update(receive_qr_data, len(receive_qr_data))
+        self.setContentView(qr_screen)
