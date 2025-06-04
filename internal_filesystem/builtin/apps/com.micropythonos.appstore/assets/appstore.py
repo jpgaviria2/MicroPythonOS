@@ -9,24 +9,18 @@ import _thread
 from mpos.apps import Activity, Intent
 import mpos.ui
 
-# Screens:
-app_detail_screen = None
-main_screen = None
-
-action_label_install = "Install"
-action_label_uninstall = "Uninstall"
-action_label_restore = "Restore Built-in"
-action_label_nothing = "Disable" # This doesn't do anything at the moment, but it could mark builtin apps as "Disabled" somehow and also allow for "Enable" then
-
-class MainActivity(Activity):
-    main_screen = None
+class AppStore(Activity):
     apps = []
+    app_index_url = "https://apps.micropythonos.com/app_index.json"
+    can_check_network = True
+
+    # Widgets:
+    main_screen = None
     update_button = None
     install_button = None
     install_label = None
     please_wait_label = None
     progress_bar = None
-    can_check_network = True
 
     def onCreate(self):
         self.main_screen = lv.obj()
@@ -44,7 +38,7 @@ class MainActivity(Activity):
             self.please_wait_label.set_text("Error: WiFi is not connected.")
         else:
             _thread.stack_size(mpos.apps.good_stack_size())
-            _thread.start_new_thread(self.download_app_index, ("https://apps.micropythonos.com/app_index.json",))
+            _thread.start_new_thread(self.download_app_index, (self.app_index_url,))
 
     def onDestroy(self, screen):
         print("appstore.py destroyed, restarting launcher to refresh...")
@@ -81,7 +75,7 @@ class MainActivity(Activity):
 
     def create_apps_list(self):
         print("create_apps_list")
-        default_icon_dsc = load_icon("builtin/res/mipmap-mdpi/default_icon_64x64.png")
+        default_icon_dsc = self.load_icon("builtin/res/mipmap-mdpi/default_icon_64x64.png")
         apps_list = lv.list(self.main_screen)
         apps_list.set_style_pad_all(0, 0)
         apps_list.set_size(lv.pct(100), lv.pct(100))
@@ -123,8 +117,11 @@ class MainActivity(Activity):
     
     def download_icons(self):
         for app in self.apps:
+            if app.image_dsc:
+                print(f"Skipping icon download for {app.name} because already downloaded.")
+                continue
             print(f"Downloading icon for {app.name}")
-            image_dsc = download_icon(app.icon_url)
+            image_dsc = self.download_icon(app.icon_url)
             app.image_dsc = image_dsc # save it for the app detail page
             lv.async_call(lambda l: app.image.set_src(image_dsc), None)
             time.sleep_ms(100) # not waiting here will result in some async_calls() not being executed
@@ -135,7 +132,34 @@ class MainActivity(Activity):
         intent.putExtra("app", app)
         self.startActivity(intent)
 
-    
+    @staticmethod
+    def download_icon(url):
+        print(f"Downloading icon from {url}")
+        try:
+            response = requests.get(url, timeout=5)
+            if response.status_code == 200:
+                image_data = response.content
+                print("Downloaded image, size:", len(image_data), "bytes")
+                image_dsc = lv.image_dsc_t({
+                    'data_size': len(image_data),
+                    'data': image_data
+                })
+                return image_dsc
+            else:
+                print("Failed to download image: Status code", response.status_code)
+        except Exception as e:
+            print(f"Exception during download of icon: {e}")
+        return None
+
+    @staticmethod
+    def load_icon(icon_path):
+        with open(icon_path, 'rb') as f:
+            image_data = f.read()
+            image_dsc = lv.image_dsc_t({
+                'data_size': len(image_data),
+                'data': image_data
+            })
+        return image_dsc
 
 class AppDetail(Activity):
 
@@ -144,6 +168,12 @@ class AppDetail(Activity):
     except ImportError:
         zipfile = None
 
+    action_label_install = "Install"
+    action_label_uninstall = "Uninstall"
+    action_label_restore = "Restore Built-in"
+    action_label_nothing = "Disable" # This could mark builtin apps as "Disabled" somehow and also allow for "Enable" then
+
+    # Widgets:
     install_button = None
     update_button = None
     progress_bar = None
@@ -151,6 +181,7 @@ class AppDetail(Activity):
 
     def onCreate(self):
         print("Creating app detail screen...")
+        app = self.getIntent().extras.get("app")
         app_detail_screen = lv.obj()
         app_detail_screen.set_size(lv.pct(100), lv.pct(100))
         app_detail_screen.set_pos(0, 40)
@@ -194,11 +225,10 @@ class AppDetail(Activity):
         self.install_button.set_size(lv.pct(100), 40)
         self.install_label = lv.label(self.install_button)
         self.install_label.center()
-        set_install_label(app.fullname)
-        if is_update_available(app.fullname, app.version):
+        self.set_install_label(app.fullname)
+        if self.is_update_available(app.fullname, app.version):
             self.install_button.set_size(lv.pct(47), 40) # make space for update button
             print("Update available, adding update button.")
-            global update_button
             self.update_button = lv.button(buttoncont)
             self.update_button.set_size(lv.pct(47), 40)
             self.update_button.add_event_cb(lambda e, d=app.download_url, f=app.fullname: self.update_button_click(d,f), lv.EVENT.CLICKED, None)
@@ -210,7 +240,7 @@ class AppDetail(Activity):
         version_label.set_width(lv.pct(100))
         version_label.set_text(f"Latest version: {app.version}") # make this bold if this is newer than the currently installed one
         version_label.set_style_text_font(lv.font_montserrat_12, 0)
-        version_label.align_to(install_button, lv.ALIGN.OUT_BOTTOM_MID, 0, lv.pct(5))
+        version_label.align_to(self.install_button, lv.ALIGN.OUT_BOTTOM_MID, 0, lv.pct(5))
         long_desc_label = lv.label(app_detail_screen)
         long_desc_label.align_to(version_label, lv.ALIGN.OUT_BOTTOM_MID, 0, lv.pct(5))
         long_desc_label.set_text(app.long_description)
@@ -231,8 +261,8 @@ class AppDetail(Activity):
         # - update is separate button, only shown if already installed and new version
         is_installed = True
         update_available = False
-        builtin_app = is_builtin_app(app_fullname)
-        overridden_builtin_app = is_overridden_builtin_app(app_fullname)
+        builtin_app = self.is_builtin_app(app_fullname)
+        overridden_builtin_app = self.is_overridden_builtin_app(app_fullname)
         if not overridden_builtin_app:
             is_installed = is_installed_by_name(app_fullname)
         if is_installed:
@@ -249,7 +279,6 @@ class AppDetail(Activity):
     
 
     def toggle_install(self, download_url, fullname):
-        global install_label
         print(f"Install button clicked for {download_url} and fullname {fullname}")
         label_text = self.install_label.get_text()
         if label_text == action_label_install:
@@ -276,7 +305,7 @@ class AppDetail(Activity):
         except Exception as e:
             print("Could not start download_and_unzip thread: ", e)
     
-    def uninstall_app(app_folder, app_fullname):
+    def uninstall_app(self, app_folder, app_fullname):
         self.install_button.remove_flag(lv.obj.FLAG.CLICKABLE) # TODO: change color so it's clear the button is not clickable
         self.install_label.set_text("Please wait...") # TODO: Put "Cancel" if cancellation is possible
         self.progress_bar.remove_flag(lv.obj.FLAG.HIDDEN)
@@ -295,12 +324,12 @@ class AppDetail(Activity):
         self.progress_bar.set_value(0, lv.ANIM.OFF)
         set_install_label(app_fullname)
         self.install_button.add_flag(lv.obj.FLAG.CLICKABLE)
-        if is_builtin_app(app_fullname):
+        if self.is_builtin_app(app_fullname):
             self.update_button.remove_flag(lv.obj.FLAG.HIDDEN)
             self.install_button.set_size(lv.pct(47), 40) # if a builtin app was removed, then it was overridden, and a new version is available, so make space for update button
     
 
-    def download_and_unzip(zip_url, dest_folder, app_fullname):
+    def download_and_unzip(self, zip_url, dest_folder, app_fullname):
         self.install_button.remove_flag(lv.obj.FLAG.CLICKABLE) # TODO: change color so it's clear the button is not clickable
         self.install_label.set_text("Please wait...") # TODO: Put "Cancel" if cancellation is possible
         self.progress_bar.remove_flag(lv.obj.FLAG.HIDDEN)
@@ -363,94 +392,65 @@ class AppDetail(Activity):
         self.progress_bar.set_value(0, lv.ANIM.OFF)
         set_install_label(app_fullname)
         self.install_button.add_flag(lv.obj.FLAG.CLICKABLE)
-    
 
-
-# Non-class functions:
-
-def compare_versions(ver1: str, ver2: str) -> bool:
-    """Compare two version numbers (e.g., '1.2.3' vs '4.5.6').
-    Returns True if ver1 is greater than ver2, False otherwise."""
-    print(f"Comparing versions: {ver1} vs {ver2}")
-    v1_parts = [int(x) for x in ver1.split('.')]
-    v2_parts = [int(x) for x in ver2.split('.')]
-    print(f"Version 1 parts: {v1_parts}")
-    print(f"Version 2 parts: {v2_parts}")
-    for i in range(max(len(v1_parts), len(v2_parts))):
-        v1 = v1_parts[i] if i < len(v1_parts) else 0
-        v2 = v2_parts[i] if i < len(v2_parts) else 0
-        print(f"Comparing part {i}: {v1} vs {v2}")
-        if v1 > v2:
-            print(f"{ver1} is greater than {ver2}")
-            return True
-        if v1 < v2:
-            print(f"{ver1} is less than {ver2}")
-            return False
-    print(f"Versions are equal or {ver1} is not greater than {ver2}")
-    return False
-
-def is_builtin_app(app_fullname):
-    return is_installed_by_path(f"builtin/apps/{app_fullname}")
-
-def is_overridden_builtin_app(app_fullname):
-    return is_installed_by_path(f"apps/{app_fullname}") and is_installed_by_path(f"builtin/apps/{app_fullname}")
-
-def is_update_available(app_fullname, new_version):
-    appdir = f"apps/{app_fullname}"
-    builtinappdir = f"builtin/apps/{app_fullname}"
-    installed_app=None
-    if is_installed_by_path(appdir):
-        print(f"{appdir} found, getting version...")
-        installed_app = mpos.apps.parse_manifest(f"{appdir}/META-INF/MANIFEST.JSON")
-    elif is_installed_by_path(builtinappdir):
-        print(f"{builtinappdir} found, getting version...")
-        installed_app = mpos.apps.parse_manifest(f"{builtinappdir}/META-INF/MANIFEST.JSON")
-    if not installed_app or installed_app.version == "0.0.0": # special case, if the installed app doesn't have a version number then there's no update
-        return False
-    return compare_versions(new_version, installed_app.version)
-
-
-def is_installed_by_path(dir_path):
-    try:
-        if os.stat(dir_path)[0] & 0x4000:
-            manifest = f"{dir_path}/META-INF/MANIFEST.JSON"
-            if os.stat(manifest)[0] & 0x8000:
+    @staticmethod
+    def compare_versions(ver1: str, ver2: str) -> bool:
+        """Compare two version numbers (e.g., '1.2.3' vs '4.5.6').
+        Returns True if ver1 is greater than ver2, False otherwise."""
+        print(f"Comparing versions: {ver1} vs {ver2}")
+        v1_parts = [int(x) for x in ver1.split('.')]
+        v2_parts = [int(x) for x in ver2.split('.')]
+        print(f"Version 1 parts: {v1_parts}")
+        print(f"Version 2 parts: {v2_parts}")
+        for i in range(max(len(v1_parts), len(v2_parts))):
+            v1 = v1_parts[i] if i < len(v1_parts) else 0
+            v2 = v2_parts[i] if i < len(v2_parts) else 0
+            print(f"Comparing part {i}: {v1} vs {v2}")
+            if v1 > v2:
+                print(f"{ver1} is greater than {ver2}")
                 return True
-    except OSError:
-        pass # Skip if directory or manifest doesn't exist
-    return False
+            if v1 < v2:
+                print(f"{ver1} is less than {ver2}")
+                return False
+        print(f"Versions are equal or {ver1} is not greater than {ver2}")
+        return False
 
-def is_installed_by_name(app_fullname):
-    print(f"Checking if app {app_fullname} is installed...")
-    return is_installed_by_path(f"apps/{app_fullname}") or is_installed_by_path(f"builtin/apps/{app_fullname}")
+    @staticmethod
+    def is_builtin_app(app_fullname):
+        return AppStore.is_installed_by_path(f"builtin/apps/{app_fullname}")
 
+    @staticmethod
+    def is_overridden_builtin_app(app_fullname):
+        return AppStore.is_installed_by_path(f"apps/{app_fullname}") and AppStore.is_installed_by_path(f"builtin/apps/{app_fullname}")
 
-def download_icon(url):
-    print(f"Downloading icon from {url}")
-    try:
-        response = requests.get(url, timeout=5)
-        if response.status_code == 200:
-            image_data = response.content
-            print("Downloaded image, size:", len(image_data), "bytes")
-            image_dsc = lv.image_dsc_t({
-                'data_size': len(image_data),
-                'data': image_data
-            })
-            return image_dsc
-        else:
-           print("Failed to download image: Status code", response.status_code)
-    except Exception as e:
-        print(f"Exception during download of icon: {e}")
-    return None
+    @staticmethod
+    def is_update_available(app_fullname, new_version):
+        appdir = f"apps/{app_fullname}"
+        builtinappdir = f"builtin/apps/{app_fullname}"
+        installed_app=None
+        if AppStore.is_installed_by_path(appdir):
+            print(f"{appdir} found, getting version...")
+            installed_app = mpos.apps.parse_manifest(f"{appdir}/META-INF/MANIFEST.JSON")
+        elif AppStore.is_installed_by_path(builtinappdir):
+            print(f"{builtinappdir} found, getting version...")
+            installed_app = mpos.apps.parse_manifest(f"{builtinappdir}/META-INF/MANIFEST.JSON")
+        if not installed_app or installed_app.version == "0.0.0": # special case, if the installed app doesn't have a version number then there's no update
+            return False
+        return compare_versions(new_version, installed_app.version)
 
+    @staticmethod
+    def is_installed_by_path(dir_path):
+        try:
+            if os.stat(dir_path)[0] & 0x4000:
+                manifest = f"{dir_path}/META-INF/MANIFEST.JSON"
+                if os.stat(manifest)[0] & 0x8000:
+                    return True
+        except OSError:
+            pass # Skip if directory or manifest doesn't exist
+        return False
 
-def load_icon(icon_path):
-    with open(icon_path, 'rb') as f:
-        image_data = f.read()
-        image_dsc = lv.image_dsc_t({
-            'data_size': len(image_data),
-            'data': image_data
-        })
-    return image_dsc
-
+    @staticmethod
+    def is_installed_by_name(app_fullname):
+        print(f"Checking if app {app_fullname} is installed...")
+        return AppStore.is_installed_by_path(f"apps/{app_fullname}") or AppStore.is_installed_by_path(f"builtin/apps/{app_fullname}")
 

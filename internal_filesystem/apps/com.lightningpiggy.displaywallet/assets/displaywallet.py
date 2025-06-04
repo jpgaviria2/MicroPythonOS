@@ -4,7 +4,7 @@ import mpos.config
 from wallet import LNBitsWallet, NWCWallet
 from captureqr import Camera
 
-class MainActivity(Activity):
+class DisplayWallet(Activity):
     
     def __init__(self):
         super().__init__()
