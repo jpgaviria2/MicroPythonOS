@@ -5,11 +5,11 @@ buildtype="$2"
 
 if [ -z "$target" -o -z "$buildtype" ]; then
 	echo "Usage: $0 <esp32 or unix or macos> <dev or prod>"
-	echo "Example: $0"
-	echo "Example: $0 devbuild"
+	echo "Example: $0 unix dev"
+	echo "Example: $0 esp32 prod"
 	echo
 	echo "A 'dev' build is without any preinstalled files or builtin/ filsystem, so it will just start with a black screen and you'll have to do: ./scripts/install.sh to install the User Interface."
-	echo "A 'prod' build has the files from manifest*.py frozen in."
+	echo "A 'prod' build has the files from manifest*.py frozen in. Don't forget to run: ./scripts/freezefs_mount_builtin.sh !"
 	exit 1
 fi
 
