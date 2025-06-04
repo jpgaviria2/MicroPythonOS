@@ -6,6 +6,11 @@ import os
 import time
 import _thread
 
+try:
+    import zipfile
+except ImportError:
+    print("import zipfile failed, installation won't work!")
+
 from mpos.apps import Activity, Intent
 import mpos.ui
 
@@ -165,11 +170,6 @@ class AppStore(Activity):
         return image_dsc
 
 class AppDetail(Activity):
-
-    try:
-        import zipfile
-    except ImportError:
-        zipfile = None
 
     action_label_install = "Install"
     action_label_uninstall = "Uninstall"
@@ -374,8 +374,6 @@ class AppDetail(Activity):
                 response.close()
         try:
             # Step 2: Unzip the file
-            if zipfile is None:
-                print("WARNING: zipfile module not available in this MicroPython build, unzip will fail!")
             print("Unzipping it to:", dest_folder)
             with zipfile.ZipFile(temp_zip_path, "r") as zip_ref:
                 zip_ref.extractall(dest_folder)
