@@ -442,10 +442,12 @@ class AppDetail(Activity):
     def is_installed_by_path(dir_path):
         try:
             if os.stat(dir_path)[0] & 0x4000:
+                print(f"is_installed_by_path: {dir_path} found, checking manifest...")
                 manifest = f"{dir_path}/META-INF/MANIFEST.JSON"
                 if os.stat(manifest)[0] & 0x8000:
                     return True
         except OSError:
+            print(f"is_installed_by_path got OSError for {dir_path}")
             pass # Skip if directory or manifest doesn't exist
         return False
 
