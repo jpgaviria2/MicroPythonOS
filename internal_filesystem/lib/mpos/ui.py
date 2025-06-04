@@ -288,7 +288,7 @@ def create_drawer(display=None):
     def wifi_event(e):
         global drawer_open
         close_drawer()
-        mpos.apps.start_app_by_name("com.example.wificonf")
+        mpos.apps.start_app_by_name("com.micropythonos.wificonf")
     
     wifi_btn.add_event_cb(wifi_event,lv.EVENT.CLICKED,None)
     #
