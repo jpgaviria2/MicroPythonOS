@@ -247,6 +247,9 @@ class Activity:
     def startActivity(self, intent):
         ActivityNavigator.startActivity(intent)
 
+    def startActivityForResult(self, intent, result_callback):
+        ActivityNavigator.startActivityForResult(intent, result_callback)
+
     def initError(self, e):
         print(f"WARNING: You might have inherited from Activity with a custom __init__() without calling super().__init__(). Got AttributeError: {e}")
 
@@ -290,31 +293,53 @@ class Intent:
 
 
 class ActivityNavigator:
-
+    @staticmethod
     def startActivity(intent):
         if not isinstance(intent, Intent):
             raise ValueError("Must provide an Intent")
-        if intent.action: # Implicit intent: resolve handlers
+        if intent.action:  # Implicit intent: resolve handlers
             handlers = APP_REGISTRY.get(intent.action, [])
             if len(handlers) == 1:
                 intent.activity_class = handlers[0]
                 ActivityNavigator._launch_activity(intent)
             elif handlers:
-                _show_chooser(intent, handlers)
+                ActivityNavigator._show_chooser(intent, handlers)
             else:
                 raise ValueError(f"No handlers for action: {intent.action}")
         else:
-            # Explicit intent
             ActivityNavigator._launch_activity(intent)
 
-    def _launch_activity(intent):
+    @staticmethod
+    def startActivityForResult(intent, result_callback):
+        """Launch an activity and pass a callback for the result."""
+        if not isinstance(intent, Intent):
+            raise ValueError("Must provide an Intent")
+        if intent.action:  # Implicit intent: resolve handlers
+            handlers = APP_REGISTRY.get(intent.action, [])
+            if len(handlers) == 1:
+                intent.activity_class = handlers[0]
+                return ActivityNavigator._launch_activity(intent, result_callback)
+            elif handlers:
+                ActivityNavigator._show_chooser(intent, handlers)
+                return None  # Chooser handles result forwarding
+            else:
+                raise ValueError(f"No handlers for action: {intent.action}")
+        else:
+            return ActivityNavigator._launch_activity(intent, result_callback)
+
+    @staticmethod
+    def _launch_activity(intent, result_callback=None):
+        """Launch an activity and set up result callback."""
         activity = intent.activity_class()
         activity.intent = intent
+        activity._result_callback = result_callback  # Pass callback to activity
         activity.onCreate()
+        return activity
 
+    @staticmethod
     def _show_chooser(intent, handlers):
         chooser_intent = Intent(ChooserActivity, extras={"original_intent": intent, "handlers": [h.__name__ for h in handlers]})
-        _launch_activity(chooser_intent)
+        ActivityNavigator._launch_activity(chooser_intent)
 
 
 class ChooserActivity(Activity):

@@ -25,7 +25,7 @@ for apprepo in internal_filesystem/apps internal_filesystem/builtin/apps; do
 	    version=$( jq -r '.version' "$manifest" )
             cat "$manifest" | tee -a "$outputjson"
 	    echo -n "," | tee -a "$outputjson"
-            thisappdir="$output"/"$appdir"
+            thisappdir="$output"/apps/"$appdir"
             mkdir -p "$thisappdir"
             mkdir -p "$thisappdir"/mpks
             mkdir -p "$thisappdir"/icons
