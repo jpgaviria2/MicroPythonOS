@@ -5,16 +5,15 @@ from wallet import LNBitsWallet, NWCWallet
 from captureqr import Camera
 
 class DisplayWallet(Activity):
-    
-    def __init__(self):
-        super().__init__()
-        self.wallet = None
-        self.receive_qr_data = None
-        self.destination = None
-        # widgets
-        self.balance_label = None
-        self.receive_qr = None
-        self.payments_label = None
+
+    wallet = None
+    receive_qr_data = None
+    destination = None
+
+    # widgets
+    balance_label = None
+    receive_qr = None
+    payments_label = None
 
     def onCreate(self):
         main_screen = lv.obj()
