@@ -123,12 +123,6 @@ or
 ~/sources/MicroPythonOS/scripts/build_lvgl_micropython.sh macOS
 ```
 
-To run it, it's recommended to symlink your ~/.micropython/lib folder into this project's lib:
-
-```
-ln -sf $(readlink -f internal_filesystem/lib) ~/.micropython/lib
-```
-
 Then to run it, do:
 
 ```

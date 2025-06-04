@@ -4,6 +4,10 @@ import lcd_bus
 import lvgl as lv
 import sdl_display
 
+# Add lib/ to the path for modules, otherwise it will only search in ~/.micropython/lib and /usr/lib/micropython
+import sys
+sys.path.append('lib/')
+
 import mpos.ui
 
 #TFT_HOR_RES=640
@@ -31,6 +35,7 @@ mouse = sdl_pointer.SDLPointer()
    # print(f"boot_unix: code={event_code}") # target={event.get_target()}, user_data={event.get_user_data()}, param={event.get_param()}
 
 #keyboard.add_event_cb(keyboard_cb, lv.EVENT.ALL, None)
+
 
 print("boot_unix.py finished")
 
