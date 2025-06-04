@@ -322,7 +322,7 @@ class AppDetail(Activity):
         time.sleep(1)
         self.progress_bar.add_flag(lv.obj.FLAG.HIDDEN)
         self.progress_bar.set_value(0, lv.ANIM.OFF)
-        set_install_label(app_fullname)
+        self.set_install_label(app_fullname)
         self.install_button.add_flag(lv.obj.FLAG.CLICKABLE)
         if self.is_builtin_app(app_fullname):
             self.update_button.remove_flag(lv.obj.FLAG.HIDDEN)
@@ -342,7 +342,7 @@ class AppDetail(Activity):
             if response.status_code != 200:
                 print("Download failed: Status code", response.status_code)
                 response.close()
-                set_install_label(app_fullname)
+                self.set_install_label(app_fullname)
             self.progress_bar.set_value(40, lv.ANIM.ON)
             time.sleep_ms(500)
             # Save the .mpk file to a temporary location
@@ -390,7 +390,7 @@ class AppDetail(Activity):
         time.sleep(1)
         self.progress_bar.add_flag(lv.obj.FLAG.HIDDEN)
         self.progress_bar.set_value(0, lv.ANIM.OFF)
-        set_install_label(app_fullname)
+        self.set_install_label(app_fullname)
         self.install_button.add_flag(lv.obj.FLAG.CLICKABLE)
 
     @staticmethod
