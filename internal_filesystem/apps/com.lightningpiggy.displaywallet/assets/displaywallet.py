@@ -322,14 +322,16 @@ class SettingActivity(Activity):
         cb.add_style(style_radio_chk, lv.PART.INDICATOR | lv.STATE.CHECKED)
         return cb
 
-    def gotqr_callback(self, success, data):
-        print(f"gotqr_callback {success}, {data}")
-        if success:
+    def gotqr_result_callback(self, result):
+        print(f"QR capture finished, result: {result}")
+        if result.get("result_code"):
+            data = result.get("data")
+            print(f"Setting textarea data: {data}")
             self.textarea.set_text(data)
 
     def cambutton_cb(self, event):
         print("cambutton clicked!")
-        self.startActivity(Intent(activity_class=Camera).putExtra("scanqr_callback", self.gotqr_callback))
+        self.startActivityForResult(Intent(activity_class=Camera).putExtra("scanqr_mode", True), self.gotqr_result_callback)
 
     def save_setting(self, setting):
         if setting["key"] == "wallet_type" and self.radio_container:

@@ -14,33 +14,35 @@ except Exception as e:
 
 from mpos.apps import Activity
 
-width = 240
-height = 240
-
-status_label_text = "No camera found."
-status_label_text_searching = "Searching QR codes...\n\nHold still and make them big!\n10cm for simple QR codes,\n20cm for complex."
-status_label_text_found = "Decoding QR..."
-
 class Camera(Activity):
 
-    def __init__(self):
-        super().__init__()
-        self.cam = None
-        self.current_cam_buffer = None # Variable to hold the current memoryview to prevent garbage collection
-        self.image_dsc = None
-        self.image = None
-        self.qr_label = None
-        self.scanqr_callback = None
-        self.use_webcam = False
-        self.qr_button = None
-        self.snap_button = None
-        self.capture_timer = None
-        self.status_label = None
-        self.status_label_cont = None
-        self.keepliveqrdecoding = False
+    width = 240
+    height = 240
+
+    status_label_text = "No camera found."
+    status_label_text_searching = "Searching QR codes...\n\nHold still and make them big!\n10cm for simple QR codes,\n20cm for complex."
+    status_label_text_found = "Decoding QR..."
+
+    cam = None
+    current_cam_buffer = None # Holds the current memoryview to prevent garbage collection
+
+    image = None
+    image_dsc = None
+    scanqr_mode = None
+    use_webcam = False
+    keepliveqrdecoding = False
+    
+    capture_timer = None
+    
+    # Widgets:
+    qr_label = None
+    qr_button = None
+    snap_button = None
+    status_label = None
+    status_label_cont = None
 
     def onCreate(self):
-        self.scanqr_callback = self.getIntent().extras.get("scanqr_callback")
+        self.scanqr_mode = self.getIntent().extras.get("scanqr_mode")
         main_screen = lv.obj()
         main_screen.set_style_pad_all(0, 0)
         main_screen.set_style_border_width(0, 0)
@@ -76,13 +78,13 @@ class Camera(Activity):
         self.image_dsc = lv.image_dsc_t({
             "header": {
                 "magic": lv.IMAGE_HEADER_MAGIC,
-                "w": width,
-                "h": height,
-                "stride": width * 2,
+                "w": self.width,
+                "h": self.height,
+                "stride": self.width * 2,
                 "cf": lv.COLOR_FORMAT.RGB565
                 #"cf": lv.COLOR_FORMAT.L8
             },
-            'data_size': width * height * 2,
+            'data_size': self.width * self.height * 2,
             'data': None # Will be updated per frame
         })
         self.image.set_src(self.image_dsc)
@@ -115,15 +117,16 @@ class Camera(Activity):
             print("Camera initialized, continuing...")
             self.capture_timer = lv.timer_create(self.try_capture, 100, None)
             self.status_label_cont.add_flag(lv.obj.FLAG.HIDDEN)
-            if self.scanqr_callback:
+            if self.scanqr_mode:
                 self.start_qr_decoding()
             else:
                 self.qr_button.remove_flag(lv.obj.FLAG.HIDDEN)
                 self.snap_button.remove_flag(lv.obj.FLAG.HIDDEN)
         else:
             print("No camera found, stopping camtest.py")
-            if self.scanqr_callback:
-                self.scanqr_callback(False,"")
+            if self.scanqr_mode:
+                self.finish()
+
 
     def onStop(self, screen):
         print("camtest.py backgrounded, cleaning up...")
@@ -138,26 +141,26 @@ class Camera(Activity):
     def qrdecode_one(self):
         try:
             import qrdecode
-            result = qrdecode.qrdecode_rgb565(self.current_cam_buffer, width, height)
+            result = qrdecode.qrdecode_rgb565(self.current_cam_buffer, self.width, self.height)
             #result = bytearray("INSERT_QR_HERE", "utf-8")
             if not result:
-                self.status_label.set_text(status_label_text_searching)
+                self.status_label.set_text(self.status_label_text_searching)
             else:
                 self.stop_qr_decoding()
                 result = remove_bom(result)
                 result = print_qr_buffer(result)
                 print(f"QR decoding found: {result}")
-                if self.scanqr_callback:
-                    self.scanqr_callback(True,result)
+                if self.scanqr_mode:
+                    self.setResult(True, result)
                     self.finish()
                 else:
                     self.status_label.set_text(result) # in the future, the status_label text should be copy-paste-able
         except ValueError as e:
             print("QR ValueError: ", e)
-            self.status_label.set_text(status_label_text_searching)
+            self.status_label.set_text(self.status_label_text_searching)
         except TypeError as e:
             print("QR TypeError: ", e)
-            self.status_label.set_text(status_label_text_found)
+            self.status_label.set_text(self.status_label_text_found)
         except Exception as e:
             print("QR got other error: ", e)
 
@@ -186,14 +189,14 @@ class Camera(Activity):
         self.keepliveqrdecoding = True
         self.qr_label.set_text(lv.SYMBOL.EYE_CLOSE)
         self.status_label_cont.remove_flag(lv.obj.FLAG.HIDDEN)
-        self.status_label.set_text(status_label_text_searching)
+        self.status_label.set_text(self.status_label_text_searching)
     
     def stop_qr_decoding(self):
         print("Deactivating live QR decoding...")
         self.keepliveqrdecoding = False
         self.qr_label.set_text(lv.SYMBOL.EYE_OPEN)
-        status_label_text = self.status_label.get_text()
-        if status_label_text == status_label_text_searching or status_label_text == status_label_text_found: # if it found a QR code, leave it
+        self.status_label_text = self.status_label.get_text()
+        if self.status_label_text in (self.status_label_text_searching or self.status_label_text_found): # if it found a QR code, leave it
             self.status_label_cont.add_flag(lv.obj.FLAG.HIDDEN)
     
     def qr_button_click(self, e):
@@ -219,6 +222,8 @@ class Camera(Activity):
                     self.qrdecode_one()
         except Exception as e:
             print(f"Camera capture exception: {e}")
+
+
 
 # Non-class functions:
 def init_internal_cam():

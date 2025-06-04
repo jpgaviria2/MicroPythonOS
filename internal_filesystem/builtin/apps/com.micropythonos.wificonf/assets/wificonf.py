@@ -7,31 +7,26 @@ import _thread
 from mpos.apps import Activity, Intent
 import mpos.ui
 
+# Global variables because they're shared between activities:
 access_points={}
-
 last_tried_ssid = ""
 last_tried_result = ""
 
-scan_button_scan_text = "Rescan"
-scan_button_scanning_text = "Scanning..."
-
-RESULT_CODE_CONNECT = 1
-RESULT_CODE_CANCEL = 0
-
-
 class WiFiConfig(Activity):
 
-    havenetwork = True
+    scan_button_scan_text = "Rescan"
+    scan_button_scanning_text = "Scanning..."
+
     ssids=[]
-    busy_scanning=False
-    busy_connecting=False
-    #selected_ssid=None
+    havenetwork = True
+    busy_scanning = False
+    busy_connecting = False
 
     # Widgets:
     aplist = None
-    error_label=None
-    scan_button=None
-    scan_button_label=None
+    error_label = None
+    scan_button = None
+    scan_button_label = None
 
     def onCreate(self):
         main_screen = lv.obj()
@@ -50,7 +45,7 @@ class WiFiConfig(Activity):
         self.scan_button.set_size(lv.SIZE_CONTENT,lv.pct(15))
         self.scan_button.align(lv.ALIGN.BOTTOM_MID,0,0)
         self.scan_button_label=lv.label(self.scan_button)
-        self.scan_button_label.set_text(scan_button_scan_text)
+        self.scan_button_label.set_text(self.scan_button_scan_text)
         self.scan_button_label.center()
         self.scan_button.add_event_cb(self.scan_cb,lv.EVENT.CLICKED,None)
         self.setContentView(main_screen)
@@ -94,7 +89,7 @@ class WiFiConfig(Activity):
             self.show_error("Wi-Fi scan failed")
         # scan done:
         self.busy_scanning = False
-        lv.async_call(lambda l: self.scan_button_label.set_text(scan_button_scan_text), None)
+        lv.async_call(lambda l: self.scan_button_label.set_text(self.scan_button_scan_text), None)
         lv.async_call(lambda l: self.scan_button.add_flag(lv.obj.FLAG.CLICKABLE), None)
         lv.async_call(lambda l: self.refresh_list(), None)
 
@@ -105,7 +100,7 @@ class WiFiConfig(Activity):
         else:
             self.busy_scanning = True
             self.scan_button.remove_flag(lv.obj.FLAG.CLICKABLE)
-            self.scan_button_label.set_text(scan_button_scanning_text)
+            self.scan_button_label.set_text(self.scan_button_scanning_text)
             _thread.stack_size(mpos.apps.good_stack_size())
             _thread.start_new_thread(self.scan_networks_thread, ())
     
@@ -146,13 +141,13 @@ class WiFiConfig(Activity):
         
     def password_page_result_cb(self, result):
         print(f"PasswordPage finished, result: {result}")
-        if result.get("result_code") == RESULT_CODE_CONNECT:
+        if result.get("result_code"):
             data = result.get("data")
             if data:
                 self.start_attempt_connecting(data.get("ssid"), data.get("password"))
 
     def start_attempt_connecting(self, ssid, password):
-        print(f"start_attempt_connecting: Attempting to connect to SSID: {ssid}")
+        print(f"start_attempt_connecting: Attempting to connect to SSID '{ssid}' with password '{password}'")
         self.scan_button.remove_flag(lv.obj.FLAG.CLICKABLE)
         self.scan_button_label.set_text(f"Connecting to {ssid}...")
         if self.busy_connecting:
@@ -164,7 +159,7 @@ class WiFiConfig(Activity):
 
     def attempt_connecting_thread(self, ssid, password):
         global last_tried_ssid, last_tried_result
-        print(f"attempt_connecting: Attempting to connect to SSID: {ssid}")
+        print(f"attempt_connecting_thread: Attempting to connect to SSID '{ssid}' with password '{password}'")
         result="connected"
         try:
             if self.havenetwork:
@@ -189,7 +184,7 @@ class WiFiConfig(Activity):
         last_tried_result = result
         self.busy_connecting=False
         # Schedule UI updates because different thread
-        lv.async_call(lambda l: self.scan_button_label.set_text(scan_button_scan_text), None)
+        lv.async_call(lambda l: self.scan_button_label.set_text(self.scan_button_scan_text), None)
         lv.async_call(lambda l: self.scan_button.add_flag(lv.obj.FLAG.CLICKABLE), None)
         lv.async_call(lambda l: self.refresh_list(), None)
 
@@ -299,13 +294,12 @@ class PasswordPage(Activity):
         access_points[self.selected_ssid]=password
         print(f"connect_cb: Updated access_points: {access_points}")
         save_config()
-        self.setResult(RESULT_CODE_CONNECT, {"ssid": self.selected_ssid, "password": password})
+        self.setResult(True, {"ssid": self.selected_ssid, "password": password})
         print("connect_cb: Restoring main_screen")
         self.finish()
     
     def cancel_cb(self, event):
         print("cancel_cb: Cancel button clicked")
-        self.setResult(RESULT_CODE_CANCEL, None)
         self.finish()
 
 
