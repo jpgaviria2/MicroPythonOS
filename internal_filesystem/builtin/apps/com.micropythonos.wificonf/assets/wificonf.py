@@ -6,8 +6,9 @@ import _thread
 
 from mpos.apps import Activity, Intent
 import mpos.ui
+import mpos.config
 
-# Global variables because they're shared between activities:
+# Global variables because they're used by multiple Activities:
 access_points={}
 last_tried_ssid = ""
 last_tried_result = ""
@@ -61,7 +62,9 @@ class WiFiConfig(Activity):
         self.start_scan_networks()
 
     def onResume(self, screen):
-        load_config()
+        global access_points
+        access_points = mpos.config.SharedPreferences("com.micropythonos.wificonf").get_dict("access_points")
+
 
     def show_error(self, message):
         print(f"show_error: Displaying error: {message}")
@@ -103,7 +106,7 @@ class WiFiConfig(Activity):
             self.scan_button_label.set_text(self.scan_button_scanning_text)
             _thread.stack_size(mpos.apps.good_stack_size())
             _thread.start_new_thread(self.scan_networks_thread, ())
-    
+
     def refresh_list(self):
         print("refresh_list: Clearing current list")
         self.aplist.clean() # this causes an issue with lost taps if an ssid is clicked that has been removed
@@ -203,6 +206,7 @@ class PasswordPage(Activity):
     connect_button=None
     cancel_button=None
 
+
     def onCreate(self):
         self.selected_ssid = self.getIntent().extras.get("selected_ssid")
         print("PasswordPage: Creating new password page")
@@ -218,11 +222,9 @@ class PasswordPage(Activity):
         self.password_ta.set_one_line(True)
         self.password_ta.align_to(label, lv.ALIGN.OUT_BOTTOM_MID, 5, 0)
         self.password_ta.add_event_cb(self.password_ta_cb,lv.EVENT.CLICKED,None)
-        # try to find saved password:
-        for apssid,password in access_points.items():
-            if self.selected_ssid == apssid:
-                self.password_ta.set_text(password)
-                break
+        pwd = self.findSavedPassword(self.selected_ssid)
+        if pwd:
+            self.password_ta.set_text(pwd)
         self.password_ta.set_placeholder_text("Password")
         print("PasswordPage: Creating keyboard (hidden by default)")
         self.keyboard=lv.keyboard(password_page)
@@ -291,9 +293,11 @@ class PasswordPage(Activity):
         print("connect_cb: Connect button clicked")
         password=self.password_ta.get_text()
         print(f"connect_cb: Got password: {password}")
-        access_points[self.selected_ssid]=password
+        self.setPassword(self.selected_ssid, password)
         print(f"connect_cb: Updated access_points: {access_points}")
-        save_config()
+        editor = mpos.config.SharedPreferences("com.micropythonos.wificonf").edit()
+        editor.put_dict("access_points", access_points)
+        editor.commit()
         self.setResult(True, {"ssid": self.selected_ssid, "password": password})
         print("connect_cb: Restoring main_screen")
         self.finish()
@@ -302,47 +306,21 @@ class PasswordPage(Activity):
         print("cancel_cb: Cancel button clicked")
         self.finish()
 
+    @staticmethod
+    def setPassword(ssid, password):
+        global access_points
+        ap = access_points.get(ssid)
+        if ap:
+            ap["password"] = password
+            return
+        # if not found, then add it:
+        access_points[ssid] = { "password": password }
 
-
-
-# Non-class functions:
-
-
-def load_config(): # Maybe this should call a framework function
-    print("load_config: Checking for /data directory")
-    try:
-        os.stat('data')
-        print("load_config: /data exists")
-    except OSError:
-        print("load_config: Creating /data directory")
-        os.mkdir('data')
-    print("load_config: Checking for /data/com.example.wificonf directory")
-    try:
-        os.stat('data/com.example.wificonf')
-        print("load_config: /data/com.example.wificonf exists")
-    except OSError:
-        print("load_config: Creating /data/com.example.wificonf directory")
-        os.mkdir('data/com.example.wificonf')
-    print("load_config: Loading config from conf.json")
-    try:
-        with open('data/com.example.wificonf/conf.json','r') as f:
-            global access_points
-            access_points=ujson.load(f)
-            print(f"load_config: Loaded access_points: {access_points}")
-    except OSError:
-        access_points={}
-        print("load_config: No config file found, using empty access_points")
-
-
-def save_config(): # Maybe this should call a framework function
-    print("save_config: Saving access_points to conf.json")
-    try:
-        with open('data/com.example.wificonf/conf.json','w') as f:
-            ujson.dump(access_points,f)
-        print(f"save_config: Saved access_points: {access_points}")
-    except OSError:
-        self.show_error("Failed to save config")
-        print("save_config: Failed to save config")
-
-
-
+    @staticmethod
+    def findSavedPassword(ssid):
+        if not access_points:
+            return None
+        ap = access_points.get(ssid)
+        if ap:
+            return ap.get("password")
+        return None
