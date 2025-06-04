@@ -5,7 +5,7 @@ try:
     import network
 except Exception as e:
     have_network=False
-    print("auto_connect.py could not import network, have_network=False")
+    print("Could not import network, have_network=False")
 
 import ujson
 import os

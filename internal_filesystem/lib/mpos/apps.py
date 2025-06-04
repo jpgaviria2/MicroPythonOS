@@ -205,21 +205,14 @@ def parse_manifest(manifest_path):
 
 
 def auto_connect():
-    # A generic "start at boot" mechanism hasn't been implemented yet, so do it like this:
-    custom_auto_connect = "apps/com.example.wificonf/assets/auto_connect.py"
-    builtin_auto_connect = "builtin/apps/com.example.wificonf/assets/auto_connect.py"
-    # Maybe start_app_by_name() and start_app_by_name() could be merged so the try-except logic is not duplicated...
+    builtin_auto_connect = "builtin/system/WifiService.py"
     try:
-        stat = uos.stat(custom_auto_connect)
-        execute_script_new_thread(custom_auto_connect, True)
+        print(f"Starting {builtin_auto_connect}...")
+        stat = uos.stat(builtin_auto_connect)
+        execute_script_new_thread(builtin_auto_connect, True)
     except Exception as e:
-        try:
-            print(f"Couldn't execute {custom_auto_connect} because exception {e}, trying {builtin_auto_connect}...")
-            stat = uos.stat(builtin_auto_connect)
-            execute_script_new_thread(builtin_auto_connect, True)
-        except Exception as e:
-            print("Couldn't execute {builtin_auto_connect} because exception {e}, continuing...")
-    
+        print("Couldn't execute {builtin_auto_connect} because exception {e}, continuing...")
+
 
 class Activity:
 
