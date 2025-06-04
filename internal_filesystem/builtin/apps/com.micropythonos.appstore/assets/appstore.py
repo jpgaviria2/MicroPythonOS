@@ -56,7 +56,7 @@ class AppStore(Activity):
             lv.async_call(lambda l, error=e: self.please_wait_label.set_text(f"Downloading app index from:\n{json_url}\ngot error: {error}"), None)
             return
         if response and response.status_code == 200:
-            print(f"Got response text: {response.text}")
+            #print(f"Got response text: {response.text}")
             try:
                 applist = json.loads(response.text)
                 for app in json.loads(response.text):
