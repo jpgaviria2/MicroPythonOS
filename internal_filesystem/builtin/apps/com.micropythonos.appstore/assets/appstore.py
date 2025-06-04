@@ -60,15 +60,24 @@ class MainActivity(Activity):
             return
         if response and response.status_code == 200:
             print(f"Got response text: {response.text}")
-            self.apps = [mpos.apps.App(**app) for app in json.loads(response.text)]
-            response.close()
-            # Remove duplicates based on app.name
-            seen = set()
-            self.apps = [app for app in self.apps if not (app.name in seen or seen.add(app.name))]
-            # Sort apps by app.name
-            self.apps.sort(key=lambda x: x.name.lower())  # Use .lower() for case-insensitive sorting
-            self.please_wait_label.add_flag(lv.obj.FLAG.HIDDEN)
-            lv.async_call(lambda l: self.create_apps_list(), None)
+            try:
+                applist = json.loads(response.text)
+                for app in json.loads(response.text):
+                    try:
+                        self.apps.append(mpos.apps.App(**app))
+                    except Exception as e:
+                        print(f"Warning: could not add app from {json_url} to apps list: {e}")
+                # Remove duplicates based on app.name
+                seen = set()
+                self.apps = [app for app in self.apps if not (app.name in seen or seen.add(app.name))]
+                # Sort apps by app.name
+                self.apps.sort(key=lambda x: x.name.lower())  # Use .lower() for case-insensitive sorting
+                self.please_wait_label.add_flag(lv.obj.FLAG.HIDDEN)
+                lv.async_call(lambda l: self.create_apps_list(), None)
+            except Exception as e:
+                print(f"ERROR: could not parse reponse.text JSON: {e}")
+            finally:
+                response.close()
 
     def create_apps_list(self):
         print("create_apps_list")
@@ -112,7 +121,7 @@ class MainActivity(Activity):
         except Exception as e:
             print("Could not start thread to download icons: ", e)
     
-    def download_icons():
+    def download_icons(self):
         for app in self.apps:
             print(f"Downloading icon for {app.name}")
             image_dsc = download_icon(app.icon_url)
