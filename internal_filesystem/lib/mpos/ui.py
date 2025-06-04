@@ -77,12 +77,12 @@ def open_drawer():
         drawer.remove_flag(lv.obj.FLAG.HIDDEN)
 
 def close_drawer(to_launcher=False):
-    global drawer_open, drawer
+    global drawer_open, drawer, foreground_app_name
     if drawer_open:
         drawer_open=False
         drawer.add_flag(lv.obj.FLAG.HIDDEN)
         if not to_launcher and not mpos.apps.is_launcher(foreground_app_name):
-            print("close_drawer: also closing bar")
+            print(f"close_drawer: also closing bar because to_launcher is {to_launcher} and foreground_app_name is {foreground_app_name}")
             close_bar()
 
 def open_bar():
@@ -271,7 +271,7 @@ def create_drawer(display=None):
     slider.set_range(1,100)
     slider.set_value(100,False)
     slider.set_width(lv.pct(80))
-    slider.align_to(slider_label,lv.ALIGN.OUT_BOTTOM_MID,0,lv.pct(4))
+    slider.align_to(slider_label,lv.ALIGN.OUT_BOTTOM_MID,0,lv.pct(6))
     def slider_event(e):
         value=slider.get_value()
         slider_label.set_text(f"{value}%")
@@ -288,7 +288,7 @@ def create_drawer(display=None):
     def wifi_event(e):
         global drawer_open
         close_drawer()
-        mpos.apps.start_app_by_name("com.micropythonos.wificonf")
+        mpos.apps.start_app_by_name("com.micropythonos.wifi")
     
     wifi_btn.add_event_cb(wifi_event,lv.EVENT.CLICKED,None)
     #
@@ -320,7 +320,7 @@ def create_drawer(display=None):
     #
     restart_btn=lv.button(drawer)
     restart_btn.set_size(lv.pct(40),lv.SIZE_CONTENT)
-    restart_btn.align(lv.ALIGN.RIGHT_MID,0,0)
+    restart_btn.align(lv.ALIGN.BOTTOM_RIGHT,0,0)
     restart_label=lv.label(restart_btn)
     restart_label.set_text(lv.SYMBOL.POWER+" Reset")
     restart_label.center()
@@ -338,6 +338,8 @@ def create_drawer(display=None):
     except Exception as e:
         print("Warning: could not import machine, not adding reset callback")
     
+    '''
+    Doesn't do anything on ESP32, not much use:
     poweroff_btn=lv.button(drawer)
     poweroff_btn.set_size(lv.pct(40),lv.SIZE_CONTENT)
     poweroff_btn.align(lv.ALIGN.BOTTOM_RIGHT,0,0)
@@ -348,9 +350,8 @@ def create_drawer(display=None):
         lv.deinit()  # Deinitialize LVGL (if supported)
         import sys
         sys.exit(0)
-    
     poweroff_btn.add_event_cb(poweroff_cb,lv.EVENT.CLICKED,None)
-    
+    '''
 
 
 
@@ -554,7 +555,7 @@ def back_swipe_cb(event):
 
 def handle_back_swipe():
     rect = lv.obj(lv.layer_top())
-    rect.set_size(NOTIFICATION_BAR_HEIGHT, lv.layer_top().get_height()-NOTIFICATION_BAR_HEIGHT)
+    rect.set_size(round(NOTIFICATION_BAR_HEIGHT/2), lv.layer_top().get_height()-NOTIFICATION_BAR_HEIGHT) # narrow because it overlaps buttons
     rect.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
     rect.set_pos(0, NOTIFICATION_BAR_HEIGHT)
     style = lv.style_t()
@@ -596,7 +597,7 @@ def top_swipe_cb(event):
         y = point.y
         print(f"pos: {x}, {y}")
         #rect.set_pos(x, 0)
-        if event_code == lv.EVENT.RELEASED and y > 60: # TODO: use display_height / 3 here
+        if event_code == lv.EVENT.RELEASED and y > 60: # TODO: use display_height / 3 here, or better: an animation for more feedback
             mpos.ui.open_drawer()
             #rect.set_pos(0,0)
         #rect.set_pos(xa + point.x, ya + point.y)
@@ -605,7 +606,7 @@ def top_swipe_cb(event):
 
 def handle_top_swipe():
     rect = lv.obj(lv.layer_top())
-    rect.set_size(lv.pct(100), NOTIFICATION_BAR_HEIGHT)
+    rect.set_size(lv.pct(100), round(NOTIFICATION_BAR_HEIGHT*2/3))
     rect.set_pos(0, 0)
     rect.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
     style = lv.style_t()
