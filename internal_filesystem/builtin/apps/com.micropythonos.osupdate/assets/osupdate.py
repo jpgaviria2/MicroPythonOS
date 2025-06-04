@@ -46,7 +46,7 @@ class OSUpdate(Activity):
         
         print("osupdate.py finished")
 
-    def onStop():
+    def onStop(self, screen):
         self.keep_running = False # this is checked by the update_with_lvgl thread
 
     def show_update_info(self):
