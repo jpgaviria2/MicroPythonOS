@@ -264,30 +264,30 @@ class AppDetail(Activity):
         builtin_app = self.is_builtin_app(app_fullname)
         overridden_builtin_app = self.is_overridden_builtin_app(app_fullname)
         if not overridden_builtin_app:
-            is_installed = is_installed_by_name(app_fullname)
+            is_installed = AppDetail.is_installed_by_name(app_fullname)
         if is_installed:
             if builtin_app:
                 if overridden_builtin_app:
-                    action_label = action_label_restore
+                    action_label = self.action_label_restore
                 else:
-                    action_label = action_label_nothing
+                    action_label = self.action_label_nothing
             else:
-                action_label = action_label_uninstall
+                action_label = self.action_label_uninstall
         else:
-            action_label = action_label_install
+            action_label = self.action_label_install
         self.install_label.set_text(action_label)
     
 
     def toggle_install(self, download_url, fullname):
         print(f"Install button clicked for {download_url} and fullname {fullname}")
         label_text = self.install_label.get_text()
-        if label_text == action_label_install:
+        if label_text == self.action_label_install:
             try:
                 _thread.stack_size(mpos.apps.good_stack_size())
                 _thread.start_new_thread(self.download_and_unzip, (download_url, f"apps/{fullname}", fullname))
             except Exception as e:
                 print("Could not start download_and_unzip thread: ", e)
-        elif label_text == action_label_uninstall or label_text == action_label_restore:
+        elif label_text == self.action_label_uninstall or label_text == self.action_label_restore:
             print("Uninstalling app....")
             try:
                 _thread.stack_size(mpos.apps.good_stack_size())
@@ -417,26 +417,26 @@ class AppDetail(Activity):
 
     @staticmethod
     def is_builtin_app(app_fullname):
-        return AppStore.is_installed_by_path(f"builtin/apps/{app_fullname}")
+        return AppDetail.is_installed_by_path(f"builtin/apps/{app_fullname}")
 
     @staticmethod
     def is_overridden_builtin_app(app_fullname):
-        return AppStore.is_installed_by_path(f"apps/{app_fullname}") and AppStore.is_installed_by_path(f"builtin/apps/{app_fullname}")
+        return AppDetail.is_installed_by_path(f"apps/{app_fullname}") and AppDetail.is_installed_by_path(f"builtin/apps/{app_fullname}")
 
     @staticmethod
     def is_update_available(app_fullname, new_version):
         appdir = f"apps/{app_fullname}"
         builtinappdir = f"builtin/apps/{app_fullname}"
         installed_app=None
-        if AppStore.is_installed_by_path(appdir):
+        if AppDetail.is_installed_by_path(appdir):
             print(f"{appdir} found, getting version...")
             installed_app = mpos.apps.parse_manifest(f"{appdir}/META-INF/MANIFEST.JSON")
-        elif AppStore.is_installed_by_path(builtinappdir):
+        elif AppDetail.is_installed_by_path(builtinappdir):
             print(f"{builtinappdir} found, getting version...")
             installed_app = mpos.apps.parse_manifest(f"{builtinappdir}/META-INF/MANIFEST.JSON")
         if not installed_app or installed_app.version == "0.0.0": # special case, if the installed app doesn't have a version number then there's no update
             return False
-        return compare_versions(new_version, installed_app.version)
+        return AppDetail.compare_versions(new_version, installed_app.version)
 
     @staticmethod
     def is_installed_by_path(dir_path):
@@ -452,5 +452,5 @@ class AppDetail(Activity):
     @staticmethod
     def is_installed_by_name(app_fullname):
         print(f"Checking if app {app_fullname} is installed...")
-        return AppStore.is_installed_by_path(f"apps/{app_fullname}") or AppStore.is_installed_by_path(f"builtin/apps/{app_fullname}")
+        return AppDetail.is_installed_by_path(f"apps/{app_fullname}") or AppDetail.is_installed_by_path(f"builtin/apps/{app_fullname}")
 
