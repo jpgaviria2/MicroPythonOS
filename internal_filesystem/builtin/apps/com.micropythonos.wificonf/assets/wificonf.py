@@ -20,6 +20,7 @@ class WiFiConfig(Activity):
 
     ssids=[]
     havenetwork = True
+    keep_running = True
     busy_scanning = False
     busy_connecting = False
 
@@ -59,19 +60,25 @@ class WiFiConfig(Activity):
             wlan.active(True)
         except Exception as e:
             self.havenetwork = False
-        self.start_scan_networks()
 
     def onResume(self, screen):
         global access_points
         access_points = mpos.config.SharedPreferences("com.micropythonos.wificonf").get_dict("access_points")
+        self.keep_running = True
+        if len(self.ssids) == 0:
+            self.start_scan_networks()
 
+    def onStop(self, screen):
+        self.keep_running = False
 
     def show_error(self, message):
-        print(f"show_error: Displaying error: {message}")
-        lv.async_call(lambda l: self.error_label.set_text(message), None)
-        lv.async_call(lambda l: self.error_label.remove_flag(lv.obj.FLAG.HIDDEN), None)
-        timer=lv.timer_create(lambda t: self.error_label.add_flag(lv.obj.FLAG.HIDDEN),3000,None)
-        timer.set_repeat_count(1)
+        if self.keep_running: # called from slow threads so might already have stopped
+            # Schedule UI updates because different thread
+            print(f"show_error: Displaying error: {message}")
+            lv.async_call(lambda l: self.error_label.set_text(message), None)
+            lv.async_call(lambda l: self.error_label.remove_flag(lv.obj.FLAG.HIDDEN), None)
+            timer=lv.timer_create(lambda t: self.error_label.add_flag(lv.obj.FLAG.HIDDEN),3000,None)
+            timer.set_repeat_count(1)
 
     def scan_networks_thread(self):
         print("scan_networks: Scanning for Wi-Fi networks")
@@ -92,14 +99,18 @@ class WiFiConfig(Activity):
             self.show_error("Wi-Fi scan failed")
         # scan done:
         self.busy_scanning = False
-        lv.async_call(lambda l: self.scan_button_label.set_text(self.scan_button_scan_text), None)
-        lv.async_call(lambda l: self.scan_button.add_flag(lv.obj.FLAG.CLICKABLE), None)
-        lv.async_call(lambda l: self.refresh_list(), None)
+        if self.keep_running:
+            # Schedule UI updates because different thread
+            lv.async_call(lambda l: self.scan_button_label.set_text(self.scan_button_scan_text), None)
+            lv.async_call(lambda l: self.scan_button.add_flag(lv.obj.FLAG.CLICKABLE), None)
+            lv.async_call(lambda l: self.refresh_list(), None)
 
     def start_scan_networks(self):
         print("scan_networks: Showing scanning label")
         if self.busy_scanning:
             print("Not scanning for networks because already busy_scanning.")
+        elif not self.keep_running:
+            return
         else:
             self.busy_scanning = True
             self.scan_button.remove_flag(lv.obj.FLAG.CLICKABLE)
@@ -169,7 +180,7 @@ class WiFiConfig(Activity):
                 wlan.disconnect()
                 wlan.connect(ssid,password)
                 for i in range(10):
-                    if wlan.isconnected():
+                    if wlan.isconnected() or not self.keep_running:
                         print(f"attempt_connecting: Connected to {ssid} after {i+1} seconds")
                         break
                     print(f"attempt_connecting: Waiting for connection, attempt {i+1}/10")
@@ -177,7 +188,8 @@ class WiFiConfig(Activity):
                 if not wlan.isconnected():
                     result="timeout"
             else:
-                print("Warning: not trying to connect because not havenetwork")
+                print("Warning: not trying to connect because not havenetwork, just waiting a bit...")
+                time.sleep(5)
         except Exception as e:
             print(f"attempt_connecting: Connection error: {e}")
             result=f"{e}"
@@ -186,10 +198,11 @@ class WiFiConfig(Activity):
         last_tried_ssid = ssid
         last_tried_result = result
         self.busy_connecting=False
-        # Schedule UI updates because different thread
-        lv.async_call(lambda l: self.scan_button_label.set_text(self.scan_button_scan_text), None)
-        lv.async_call(lambda l: self.scan_button.add_flag(lv.obj.FLAG.CLICKABLE), None)
-        lv.async_call(lambda l: self.refresh_list(), None)
+        if self.keep_running:
+            # Schedule UI updates because different thread
+            lv.async_call(lambda l: self.scan_button_label.set_text(self.scan_button_scan_text), None)
+            lv.async_call(lambda l: self.scan_button.add_flag(lv.obj.FLAG.CLICKABLE), None)
+            lv.async_call(lambda l: self.refresh_list(), None)
 
 
 
