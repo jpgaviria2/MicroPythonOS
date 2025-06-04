@@ -1,5 +1,5 @@
-# Seems this must be passed as:
-# USER_C_MODULE=/home/user/sources/PiggyOS/c_mpos/micropython.cmake
+# This must be passed as:
+# USER_C_MODULE=/home/user/sources/MicroPythonOS/c_mpos/micropython.cmake
 # ...to make.py when building for esp32 to ensure it gets compiled.
 
 add_library(usermod_c_mpos INTERFACE)

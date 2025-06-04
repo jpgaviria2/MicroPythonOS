@@ -1,4 +1,4 @@
-PiggyOS
+MicroPythonOS
 =======
 
 This is an operating system for microcontrollers like the ESP32.
@@ -50,43 +50,43 @@ Prepare all the sources:
 mkdir ~/sources/
 cd ~/sources/
 
-git clone https://github.com/LightningPiggy/PiggyOS.git
+git clone https://github.com/MicroPythonOS/MicroPythonOS.git
 
 git clone https://github.com/bixb922/freezeFS
-~/sources/PiggyOS/scripts/freezefs_mount_builtin.sh
+~/sources/MicroPythonOS/scripts/freezefs_mount_builtin.sh
 
 git clone https://github.com/cnadler86/micropython-camera-API
 echo 'include("~/sources/lvgl_micropython/build/manifest.py")' >> micropython-camera-API/src/manifest.py
 
 git clone https://github.com/lvgl-micropython/lvgl_micropython
-cp ~/sources/PiggyOS/patches/lv_conf.h lvgl_micropython/lib/
+cp ~/sources/MicroPythonOS/patches/lv_conf.h lvgl_micropython/lib/
 
 cd lvgl_micropython/lib/micropython
-patch -p1 < ~/sources/PiggyOS/patches/lvgl_micropython*.patch
+patch -p1 < ~/sources/MicroPythonOS/patches/lvgl_micropython*.patch
 ```
 
 Start the build:
 
 ```
-~/sources/PiggyOS/scripts/build_lvgl_micropython.sh
+~/sources/MicroPythonOS/scripts/build_lvgl_micropython.sh
 ```
 
 Or if you want to build for development, so without any preinstalled files, do:
 
 ```
-~/sources/PiggyOS/scripts/build_lvgl_micropython.sh devbuild
+~/sources/MicroPythonOS/scripts/build_lvgl_micropython.sh devbuild
 ```
 
 Now install it with:
 
 ```
-~/sources/PiggyOS/scripts/flash_over_usb.sh
+~/sources/MicroPythonOS/scripts/flash_over_usb.sh
 ```
 
 If you made a 'devbuild', then you probably want to install all files and apps manually:
 
 ```
-~/sources/PiggyOS/scripts/install.sh
+~/sources/MicroPythonOS/scripts/install.sh
 ```
 
 Release checklist
@@ -114,13 +114,13 @@ To do so, make sure you have the necessary dependencies:
 ...and then run:
 
 ```
-~/sources/PiggyOS/scripts/build_lvgl_micropython.sh unix
+~/sources/MicroPythonOS/scripts/build_lvgl_micropython.sh unix
 ```
 
 or
 
 ```
-~/sources/PiggyOS/scripts/build_lvgl_micropython.sh macOS
+~/sources/MicroPythonOS/scripts/build_lvgl_micropython.sh macOS
 ```
 
 To run it, it's recommended to symlink your ~/.micropython/lib folder into this project's lib:
