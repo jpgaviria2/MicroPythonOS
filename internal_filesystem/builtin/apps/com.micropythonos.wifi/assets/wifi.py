@@ -8,6 +8,12 @@ from mpos.apps import Activity, Intent
 import mpos.ui
 import mpos.config
 
+have_network = True
+try:
+    import network
+except Exception as e:
+    have_network = False
+
 # Global variables because they're used by multiple Activities:
 access_points={}
 last_tried_ssid = ""
@@ -20,7 +26,6 @@ class WiFi(Activity):
     scan_button_scanning_text = "Scanning..."
 
     ssids=[]
-    havenetwork = True
     keep_running = True
     busy_scanning = False
     busy_connecting = False
@@ -53,15 +58,6 @@ class WiFi(Activity):
         self.scan_button.add_event_cb(self.scan_cb,lv.EVENT.CLICKED,None)
         self.setContentView(main_screen)
 
-    def onStart(self, screen):
-        self.havenetwork = True
-        try:
-            import network
-            wlan=network.WLAN(network.STA_IF)
-            wlan.active(True)
-        except Exception as e:
-            self.havenetwork = False
-
     def onResume(self, screen):
         global access_points
         access_points = mpos.config.SharedPreferences("com.micropythonos.system.wifiservice").get_dict("access_points")
@@ -82,13 +78,15 @@ class WiFi(Activity):
             timer.set_repeat_count(1)
 
     def scan_networks_thread(self):
+        global have_network
         print("scan_networks: Scanning for Wi-Fi networks")
-        global ssids, busy_scanning, scan_button_label, scan_button
-        if self.havenetwork and not wlan.isconnected(): # restart WiFi hardware in case it's in a bad state
-            wlan.active(False)
-            wlan.active(True)
+        if have_network:
+            wlan=network.WLAN(network.STA_IF)
+            if not wlan.isconnected(): # restart WiFi hardware in case it's in a bad state
+                wlan.active(False)
+                wlan.active(True)
         try:
-            if self.havenetwork:
+            if have_network:
                 networks = wlan.scan()
                 self.ssids = list(set(n[0].decode() for n in networks))
             else:
@@ -120,6 +118,7 @@ class WiFi(Activity):
             _thread.start_new_thread(self.scan_networks_thread, ())
 
     def refresh_list(self):
+        global have_network
         print("refresh_list: Clearing current list")
         self.aplist.clean() # this causes an issue with lost taps if an ssid is clicked that has been removed
         print("refresh_list: Populating list with scanned networks")
@@ -130,20 +129,20 @@ class WiFi(Activity):
             print(f"refresh_list: Adding SSID: {ssid}")
             button=self.aplist.add_button(None,ssid)
             button.add_event_cb(lambda e, s=ssid: self.select_ssid_cb(s),lv.EVENT.CLICKED,None)
-            if self.havenetwork and wlan.isconnected() and wlan.config('essid')==ssid:
-                status="connected"
-            elif last_tried_ssid==ssid: # implies not connected because not wlan.isconnected()
-                status=last_tried_result
-            elif ssid in access_points:
-                status="saved"
-            else:
-                status=""
-            if status:
-                print(f"refresh_list: Setting status '{status}' for SSID: {ssid}")
-                label=lv.label(button)
-                label.set_text(status)
-                label.align(lv.ALIGN.RIGHT_MID,-10,0)
-    
+            status = ""
+            if have_network:
+                wlan=network.WLAN(network.STA_IF)
+                if wlan.isconnected() and wlan.config('essid')==ssid:
+                    status="connected"
+            if status != "connected":
+                if last_tried_ssid == ssid: # implies not connected because not wlan.isconnected()
+                    status=last_tried_result
+                elif ssid in access_points:
+                    status="saved"
+            label=lv.label(button)
+            label.set_text(status)
+            label.align(lv.ALIGN.RIGHT_MID,0,0)
+
     def scan_cb(self, event):
         print("scan_cb: Scan button clicked, refreshing list")
         self.start_scan_networks()
@@ -173,11 +172,12 @@ class WiFi(Activity):
             _thread.start_new_thread(self.attempt_connecting_thread, (ssid,password))
 
     def attempt_connecting_thread(self, ssid, password):
-        global last_tried_ssid, last_tried_result
+        global last_tried_ssid, last_tried_result, have_network
         print(f"attempt_connecting_thread: Attempting to connect to SSID '{ssid}' with password '{password}'")
         result="connected"
         try:
-            if self.havenetwork:
+            if have_network:
+                wlan=network.WLAN(network.STA_IF)
                 wlan.disconnect()
                 wlan.connect(ssid,password)
                 for i in range(10):
@@ -189,7 +189,7 @@ class WiFi(Activity):
                 if not wlan.isconnected():
                     result="timeout"
             else:
-                print("Warning: not trying to connect because not havenetwork, just waiting a bit...")
+                print("Warning: not trying to connect because not have_network, just waiting a bit...")
                 time.sleep(5)
         except Exception as e:
             print(f"attempt_connecting: Connection error: {e}")
@@ -209,7 +209,6 @@ class WiFi(Activity):
 
 
 class PasswordPage(Activity):
-
     # Would be good to add some validation here so the password is not too short etc...
 
     selected_ssid = None
@@ -219,7 +218,6 @@ class PasswordPage(Activity):
     keyboard=None
     connect_button=None
     cancel_button=None
-
 
     def onCreate(self):
         self.selected_ssid = self.getIntent().extras.get("selected_ssid")
@@ -268,7 +266,6 @@ class PasswordPage(Activity):
         self.setContentView(password_page)
 
     def hide_keyboard(self):
-        #global keyboard,connect_button,cancel_button
         print("keyboard_cb: READY or CANCEL or RETURN clicked, hiding keyboard")
         self.keyboard.set_height(0)
         self.keyboard.remove_flag(lv.obj.FLAG.CLICKABLE)
