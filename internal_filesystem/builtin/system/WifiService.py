@@ -1,45 +1,12 @@
 # Automatically connect to the WiFi, based on the saved networks
-
-have_network=True
-try:
-    import network
-except Exception as e:
-    have_network=False
-    print("Could not import network, have_network=False")
+# Manage concurrent accesses to the wifi (scan while connect, connect while scan etc)
+# Manage saved networks
+# This gets started in a new thread, does an autoconnect, and exits.
 
 import ujson
 import os
 import time
-
-
-access_points={}
-
-
-def load_config():
-    print("load_config: Checking for /data directory")
-    try:
-        os.stat('data')
-        print("load_config: /data exists")
-    except OSError:
-        print("load_config: Creating /data directory")
-        os.mkdir('data')
-    print("load_config: Checking for /data/com.example.wificonf directory")
-    try:
-        os.stat('data/com.example.wificonf')
-        print("load_config: /data/com.example.wificonf exists")
-    except OSError:
-        print("load_config: Creating /data/com.example.wificonf directory")
-        os.mkdir('data/com.example.wificonf')
-    print("load_config: Loading config from conf.json")
-    try:
-        with open('data/com.example.wificonf/conf.json','r') as f:
-            global access_points
-            access_points=ujson.load(f)
-            print(f"load_config: Loaded access_points: {access_points}")
-    except OSError:
-        access_points={}
-        print("load_config: No config file found, using empty access_points")
-
+import mpos.config
 
 def auto_connect():
     networks = wlan.scan()
@@ -47,7 +14,7 @@ def auto_connect():
         ssid = n[0].decode()
         print(f"auto_connect: checking ssid '{ssid}'")
         if ssid in access_points:
-            password = access_points.get(ssid)
+            password = access_points.get(ssid).get("password")
             print(f"auto_connect: attempting to connect to saved network {ssid} with password {password}")
             if attempt_connecting(ssid,password):
                 print(f"auto_connect: Connected to {ssid}")
@@ -92,19 +59,28 @@ def attempt_connecting(ssid,password):
         return False
 
 
-print("auto_connect.py running")
-load_config()
+print("WifiService.py running")
+
+have_network=True
+try:
+    import network
+except Exception as e:
+    have_network=False
+    print("Could not import network, have_network=False")
+
+# load config:
+access_points = mpos.config.SharedPreferences("com.micropythonos.system.wifiservice").get_dict("access_points")
 
 if not have_network:
-    print("auto_connect.py: no network module found, exiting...")
+    print("WifiService.py: no network module found, exiting...")
 elif len(access_points):
     wlan=network.WLAN(network.STA_IF)
     wlan.active(False) # restart WiFi hardware in case it's in a bad state
     wlan.active(True)
     if auto_connect():
-        print("auto_connect.py managed to connect.")
+        print("WifiService.py managed to connect.")
     else:
-        print("auto_connect.py did not manage to connect.")
+        print("WifiService.py did not manage to connect.")
         wlan.active(False) # disable to conserve power
 else:
-    print("auto_connect.py: not access points configured, exiting...")
+    print("WifiService.py: not access points configured, exiting...")

@@ -13,6 +13,7 @@ access_points={}
 last_tried_ssid = ""
 last_tried_result = ""
 
+# This is basically the wifi settings app
 class WiFi(Activity):
 
     scan_button_scan_text = "Rescan"
@@ -63,7 +64,7 @@ class WiFi(Activity):
 
     def onResume(self, screen):
         global access_points
-        access_points = mpos.config.SharedPreferences("com.micropythonos.wifi").get_dict("access_points")
+        access_points = mpos.config.SharedPreferences("com.micropythonos.system.wifiservice").get_dict("access_points")
         self.keep_running = True
         if len(self.ssids) == 0:
             self.start_scan_networks()
@@ -308,7 +309,7 @@ class PasswordPage(Activity):
         print(f"connect_cb: Got password: {password}")
         self.setPassword(self.selected_ssid, password)
         print(f"connect_cb: Updated access_points: {access_points}")
-        editor = mpos.config.SharedPreferences("com.micropythonos.wifi").edit()
+        editor = mpos.config.SharedPreferences("com.micropythonos.system.wifiservice").edit()
         editor.put_dict("access_points", access_points)
         editor.commit()
         self.setResult(True, {"ssid": self.selected_ssid, "password": password})
