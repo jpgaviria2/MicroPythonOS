@@ -25,7 +25,7 @@ def execute_script(script_source, is_file, cwd=None, classname=None):
     try:
         if is_file:
             print(f"Thread {thread_id}: reading script from file {script_source}")
-            with open(script_source, 'r') as f: # TODO: check if file exists first?
+            with open(script_source, 'r') as f: # No need to check if it exists as exceptions are caught
                 script_source = f.read()
         script_globals = {
             'lv': lv,

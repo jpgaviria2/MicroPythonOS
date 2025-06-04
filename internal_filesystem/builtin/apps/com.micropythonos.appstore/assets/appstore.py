@@ -29,7 +29,9 @@ class AppStore(Activity):
         self.please_wait_label.center()
         self.setContentView(self.main_screen)
 
-    def onStart(self, screen):
+    def onResume(self, screen):
+        if len(self.apps):
+            return
         try:
             import network
         except Exception as e:
@@ -46,6 +48,7 @@ class AppStore(Activity):
         print("appstore.py ending")
 
     def download_app_index(self, json_url):
+        #time.sleep(5)
         try:
             response = requests.get(json_url, timeout=10)
         except Exception as e:
