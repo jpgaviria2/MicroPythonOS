@@ -3,6 +3,7 @@ import lvgl as lv
 import uio
 import ujson
 import uos
+import utime # for timing calls
 
 import _thread
 import traceback
@@ -19,6 +20,7 @@ def good_stack_size():
 
 # Run the script in the current thread:
 def execute_script(script_source, is_file, cwd=None, classname=None):
+    import utime # for timing read and compile
     thread_id = _thread.get_ident()
     compile_name = 'script' if not is_file else script_source
     print(f"Thread {thread_id}: executing script with cwd: {cwd}")
@@ -26,7 +28,10 @@ def execute_script(script_source, is_file, cwd=None, classname=None):
         if is_file:
             print(f"Thread {thread_id}: reading script from file {script_source}")
             with open(script_source, 'r') as f: # No need to check if it exists as exceptions are caught
+                start_time = utime.ticks_ms()
                 script_source = f.read()
+                read_time = utime.ticks_diff(utime.ticks_ms(), start_time)
+                print(f"execute_script: reading script_source took {read_time}ms")
         script_globals = {
             'lv': lv,
             '__name__': "__main__"
@@ -37,8 +42,14 @@ def execute_script(script_source, is_file, cwd=None, classname=None):
         if cwd:
             sys.path.append(cwd)
         try:
+            start_time = utime.ticks_ms()
             compiled_script = compile(script_source, compile_name, 'exec')
+            compile_time = utime.ticks_diff(utime.ticks_ms(), start_time)
+            print(f"execute_script: compiling script_source took {compile_time}ms")
+            start_time = utime.ticks_ms()
             exec(compiled_script, script_globals)
+            end_time = utime.ticks_diff(utime.ticks_ms(), start_time)
+            print(f"apps.py execute_script: exec took {end_time}ms")
             # Introspect globals
             #classes = {k: v for k, v in script_globals.items() if isinstance(v, type)}
             #functions = {k: v for k, v in script_globals.items() if callable(v) and not isinstance(v, type)}
@@ -49,7 +60,10 @@ def execute_script(script_source, is_file, cwd=None, classname=None):
             if classname:
                 main_activity = script_globals.get(classname)
                 if main_activity:
+                    start_time = utime.ticks_ms()
                     Activity.startActivity(None, Intent(activity_class=main_activity))
+                    end_time = utime.ticks_diff(utime.ticks_ms(), start_time)
+                    print(f"execute_script: Activity.startActivity took {end_time}ms")
                 else:
                     print("Warning: could not find main_activity")
         except Exception as e:
@@ -102,6 +116,8 @@ def start_app_by_name(app_name, is_launcher=False):
 
 def start_app(app_dir, is_launcher=False):
     print(f"main.py start_app({app_dir},{is_launcher})")
+    import utime
+    start_time = utime.ticks_ms()
     mpos.ui.set_foreground_app(app_dir) # would be better to store only the app name...
     manifest_path = f"{app_dir}/META-INF/MANIFEST.JSON"
     app = mpos.apps.parse_manifest(manifest_path)
@@ -117,6 +133,8 @@ def start_app(app_dir, is_launcher=False):
         mpos.ui.open_bar()
     else:
         mpos.ui.close_bar()
+    end_time = utime.ticks_diff(utime.ticks_ms(), start_time)
+    print(f"start_app() took {end_time}ms")
 
 def restart_launcher():
     mpos.ui.empty_screen_stack()
@@ -326,7 +344,10 @@ class ActivityNavigator:
         activity = intent.activity_class()
         activity.intent = intent
         activity._result_callback = result_callback  # Pass callback to activity
+        start_time = utime.ticks_ms()
         activity.onCreate()
+        end_time = utime.ticks_diff(utime.ticks_ms(), start_time)
+        print(f"apps.py _launch_activity: activity.onCreate took {end_time}ms")
         return activity
 
     @staticmethod

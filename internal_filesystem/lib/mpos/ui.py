@@ -1,3 +1,5 @@
+import utime # for timing calls
+
 import lvgl as lv
 import mpos.apps
 
@@ -488,10 +490,21 @@ def setContentView(new_activity, new_screen):
     screen_stack.append((new_activity, new_screen))
     close_top_layer_msgboxes() # otherwise they remain
     if new_activity:
+        start_time = utime.ticks_ms()
         new_activity.onStart(new_screen)  # Initialize UI elements
+        end_time = utime.ticks_diff(utime.ticks_ms(), start_time)
+        print(f"ui.py setContentView: new_activity.onStart took {end_time}ms")
+
+    start_time = utime.ticks_ms()
     lv.screen_load(new_screen)
+    end_time = utime.ticks_diff(utime.ticks_ms(), start_time)
+    print(f"ui.py setContentView: screen_load took {end_time}ms")
+
     if new_activity:
+        start_time = utime.ticks_ms()
         new_activity.onResume(new_screen)  # Screen is now active
+        end_time = utime.ticks_diff(utime.ticks_ms(), start_time)
+        print(f"ui.py setContentView: new_activity.onResume took {end_time}ms")
 
 
 def back_screen():
