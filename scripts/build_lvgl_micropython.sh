@@ -40,7 +40,10 @@ elif [ "$target" == "unix" -o "$target" == "macos" ]; then
 		manifest="FROZEN_MANIFEST=/home/user/sources/MicroPythonOS/manifest_unix.py"
 	fi
 	# build for desktop
-	python3 make.py "$target" DISPLAY=sdl_display INDEV=sdl_pointer INDEV=sdl_keyboard "$manifest"
+	#python3 make.py "$target"  DISPLAY=sdl_display INDEV=sdl_pointer INDEV=sdl_keyboard "$manifest"
+	# LV_CFLAGS are passed to USER_C_MODULES
+	# STRIP= makes it so that debug symbols are kept
+	python3 make.py "$target" LV_CFLAGS="-g -O0 -ggdb" STRIP=  DISPLAY=sdl_display INDEV=sdl_pointer INDEV=sdl_keyboard "$manifest"
 else
 	echo "invalid target $target"
 fi
