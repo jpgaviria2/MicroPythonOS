@@ -48,9 +48,8 @@ class OSUpdate(Activity):
 
     def show_update_info(self):
         self.status_label.set_text("Checking for OS updates...")
-        # URL of the JSON file
-        url = "http://demo.lnpiggy.com:2121/osupdate.json"  # Adjust if the actual JSON URL differs
-        print(f"osudpate.py: fetching {url}")
+        url = "https://updates.micropythonos.com/osupdate.json"
+        print(f"OSUpdate: fetching {url}")
         try:
             print("doing requests.get()")
             # Download the JSON

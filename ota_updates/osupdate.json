@@ -1,5 +1,5 @@
 {
-"version": "0.0.3",
-"download_url": "http://demo.lnpiggy.com:2121/osupdate_0.0.3.bin",
-"changelog": "- appstore: add 'update' button if a new version of an app is available\n- appstore: add 'restore' button to restore updated built-in apps to their original built-in version\n- launcher: don't show launcher apps and sort alphabetically\n- osupdate: show info about update and 'Start OS Update' before updating\n- wificonf: scan and connect to wifi in background thread so app stays responsive\n- introduce MANIFEST.JSON format for apps\n- improve notification bar behavior"
+"version": "0.0.4",
+"download_url": "https://updates.micropythonos.com/releases/waveshare_ESP32-S3-Touch-LCD-2_0.0.4.bin",
+"changelog": "Huge amount of changes, too many to name!"
 }
