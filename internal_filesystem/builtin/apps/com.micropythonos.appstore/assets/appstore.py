@@ -47,11 +47,6 @@ class AppStore(Activity):
             _thread.stack_size(mpos.apps.good_stack_size())
             _thread.start_new_thread(self.download_app_index, (self.app_index_url,))
 
-    def onDestroy(self, screen):
-        print("appstore.py destroyed, restarting launcher to refresh...")
-        mpos.apps.restart_launcher() # refresh the launcher
-        print("appstore.py ending")
-
     def download_app_index(self, json_url):
         #time.sleep(5)
         try:
