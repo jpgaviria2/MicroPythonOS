@@ -35,7 +35,10 @@ class SharedPreferences:
 
     def get_string(self, key, default=None):
         """Retrieve a string value for the given key, with a default if not found."""
-        return str(self.data.get(key, default))
+        to_return = self.data.get(key)
+        if not to_return and default:
+            to_return = default
+        return to_return
 
     def get_int(self, key, default=0):
         """Retrieve an integer value for the given key, with a default if not found."""
