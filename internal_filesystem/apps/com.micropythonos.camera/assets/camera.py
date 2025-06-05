@@ -107,12 +107,12 @@ class Camera(Activity):
         if self.cam:
             self.image.set_rotation(900) # internal camera is rotated 90 degrees
         else:
-            print("camtest.py: no internal camera found, trying webcam on /dev/video0")
+            print("camera.py: no internal camera found, trying webcam on /dev/video0")
             try:
                 self.cam = webcam.init("/dev/video0")
                 self.use_webcam = True
             except Exception as e:
-                print(f"camtest.py: webcam exception: {e}")
+                print(f"camera.py: webcam exception: {e}")
         if self.cam:
             print("Camera initialized, continuing...")
             self.capture_timer = lv.timer_create(self.try_capture, 100, None)
@@ -123,20 +123,20 @@ class Camera(Activity):
                 self.qr_button.remove_flag(lv.obj.FLAG.HIDDEN)
                 self.snap_button.remove_flag(lv.obj.FLAG.HIDDEN)
         else:
-            print("No camera found, stopping camtest.py")
+            print("No camera found, stopping camera.py")
             if self.scanqr_mode:
                 self.finish()
 
 
     def onStop(self, screen):
-        print("camtest.py backgrounded, cleaning up...")
+        print("camera.py backgrounded, cleaning up...")
         if self.capture_timer:
             self.capture_timer.delete()
         if self.use_webcam:
             webcam.deinit(self.cam)
         elif self.cam:
             self.cam.deinit()
-        print("camtest.py cleanup done.")
+        print("camera.py cleanup done.")
 
     def qrdecode_one(self):
         try:
@@ -172,11 +172,11 @@ class Camera(Activity):
         except OSError:
             pass
         try:
-            os.mkdir("data/com.example.camtest")
+            os.mkdir("data/images")
         except OSError:
             pass
         if self.current_cam_buffer is not None:
-            filename="data/com.example.camtest/capture.raw"
+            filename="data/images/camera_capture.raw"
             try:
                 with open(filename, 'wb') as f:
                     f.write(self.current_cam_buffer)
