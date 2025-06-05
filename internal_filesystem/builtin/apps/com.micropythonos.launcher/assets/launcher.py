@@ -17,6 +17,8 @@ import mpos.ui
 
 class Launcher(mpos.apps.Activity):
 
+    seen_base_names = set()
+
     def onCreate(self):
         print("launcher.py onCreate()")
         main_screen = lv.obj()
@@ -29,30 +31,18 @@ class Launcher(mpos.apps.Activity):
         main_screen.set_flex_flow(lv.FLEX_FLOW.ROW_WRAP)
         self.setContentView(main_screen)
 
+    def onResume(self, screen):
+        redraw = False
+        app_list = []
+        # Check and collect subdirectories from existing directories
+        apps_dir = "apps"
+        apps_dir_builtin = "builtin/apps"
         # Grid parameters
         icon_size = 64  # Adjust based on your display
         label_height = 24
         iconcont_width = icon_size + label_height
         iconcont_height = icon_size + label_height
-        
-        import time
-        start = time.ticks_ms()
-        
-        def load_icon(icon_path):
-            with open(icon_path, 'rb') as f:
-                image_data = f.read()
-                image_dsc = lv.image_dsc_t({
-                    'data_size': len(image_data),
-                    'data': image_data
-                })
-            return image_dsc
-        
-        # Check and collect subdirectories from existing directories
-        apps_dir = "apps"
-        apps_dir_builtin = "builtin/apps"
-        seen_base_names = set()
-        app_list = []
-        
+
         # Check and collect unique subdirectories
         for dir_path in [apps_dir, apps_dir_builtin]:
             try:
@@ -62,17 +52,29 @@ class Launcher(mpos.apps.Activity):
                         #print(f"full_path: {full_path}")
                         if uos.stat(full_path)[0] & 0x4000:  # Check if it's a directory
                             base_name = d
-                            if base_name not in seen_base_names:  # Avoid duplicates
-                                seen_base_names.add(base_name)
-                                #print(f"seen_base_names: {seen_base_names}")
+                            if base_name not in self.seen_base_names:  # Avoid duplicates
+                                self.seen_base_names.add(base_name)
+                                #print(f"seen_base_names: {self.seen_base_names}")
                                 app = mpos.apps.parse_manifest(f"{full_path}/META-INF/MANIFEST.JSON")
                                 if app.category != "launcher":  # Skip launchers
                                     main_launcher = mpos.apps.find_main_launcher_activity(app)
                                     if main_launcher:
+                                        redraw = True
                                         app_list.append((app.name, full_path))
             except OSError:
                 pass
         
+        if not redraw:
+            print("Launcher doesn't need redraw, done.")
+            return
+        else:
+            print("Launcher redrawing...")
+
+        import time
+        start = time.ticks_ms()
+        
+        screen.clean()
+
         # Sort apps alphabetically by app.name
         app_list.sort(key=lambda x: x[0].lower())  # Case-insensitive sorting
         
@@ -80,7 +82,7 @@ class Launcher(mpos.apps.Activity):
         for app_name, app_dir_fullpath in app_list:
             print(f"Adding app {app_name} from {app_dir_fullpath}")
             # Create container for each app (icon + label)
-            app_cont = lv.obj(main_screen)
+            app_cont = lv.obj(screen)
             app_cont.set_size(iconcont_width, iconcont_height)
             app_cont.set_style_border_width(0, 0)
             app_cont.set_style_pad_all(0, 0)
@@ -89,12 +91,12 @@ class Launcher(mpos.apps.Activity):
             icon_path = f"{app_dir_fullpath}/res/mipmap-mdpi/icon_64x64.png"
             image = lv.image(app_cont)
             try:
-                image.set_src(load_icon(icon_path))
+                image.set_src(Launcher.load_icon(icon_path))
             except Exception as e:
                 print(f"Error loading icon {icon_path}: {e} - loading default icon")
                 icon_path = "builtin/res/mipmap-mdpi/default_icon_64x64.png"
                 try:
-                    image.set_src(load_icon(icon_path))
+                    image.set_src(Launcher.load_icon(icon_path))
                 except Exception as e:
                     print(f"Error loading default icon {icon_path}: {e} - using symbol")
                     image.set_src(lv.SYMBOL.STOP)
@@ -109,4 +111,14 @@ class Launcher(mpos.apps.Activity):
             app_cont.add_event_cb(lambda e, path=app_dir_fullpath: mpos.apps.start_app(path), lv.EVENT.CLICKED, None)
         
         end = time.ticks_ms()
-        print(f"Displaying all icons took: {end-start}ms")
+        print(f"Redraw icons took: {end-start}ms")
+
+    @staticmethod
+    def load_icon(icon_path):
+        with open(icon_path, 'rb') as f:
+            image_data = f.read()
+            image_dsc = lv.image_dsc_t({
+                'data_size': len(image_data),
+                'data': image_data
+            })
+        return image_dsc
