@@ -32,6 +32,125 @@ notification_bar = None
 foreground_app_name=None
 
 
+ lass WidgetAnimator:
+    def __init__(self):
+        self.animations = {}  # Store animations for each widget
+
+    # show_widget and hide_widget could have a (lambda) callback that sets the final state (eg: drawer_open) at the end
+
+    def show_widget(self, widget, anim_type="fade", duration=500, delay=0):
+        """Show a widget with an animation (fade or slide)."""
+        # Clear HIDDEN flag to make widget visible for animation
+        widget.remove_flag(lv.obj.FLAG.HIDDEN)
+
+        if anim_type == "fade":
+            # Create fade-in animation (opacity from 0 to 255)
+            anim = lv.anim_t()
+            anim.init()
+            anim.set_var(widget)
+            anim.set_values(0, 255)
+            anim.set_time(duration)
+            anim.set_delay(delay)
+            anim.set_custom_exec_cb(lambda anim, value: widget.set_style_opacity(value, 0))
+            anim.set_path_cb(lv.anim_t.path_ease_in_out)
+            # Ensure opacity is reset after animation
+            anim.set_completed_cb(lambda *args: widget.set_style_opacity(255, 0))
+        elif anim_type == "slide_down":
+            print("doing slide_down")
+            # Create slide-down animation (y from -height to original y)
+            original_y = widget.get_y()
+            height = widget.get_height()
+            anim = lv.anim_t()
+            anim.init()
+            anim.set_var(widget)
+            anim.set_values(original_y - height, original_y)
+            anim.set_time(duration)
+            anim.set_delay(delay)
+            anim.set_custom_exec_cb(lambda anim, value: widget.set_y(value))
+            anim.set_path_cb(lv.anim_t.path_ease_in_out)
+            # Reset y position after animation
+            anim.set_completed_cb(lambda *args: widget.set_y(original_y))
+        elif anim_type == "slide_up":
+            # Create slide-up animation (y from +height to original y)
+            original_y = widget.get_y()
+            height = widget.get_height()
+            anim = lv.anim_t()
+            anim.init()
+            anim.set_var(widget)
+            anim.set_values(original_y + height, original_y)
+            anim.set_time(duration)
+            anim.set_delay(delay)
+            anim.set_custom_exec_cb(lambda anim, value: widget.set_y(value))
+            anim.set_path_cb(lv.anim_t.path_ease_in_out)
+            # Reset y position after animation
+            anim.set_completed_cb(lambda *args: widget.set_y(original_y))
+
+        # Store and start animation
+        self.animations[widget] = anim
+        anim.start()
+
+    def hide_widget(self, widget, anim_type="fade", duration=500, delay=0):
+        """Hide a widget with an animation (fade or slide)."""
+        if anim_type == "fade":
+            # Create fade-out animation (opacity from 255 to 0)
+            anim = lv.anim_t()
+            anim.init()
+            anim.set_var(widget)
+            anim.set_values(255, 0)
+            anim.set_time(duration)
+            anim.set_delay(delay)
+            anim.set_custom_exec_cb(lambda anim, value: widget.set_style_opacity(value, 0))
+            anim.set_path_cb(lv.anim_t.path_ease_in_out)
+            # Set HIDDEN flag after animation
+            anim.set_completed_cb(lambda *args: self.hide_complete_cb(widget, original_y))
+        elif anim_type == "slide_down":
+            # Create slide-down animation (y from original y to +height)
+            original_y = widget.get_y()
+            height = widget.get_height()
+            anim = lv.anim_t()
+            anim.init()
+            anim.set_var(widget)
+            anim.set_values(original_y, original_y + height)
+            anim.set_time(duration)
+            anim.set_delay(delay)
+            anim.set_custom_exec_cb(lambda anim, value: widget.set_y(value))
+            anim.set_path_cb(lv.anim_t.path_ease_in_out)
+            # Set HIDDEN flag after animation
+            anim.set_completed_cb(lambda *args: self.hide_complete_cb(widget, original_y))
+        elif anim_type == "slide_up":
+            print("hide with slide_up")
+            # Create slide-up animation (y from original y to -height)
+            original_y = widget.get_y()
+            height = widget.get_height()
+            anim = lv.anim_t()
+            anim.init()
+            anim.set_var(widget)
+            anim.set_values(original_y, original_y - height)
+            anim.set_time(duration)
+            anim.set_delay(delay)
+            anim.set_custom_exec_cb(lambda anim, value: widget.set_y(value))
+            anim.set_path_cb(lv.anim_t.path_ease_in_out)
+            # Set HIDDEN flag after animation
+            anim.set_completed_cb(lambda *args: self.hide_complete_cb(widget, original_y))
+
+        # Store and start animation
+        self.animations[widget] = anim
+        anim.start()
+
+    def hide_complete_cb(self, widget, original_y):
+        #print("hide_complete_cb")
+        widget.add_flag(lv.obj.FLAG.HIDDEN)
+        widget.set_y(original_y)
+
+
+    def stop_animation(self, widget):
+        """Stop any running animation for the widget."""
+        if widget in self.animations:
+            self.animations[widget].delete()
+            del self.animations[widget]
+
+animator = WidgetAnimator()
+
 def get_pointer_xy():
     indev = lv.indev_active()
     if indev:
@@ -76,13 +195,13 @@ def open_drawer():
     if not drawer_open:
         open_bar()
         drawer_open=True
-        drawer.remove_flag(lv.obj.FLAG.HIDDEN)
+        animator.show_widget(drawer, anim_type="slide_down", duration=1000, delay=0)
 
 def close_drawer(to_launcher=False):
     global drawer_open, drawer, foreground_app_name
     if drawer_open:
         drawer_open=False
-        drawer.add_flag(lv.obj.FLAG.HIDDEN)
+        animator.hide_widget(drawer, anim_type="slide_up", duration=1000, delay=0)
         if not to_launcher and not mpos.apps.is_launcher(foreground_app_name):
             print(f"close_drawer: also closing bar because to_launcher is {to_launcher} and foreground_app_name is {foreground_app_name}")
             close_bar()
@@ -259,7 +378,7 @@ def create_drawer(display=None):
     drawer.set_size(lv.pct(100),lv.pct(90))
     drawer.set_pos(0,NOTIFICATION_BAR_HEIGHT)
     drawer.set_scroll_dir(lv.DIR.NONE)
-    drawer.set_style_pad_all(0, 0)
+    drawer.set_style_pad_all(15, 0)
     drawer.set_style_border_width(0, 0)
     drawer.set_style_radius(0, 0)
     drawer.add_flag(lv.obj.FLAG.HIDDEN)
@@ -267,13 +386,13 @@ def create_drawer(display=None):
     drawer.add_event_cb(drawer_swipe_cb, lv.EVENT.PRESSED, None)
     drawer.add_event_cb(drawer_swipe_cb, lv.EVENT.RELEASED, None)    
     slider_label=lv.label(drawer)
-    slider_label.set_text(f"{100}%") # TODO: restore this from configuration
+    slider_label.set_text(f"{100}%") # TODO: restore this from configuration?
     slider_label.align(lv.ALIGN.TOP_MID,0,lv.pct(4))
     slider=lv.slider(drawer)
     slider.set_range(1,100)
     slider.set_value(100,False)
     slider.set_width(lv.pct(80))
-    slider.align_to(slider_label,lv.ALIGN.OUT_BOTTOM_MID,0,lv.pct(6))
+    slider.align_to(slider_label,lv.ALIGN.OUT_BOTTOM_MID,0,10)
     def slider_event(e):
         value=slider.get_value()
         slider_label.set_text(f"{value}%")
@@ -631,3 +750,5 @@ def handle_top_swipe():
     #rect.add_flag(lv.obj.FLAG.GESTURE_BUBBLE)  # Allow dragging
     #rect.add_event_cb(drag_event_cb, lv.EVENT.PRESSING, None)
     rect.add_event_cb(top_swipe_cb, lv.EVENT.RELEASED, None)
+
+
