@@ -496,7 +496,7 @@ def setContentView(new_activity, new_screen):
         print(f"ui.py setContentView: new_activity.onStart took {end_time}ms")
 
     start_time = utime.ticks_ms()
-    lv.screen_load(new_screen)
+    lv.screen_load_anim(new_screen, lv.SCR_LOAD_ANIM.OVER_LEFT, 500, 0, False)
     end_time = utime.ticks_diff(utime.ticks_ms(), start_time)
     print(f"ui.py setContentView: screen_load took {end_time}ms")
 
@@ -508,28 +508,24 @@ def setContentView(new_activity, new_screen):
 
 
 def back_screen():
+    print("back_screen() running")
     global screen_stack
     if len(screen_stack) <= 1:
         print("Warning: can't go back because screen_stack is empty.")
         return False  # No previous screen
     #close_top_layer_msgboxes() # would be nicer to "cancel" all input events
-    print("Loading previous screen")
     current_activity, current_screen = screen_stack.pop()  # Remove current screen
     if current_activity:
         current_activity.onPause(current_screen)
         current_activity.onStop(current_screen)
         current_activity.onDestroy(current_screen)
-    # System deletes the screen
-    if current_screen:
-        current_screen.delete()
-        current_screen = None
     prev_activity, prev_screen = screen_stack[-1] # load previous screen
-    lv.screen_load(prev_screen)
+    print("loading prev_screen with animation")
+    lv.screen_load_anim(prev_screen, lv.SCR_LOAD_ANIM.OVER_RIGHT, 500, 0, True) #  True means delete the old screen, which is fine as we're going back and current_activity.onDestroy() was called
     if prev_activity:
         prev_activity.onResume(prev_screen)
     if len(screen_stack) == 1:
         open_bar()
-
 
 
 # Would be better to somehow save other events, like clicks, and pass them down to the layers below if released with x < 60
