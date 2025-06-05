@@ -13,6 +13,7 @@ except Exception as e:
     print(f"Info: could not import webcam module: {e}")
 
 from mpos.apps import Activity
+import mpos.time
 
 class Camera(Activity):
 
@@ -176,7 +177,7 @@ class Camera(Activity):
         except OSError:
             pass
         if self.current_cam_buffer is not None:
-            filename="data/images/camera_capture.raw"
+            filename=f"data/images/camera_capture_{mpos.time.epoch_seconds()}.raw"
             try:
                 with open(filename, 'wb') as f:
                     f.write(self.current_cam_buffer)
