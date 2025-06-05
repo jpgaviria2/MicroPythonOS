@@ -39,12 +39,9 @@ class OSUpdate(Activity):
         
         if not network_connected:
             self.status_label.set_text("Error: WiFi is not connected.")
-            time.sleep(10)
         else:
             print("Showing update info...")
             self.show_update_info()
-        
-        print("osupdate.py finished")
 
     def onStop(self, screen):
         self.keep_running = False # this is checked by the update_with_lvgl thread
