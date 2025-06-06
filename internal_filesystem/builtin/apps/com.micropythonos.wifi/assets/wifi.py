@@ -199,6 +199,9 @@ class WiFi(Activity):
         print(f"Connecting to {ssid} got result: {result}")
         last_tried_ssid = ssid
         last_tried_result = result
+        # also do a time sync, otherwise some apps (Nostr Wallet Connect) won't work:
+        if have_network and wlan.isconnected():
+            mpos.time.sync_time()
         self.busy_connecting=False
         if self.keep_running:
             # Schedule UI updates because different thread
