@@ -30,7 +30,7 @@ class SharedPreferences:
                 self.data = ujson.load(f)
                 print(f"load: Loaded preferences: {self.data}")
         except Exception as e:
-            print(f"load: Got exception {e}, assuming empty or non-existent preferences.")
+            print(f"SharedPreferences.load found not preferences: {e}")
             self.data = {}
 
     def get_string(self, key, default=None):
