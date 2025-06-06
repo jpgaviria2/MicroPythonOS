@@ -69,7 +69,8 @@ class AppStore(Activity):
                 self.apps = [app for app in self.apps if not (app.name in seen or seen.add(app.name))]
                 # Sort apps by app.name
                 self.apps.sort(key=lambda x: x.name.lower())  # Use .lower() for case-insensitive sorting
-                self.please_wait_label.add_flag(lv.obj.FLAG.HIDDEN)
+                time.sleep_ms(100)
+                lv.async_call(lambda l: self.please_wait_label.add_flag(lv.obj.FLAG.HIDDEN), None)
                 lv.async_call(lambda l: self.create_apps_list(), None)
             except Exception as e:
                 print(f"ERROR: could not parse reponse.text JSON: {e}")
