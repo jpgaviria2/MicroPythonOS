@@ -5,9 +5,9 @@ import lvgl as lv
 import _thread
 
 from mpos.apps import Activity, Intent
-import mpos.ui.anim
-import mpos.ui
+
 import mpos.config
+import mpos.ui.anim
 
 have_network = True
 try:
@@ -220,8 +220,6 @@ class PasswordPage(Activity):
     connect_button=None
     cancel_button=None
 
-    animator = mpos.ui.anim.WidgetAnimator()
-
     def onCreate(self):
         self.selected_ssid = self.getIntent().extras.get("selected_ssid")
         print("PasswordPage: Creating new password page")
@@ -269,7 +267,7 @@ class PasswordPage(Activity):
 
     def hide_keyboard(self):
         print("keyboard_cb: READY or CANCEL or RETURN clicked, hiding keyboard")
-        self.animator.hide_widget(self.keyboard, anim_type="fade", duration=500, delay=0)
+        mpos.ui.anim.smooth_hide(self.keyboard)
         print("keyboard_cb: Showing Connect and Cancel buttons")
         self.connect_button.remove_flag(lv.obj.FLAG.HIDDEN)
         self.cancel_button.remove_flag(lv.obj.FLAG.HIDDEN)
@@ -296,7 +294,7 @@ class PasswordPage(Activity):
         self.connect_button.add_flag(lv.obj.FLAG.HIDDEN)
         self.cancel_button.add_flag(lv.obj.FLAG.HIDDEN)
         print("password_ta_cb: Showing keyboard")
-        self.animator.show_widget(self.keyboard, anim_type="fade", duration=500, delay=0) # slide_up causes it to be placed way too low...
+        mpos.ui.anim.smooth_show(self.keyboard)
     
     
     def connect_cb(self, event):

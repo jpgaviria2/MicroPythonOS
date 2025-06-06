@@ -1,12 +1,20 @@
 import lvgl as lv
 
 class WidgetAnimator:
-    def __init__(self):
-        self.animations = {}  # Store animations for each widget
+
+#    def __init__(self):
+#        self.animations = {}  # Store animations for each widget
+
+#    def stop_animation(self, widget):
+#        """Stop any running animation for the widget."""
+#        if widget in self.animations:
+#            self.animations[widget].delete()
+#            del self.animations[widget]
+
 
     # show_widget and hide_widget could have a (lambda) callback that sets the final state (eg: drawer_open) at the end
-
-    def show_widget(self, widget, anim_type="fade", duration=500, delay=0):
+    @staticmethod
+    def show_widget(widget, anim_type="fade", duration=500, delay=0):
         """Show a widget with an animation (fade or slide)."""
         # Clear HIDDEN flag to make widget visible for animation
         widget.remove_flag(lv.obj.FLAG.HIDDEN)
@@ -55,10 +63,11 @@ class WidgetAnimator:
             anim.set_completed_cb(lambda *args: widget.set_y(original_y))
 
         # Store and start animation
-        self.animations[widget] = anim
+        #self.animations[widget] = anim
         anim.start()
 
-    def hide_widget(self, widget, anim_type="fade", duration=500, delay=0):
+    @staticmethod
+    def hide_widget(widget, anim_type="fade", duration=500, delay=0):
         """Hide a widget with an animation (fade or slide)."""
         if anim_type == "fade":
             # Create fade-out animation (opacity from 255 to 0)
@@ -71,7 +80,7 @@ class WidgetAnimator:
             anim.set_custom_exec_cb(lambda anim, value: widget.set_style_opa(value, 0))
             anim.set_path_cb(lv.anim_t.path_ease_in_out)
             # Set HIDDEN flag after animation
-            anim.set_completed_cb(lambda *args: self.hide_complete_cb(widget))
+            anim.set_completed_cb(lambda *args: WidgetAnimator.hide_complete_cb(widget))
         elif anim_type == "slide_down":
             # Create slide-down animation (y from original y to +height)
             # Seems to cause scroll bars to be added somehow if done to a keyboard at the bottom of the screen...
@@ -86,7 +95,7 @@ class WidgetAnimator:
             anim.set_custom_exec_cb(lambda anim, value: widget.set_y(value))
             anim.set_path_cb(lv.anim_t.path_ease_in_out)
             # Set HIDDEN flag after animation
-            anim.set_completed_cb(lambda *args: self.hide_complete_cb(widget))
+            anim.set_completed_cb(lambda *args: WidgetAnimator.hide_complete_cb(widget))
         elif anim_type == "slide_up":
             print("hide with slide_up")
             # Create slide-up animation (y from original y to -height)
@@ -101,21 +110,22 @@ class WidgetAnimator:
             anim.set_custom_exec_cb(lambda anim, value: widget.set_y(value))
             anim.set_path_cb(lv.anim_t.path_ease_in_out)
             # Set HIDDEN flag after animation
-            anim.set_completed_cb(lambda *args: self.hide_complete_cb(widget))
+            anim.set_completed_cb(lambda *args: WidgetAnimator.hide_complete_cb(widget))
 
         # Store and start animation
-        self.animations[widget] = anim
+        #self.animations[widget] = anim
         anim.start()
 
-    def hide_complete_cb(self, widget):
+    @staticmethod
+    def hide_complete_cb(widget):
         #print("hide_complete_cb")
         widget.add_flag(lv.obj.FLAG.HIDDEN)
         #if original_y:
         #    widget.set_y(original_y) # in case it shifted slightly due to rounding etc
 
 
-    def stop_animation(self, widget):
-        """Stop any running animation for the widget."""
-        if widget in self.animations:
-            self.animations[widget].delete()
-            del self.animations[widget]
+def smooth_show(widget):
+    WidgetAnimator.show_widget(widget, anim_type="fade", duration=500, delay=0)
+
+def smooth_hide(widget):
+    WidgetAnimator.hide_widget(widget, anim_type="fade", duration=500, delay=0)
