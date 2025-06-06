@@ -17,24 +17,22 @@ import mpos.ui
 
 class Launcher(mpos.apps.Activity):
 
-    seen_base_names = set()
-
     def onCreate(self):
         print("launcher.py onCreate()")
         main_screen = lv.obj()
         main_screen.set_style_border_width(0, 0)
         main_screen.set_style_radius(0, 0)
         main_screen.set_pos(0, mpos.ui.NOTIFICATION_BAR_HEIGHT) # leave some margin for the notification bar
-        main_screen.set_size(lv.pct(100), lv.pct(100))
-        main_screen.set_style_pad_hor(5, 0)
+        #main_screen.set_size(lv.pct(100), lv.pct(100))
+        main_screen.set_style_pad_hor(mpos.ui.pct_of_display_width(2), 0)
         main_screen.set_style_pad_ver(mpos.ui.NOTIFICATION_BAR_HEIGHT, 0)
         main_screen.set_flex_flow(lv.FLEX_FLOW.ROW_WRAP)
         self.setContentView(main_screen)
 
     def onResume(self, screen):
-        redraw = False
         app_list = []
-        # Check and collect subdirectories from existing directories
+        seen_base_names = set()
+       # Check and collect subdirectories from existing directories
         apps_dir = "apps"
         apps_dir_builtin = "builtin/apps"
         # Grid parameters
@@ -42,6 +40,7 @@ class Launcher(mpos.apps.Activity):
         label_height = 24
         iconcont_width = icon_size + label_height
         iconcont_height = icon_size + label_height
+
 
         # Check and collect unique subdirectories
         for dir_path in [apps_dir, apps_dir_builtin]:
@@ -52,27 +51,19 @@ class Launcher(mpos.apps.Activity):
                         #print(f"full_path: {full_path}")
                         if uos.stat(full_path)[0] & 0x4000:  # Check if it's a directory
                             base_name = d
-                            if base_name not in self.seen_base_names:  # Avoid duplicates
-                                self.seen_base_names.add(base_name)
-                                #print(f"seen_base_names: {self.seen_base_names}")
+                            if base_name not in seen_base_names:  # Avoid duplicates
+                                seen_base_names.add(base_name)
                                 app = mpos.apps.parse_manifest(f"{full_path}/META-INF/MANIFEST.JSON")
                                 if app.category != "launcher":  # Skip launchers
                                     main_launcher = mpos.apps.find_main_launcher_activity(app)
                                     if main_launcher:
-                                        redraw = True
                                         app_list.append((app.name, full_path))
             except OSError:
                 pass
-        
-        if not redraw:
-            print("Launcher doesn't need redraw, done.")
-            return
-        else:
-            print("Launcher redrawing...")
 
         import time
         start = time.ticks_ms()
-        
+
         screen.clean()
 
         # Sort apps alphabetically by app.name
