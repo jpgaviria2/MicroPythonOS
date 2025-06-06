@@ -233,7 +233,8 @@ class PasswordPage(Activity):
         self.password_ta.set_size(200,30)
         self.password_ta.set_one_line(True)
         self.password_ta.align_to(label, lv.ALIGN.OUT_BOTTOM_MID, 5, 0)
-        self.password_ta.add_event_cb(self.password_ta_cb,lv.EVENT.CLICKED,None)
+        self.password_ta.add_event_cb(lambda *args: mpos.ui.anim.smooth_show(self.keyboard), lv.EVENT.CLICKED, None) # it might be focused, but keyboard hidden (because ready/cancel clicked)
+        self.password_ta.add_event_cb(lambda *args: mpos.ui.anim.smooth_hide(self.keyboard), lv.EVENT.DEFOCUSED, None)
         print("PasswordPage: Creating Connect button")
         self.connect_button=lv.button(password_page)
         self.connect_button.set_size(100,40)
@@ -258,45 +259,12 @@ class PasswordPage(Activity):
         self.keyboard=lv.keyboard(password_page)
         self.keyboard.align(lv.ALIGN.BOTTOM_MID,0,0)
         self.keyboard.set_textarea(self.password_ta)
-        self.keyboard.add_event_cb(self.keyboard_cb,lv.EVENT.READY,None)
-        self.keyboard.add_event_cb(self.keyboard_cb,lv.EVENT.CANCEL,None)
-        self.keyboard.add_event_cb(self.keyboard_value_changed_cb,lv.EVENT.VALUE_CHANGED,None)
-        self.hide_keyboard()
+        self.keyboard.add_event_cb(lambda *args: mpos.ui.anim.smooth_hide(self.keyboard), lv.EVENT.READY, None)
+        self.keyboard.add_event_cb(lambda *args: mpos.ui.anim.smooth_hide(self.keyboard), lv.EVENT.CANCEL, None)
+        self.keyboard.add_flag(lv.obj.FLAG.HIDDEN)
         print("PasswordPage: Loading password page")
         self.setContentView(password_page)
 
-    def hide_keyboard(self):
-        print("keyboard_cb: READY or CANCEL or RETURN clicked, hiding keyboard")
-        mpos.ui.anim.smooth_hide(self.keyboard)
-        print("keyboard_cb: Showing Connect and Cancel buttons")
-        self.connect_button.remove_flag(lv.obj.FLAG.HIDDEN)
-        self.cancel_button.remove_flag(lv.obj.FLAG.HIDDEN)
-    
-    def keyboard_cb(self, event):
-        #print("keyboard_cb: Keyboard event triggered")
-        code=event.get_code()
-        if code==lv.EVENT.READY or code==lv.EVENT.CANCEL:
-            self.hide_keyboard()
-    
-    def keyboard_value_changed_cb(self, event):
-        #print("keyboard value changed!")
-        #print(f"event: code={event.get_code()}, target={event.get_target()}, user_data={event.get_user_data()}, param={event.get_param()}") # event: code=32, target=<Blob>, user_data=<Blob>, param=<Blob>
-        button = self.keyboard.get_selected_button()
-        text = self.keyboard.get_button_text(button)
-        #print(f"button {button} and text {text}")
-        if text == lv.SYMBOL.NEW_LINE:
-            print("Newline key pressed, hiding keyboard...")
-            hide_keyboard()
-    
-    def password_ta_cb(self, event):
-        print("password_ta_cb: Password textarea clicked")
-        print("password_ta_cb: Hiding Connect and Cancel buttons")
-        self.connect_button.add_flag(lv.obj.FLAG.HIDDEN)
-        self.cancel_button.add_flag(lv.obj.FLAG.HIDDEN)
-        print("password_ta_cb: Showing keyboard")
-        mpos.ui.anim.smooth_show(self.keyboard)
-    
-    
     def connect_cb(self, event):
         global access_points
         print("connect_cb: Connect button clicked")
