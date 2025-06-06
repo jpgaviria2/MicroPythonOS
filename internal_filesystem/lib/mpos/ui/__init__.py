@@ -149,7 +149,7 @@ def create_notification_bar():
     notification_bar.set_size(lv.pct(100), NOTIFICATION_BAR_HEIGHT)
     notification_bar.set_pos(0, show_bar_animation_start_value)
     notification_bar.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
-    notification_bar.set_scroll_dir(lv.DIR.VER)
+    notification_bar.set_scroll_dir(lv.DIR.NONE)
     notification_bar.set_style_border_width(0, 0)
     notification_bar.set_style_radius(0, 0)
     # Time label

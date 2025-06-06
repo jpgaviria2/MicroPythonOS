@@ -5,6 +5,7 @@ import lvgl as lv
 import _thread
 
 from mpos.apps import Activity, Intent
+import mpos.ui.anim
 import mpos.ui
 import mpos.config
 
@@ -219,11 +220,12 @@ class PasswordPage(Activity):
     connect_button=None
     cancel_button=None
 
+    animator = mpos.ui.anim.WidgetAnimator()
+
     def onCreate(self):
         self.selected_ssid = self.getIntent().extras.get("selected_ssid")
         print("PasswordPage: Creating new password page")
         password_page=lv.obj()
-        password_page.set_size(lv.pct(100),lv.pct(100))
         print(f"show_password_page: Creating label for SSID: {self.selected_ssid}")
         label=lv.label(password_page)
         label.set_text(f"Password for {self.selected_ssid}")
@@ -234,18 +236,6 @@ class PasswordPage(Activity):
         self.password_ta.set_one_line(True)
         self.password_ta.align_to(label, lv.ALIGN.OUT_BOTTOM_MID, 5, 0)
         self.password_ta.add_event_cb(self.password_ta_cb,lv.EVENT.CLICKED,None)
-        pwd = self.findSavedPassword(self.selected_ssid)
-        if pwd:
-            self.password_ta.set_text(pwd)
-        self.password_ta.set_placeholder_text("Password")
-        print("PasswordPage: Creating keyboard (hidden by default)")
-        self.keyboard=lv.keyboard(password_page)
-        self.keyboard.set_size(lv.pct(100),0)
-        self.keyboard.align(lv.ALIGN.BOTTOM_LEFT,0,0)
-        self.keyboard.set_textarea(self.password_ta)
-        self.keyboard.add_event_cb(self.keyboard_cb,lv.EVENT.READY,None)
-        self.keyboard.add_event_cb(self.keyboard_cb,lv.EVENT.CANCEL,None)
-        self.keyboard.add_event_cb(self.keyboard_value_changed_cb,lv.EVENT.VALUE_CHANGED,None)
         print("PasswordPage: Creating Connect button")
         self.connect_button=lv.button(password_page)
         self.connect_button.set_size(100,40)
@@ -262,13 +252,24 @@ class PasswordPage(Activity):
         label=lv.label(self.cancel_button)
         label.set_text("Close")
         label.center()
+        pwd = self.findSavedPassword(self.selected_ssid)
+        if pwd:
+            self.password_ta.set_text(pwd)
+        self.password_ta.set_placeholder_text("Password")
+        print("PasswordPage: Creating keyboard (hidden by default)")
+        self.keyboard=lv.keyboard(password_page)
+        self.keyboard.align(lv.ALIGN.BOTTOM_MID,0,0)
+        self.keyboard.set_textarea(self.password_ta)
+        self.keyboard.add_event_cb(self.keyboard_cb,lv.EVENT.READY,None)
+        self.keyboard.add_event_cb(self.keyboard_cb,lv.EVENT.CANCEL,None)
+        self.keyboard.add_event_cb(self.keyboard_value_changed_cb,lv.EVENT.VALUE_CHANGED,None)
+        self.hide_keyboard()
         print("PasswordPage: Loading password page")
         self.setContentView(password_page)
 
     def hide_keyboard(self):
         print("keyboard_cb: READY or CANCEL or RETURN clicked, hiding keyboard")
-        self.keyboard.set_height(0)
-        self.keyboard.remove_state(lv.STATE.DISABLED)
+        self.animator.hide_widget(self.keyboard, anim_type="fade", duration=500, delay=0)
         print("keyboard_cb: Showing Connect and Cancel buttons")
         self.connect_button.remove_flag(lv.obj.FLAG.HIDDEN)
         self.cancel_button.remove_flag(lv.obj.FLAG.HIDDEN)
@@ -295,8 +296,7 @@ class PasswordPage(Activity):
         self.connect_button.add_flag(lv.obj.FLAG.HIDDEN)
         self.cancel_button.add_flag(lv.obj.FLAG.HIDDEN)
         print("password_ta_cb: Showing keyboard")
-        self.keyboard.set_height(160)
-        self.keyboard.add_flag(lv.obj.FLAG.CLICKABLE) # seems needed after showing/hiding the keyboard a few times
+        self.animator.show_widget(self.keyboard, anim_type="fade", duration=500, delay=0) # slide_up causes it to be placed way too low...
     
     
     def connect_cb(self, event):

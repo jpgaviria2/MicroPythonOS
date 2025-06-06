@@ -19,10 +19,10 @@ class WidgetAnimator:
             anim.set_values(0, 255)
             anim.set_time(duration)
             anim.set_delay(delay)
-            anim.set_custom_exec_cb(lambda anim, value: widget.set_style_opacity(value, 0))
+            anim.set_custom_exec_cb(lambda anim, value: widget.set_style_opa(value, 0))
             anim.set_path_cb(lv.anim_t.path_ease_in_out)
             # Ensure opacity is reset after animation
-            anim.set_completed_cb(lambda *args: widget.set_style_opacity(255, 0))
+            anim.set_completed_cb(lambda *args: widget.set_style_opa(255, 0))
         elif anim_type == "slide_down":
             print("doing slide_down")
             # Create slide-down animation (y from -height to original y)
@@ -40,6 +40,7 @@ class WidgetAnimator:
             anim.set_completed_cb(lambda *args: widget.set_y(original_y))
         elif anim_type == "slide_up":
             # Create slide-up animation (y from +height to original y)
+            # Seems to cause scroll bars to be added somehow if done to a keyboard at the bottom of the screen...
             original_y = widget.get_y()
             height = widget.get_height()
             anim = lv.anim_t()
@@ -67,12 +68,13 @@ class WidgetAnimator:
             anim.set_values(255, 0)
             anim.set_time(duration)
             anim.set_delay(delay)
-            anim.set_custom_exec_cb(lambda anim, value: widget.set_style_opacity(value, 0))
+            anim.set_custom_exec_cb(lambda anim, value: widget.set_style_opa(value, 0))
             anim.set_path_cb(lv.anim_t.path_ease_in_out)
             # Set HIDDEN flag after animation
-            anim.set_completed_cb(lambda *args: self.hide_complete_cb(widget, original_y))
+            anim.set_completed_cb(lambda *args: self.hide_complete_cb(widget))
         elif anim_type == "slide_down":
             # Create slide-down animation (y from original y to +height)
+            # Seems to cause scroll bars to be added somehow if done to a keyboard at the bottom of the screen...
             original_y = widget.get_y()
             height = widget.get_height()
             anim = lv.anim_t()
@@ -84,7 +86,7 @@ class WidgetAnimator:
             anim.set_custom_exec_cb(lambda anim, value: widget.set_y(value))
             anim.set_path_cb(lv.anim_t.path_ease_in_out)
             # Set HIDDEN flag after animation
-            anim.set_completed_cb(lambda *args: self.hide_complete_cb(widget, original_y))
+            anim.set_completed_cb(lambda *args: self.hide_complete_cb(widget))
         elif anim_type == "slide_up":
             print("hide with slide_up")
             # Create slide-up animation (y from original y to -height)
@@ -99,16 +101,17 @@ class WidgetAnimator:
             anim.set_custom_exec_cb(lambda anim, value: widget.set_y(value))
             anim.set_path_cb(lv.anim_t.path_ease_in_out)
             # Set HIDDEN flag after animation
-            anim.set_completed_cb(lambda *args: self.hide_complete_cb(widget, original_y))
+            anim.set_completed_cb(lambda *args: self.hide_complete_cb(widget))
 
         # Store and start animation
         self.animations[widget] = anim
         anim.start()
 
-    def hide_complete_cb(self, widget, original_y):
+    def hide_complete_cb(self, widget):
         #print("hide_complete_cb")
         widget.add_flag(lv.obj.FLAG.HIDDEN)
-        widget.set_y(original_y)
+        #if original_y:
+        #    widget.set_y(original_y) # in case it shifted slightly due to rounding etc
 
 
     def stop_animation(self, widget):
