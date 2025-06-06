@@ -48,7 +48,6 @@ class AppStore(Activity):
             _thread.start_new_thread(self.download_app_index, (self.app_index_url,))
 
     def download_app_index(self, json_url):
-        #time.sleep(5)
         try:
             response = requests.get(json_url, timeout=10)
         except Exception as e:
@@ -196,7 +195,6 @@ class AppDetail(Activity):
         #
         headercont = lv.obj(app_detail_screen)
         headercont.set_style_border_width(0, 0)
-        #headercont.set_style_radius(0, 0)
         headercont.set_style_pad_all(0, 0)
         headercont.set_flex_flow(lv.FLEX_FLOW.ROW)
         headercont.set_size(lv.pct(100), lv.SIZE_CONTENT)
