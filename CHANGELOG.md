@@ -1,9 +1,17 @@
 0.0.4
 =====
-- wificonf: pressing keyboard icon or newline key also closes the keyboard
-- Don't show Frames Per Second on screen
-- Tweak settings to increase display refresh rate
-- Add support for running on Linux and MacOS desktop
+- Add left edge swipe gesture for back screen action
+- Add animations
+- Add support for QR decoding by porting quirc
+- Add support for Nostr by porting python-nostr
+- Add support for Websockets by porting websocket-client's WebSocketApp 
+- Add support for secp256k1 with ecdh by porting and extending secp256k1-embedded
+- Change theme from dark to light
+- Improve display refresh rate
+- Fix aiohttp_ws bug that caused partial websocket data reception
+- Add support for on Linux desktop
+- Add support for VideoForLinux2 devices (webcams etc) on Linux
+- Improve builtin apps: Launcher, WiFi, AppStore and OSUpdate
 
 0.0.3
 =====
