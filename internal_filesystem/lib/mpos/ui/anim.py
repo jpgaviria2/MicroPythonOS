@@ -95,7 +95,7 @@ class WidgetAnimator:
             anim.set_custom_exec_cb(lambda anim, value: widget.set_y(value))
             anim.set_path_cb(lv.anim_t.path_ease_in_out)
             # Set HIDDEN flag after animation
-            anim.set_completed_cb(lambda *args: WidgetAnimator.hide_complete_cb(widget))
+            anim.set_completed_cb(lambda *args: WidgetAnimator.hide_complete_cb(widget, original_y))
         elif anim_type == "slide_up":
             print("hide with slide_up")
             # Create slide-up animation (y from original y to -height)
@@ -110,18 +110,18 @@ class WidgetAnimator:
             anim.set_custom_exec_cb(lambda anim, value: widget.set_y(value))
             anim.set_path_cb(lv.anim_t.path_ease_in_out)
             # Set HIDDEN flag after animation
-            anim.set_completed_cb(lambda *args: WidgetAnimator.hide_complete_cb(widget))
+            anim.set_completed_cb(lambda *args: WidgetAnimator.hide_complete_cb(widget, original_y))
 
         # Store and start animation
         #self.animations[widget] = anim
         anim.start()
 
     @staticmethod
-    def hide_complete_cb(widget):
+    def hide_complete_cb(widget, original_y=None):
         #print("hide_complete_cb")
         widget.add_flag(lv.obj.FLAG.HIDDEN)
-        #if original_y:
-        #    widget.set_y(original_y) # in case it shifted slightly due to rounding etc
+        if original_y:
+            widget.set_y(original_y) # in case it shifted slightly due to rounding etc
 
 
 def smooth_show(widget):
