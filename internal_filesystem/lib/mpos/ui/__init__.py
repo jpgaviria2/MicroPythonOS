@@ -6,6 +6,10 @@ from mpos.ui.anim import WidgetAnimator
 
 th = None
 
+# These get set by init_rootscreen():
+horizontal_resolution = None
+vertical_resolution = None
+
 NOTIFICATION_BAR_HEIGHT=24
 
 CLOCK_UPDATE_INTERVAL = 1000 # 10 or even 1 ms doesn't seem to change the framerate but 100ms is enough
@@ -109,7 +113,10 @@ def show_launcher():
     mpos.apps.restart_launcher()
 
 def init_rootscreen():
+    global horizontal_resolution, vertical_resolution
     rootscreen = lv.screen_active()
+    horizontal_resolution = rootscreen.get_display().get_horizontal_resolution()
+    vertical_resolution = rootscreen.get_display().get_vertical_resolution()
     # Create a style for the undecorated screen
     style = lv.style_t()
     style.init()
@@ -624,3 +631,11 @@ def handle_top_swipe():
     rect.add_event_cb(top_swipe_cb, lv.EVENT.RELEASED, None)
 
 
+def pct_of_display_width(percent):
+    return round(horizontal_resolution * percent / 100)
+
+def min_resolution():
+    return min(mpos.ui.horizontal_resolution,mpos.ui.vertical_resolution)
+
+def max_resolution():
+    return max(mpos.ui.horizontal_resolution,mpos.ui.vertical_resolution)
