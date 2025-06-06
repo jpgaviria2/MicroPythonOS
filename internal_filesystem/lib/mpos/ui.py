@@ -32,7 +32,7 @@ notification_bar = None
 foreground_app_name=None
 
 
- lass WidgetAnimator:
+class WidgetAnimator:
     def __init__(self):
         self.animations = {}  # Store animations for each widget
 
