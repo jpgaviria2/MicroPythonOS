@@ -86,7 +86,6 @@ class AppStore(Activity):
         for app in self.apps:
             item = apps_list.add_button(None, "Test")
             item.set_style_pad_all(0, 0)
-            item.add_flag(lv.obj.FLAG.CLICKABLE)
             item.set_size(lv.pct(100), lv.SIZE_CONTENT)
             item.add_event_cb(lambda e, a=app: self.show_app_detail(a), lv.EVENT.CLICKED, None)
             cont = lv.obj(item)
@@ -218,7 +217,6 @@ class AppDetail(Activity):
         buttoncont.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
         print(f"Adding (un)install button for url: {app.download_url}")
         self.install_button = lv.button(buttoncont)
-        self.install_button.add_flag(lv.obj.FLAG.CLICKABLE)
         self.install_button.add_event_cb(lambda e, d=app.download_url, f=app.fullname: self.toggle_install(d,f), lv.EVENT.CLICKED, None)
         self.install_button.set_size(lv.pct(100), 40)
         self.install_label = lv.label(self.install_button)
@@ -304,7 +302,7 @@ class AppDetail(Activity):
             print("Could not start download_and_unzip thread: ", e)
     
     def uninstall_app(self, app_folder, app_fullname):
-        self.install_button.remove_flag(lv.obj.FLAG.CLICKABLE) # TODO: change color so it's clear the button is not clickable
+        self.install_button.add_state(lv.STATE.DISABLED)
         self.install_label.set_text("Please wait...") # TODO: Put "Cancel" if cancellation is possible
         self.progress_bar.remove_flag(lv.obj.FLAG.HIDDEN)
         self.progress_bar.set_value(33, lv.ANIM.ON)
@@ -321,14 +319,14 @@ class AppDetail(Activity):
         self.progress_bar.add_flag(lv.obj.FLAG.HIDDEN)
         self.progress_bar.set_value(0, lv.ANIM.OFF)
         self.set_install_label(app_fullname)
-        self.install_button.add_flag(lv.obj.FLAG.CLICKABLE)
+        self.install_button.remove_state(lv.STATE.DISABLED)
         if self.is_builtin_app(app_fullname):
             self.update_button.remove_flag(lv.obj.FLAG.HIDDEN)
             self.install_button.set_size(lv.pct(47), 40) # if a builtin app was removed, then it was overridden, and a new version is available, so make space for update button
     
 
     def download_and_unzip(self, zip_url, dest_folder, app_fullname):
-        self.install_button.remove_flag(lv.obj.FLAG.CLICKABLE) # TODO: change color so it's clear the button is not clickable
+        self.install_button.add_state(lv.STATE.DISABLED)
         self.install_label.set_text("Please wait...") # TODO: Put "Cancel" if cancellation is possible
         self.progress_bar.remove_flag(lv.obj.FLAG.HIDDEN)
         self.progress_bar.set_value(20, lv.ANIM.ON)
@@ -387,7 +385,7 @@ class AppDetail(Activity):
         self.progress_bar.add_flag(lv.obj.FLAG.HIDDEN)
         self.progress_bar.set_value(0, lv.ANIM.OFF)
         self.set_install_label(app_fullname)
-        self.install_button.add_flag(lv.obj.FLAG.CLICKABLE)
+        self.install_button.remove_state(lv.STATE.DISABLED)
 
     @staticmethod
     def compare_versions(ver1: str, ver2: str) -> bool:
