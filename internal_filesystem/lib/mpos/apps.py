@@ -159,7 +159,7 @@ def find_main_launcher_activity(app):
 def is_launcher(app_name):
     print(f"checking is_launcher for {app_name}")
     # Simple check, could be more elaborate by checking the MANIFEST.JSON for the app...
-    return "launcher" in app_name
+    return "launcher" in app_name or len(mpos.ui.screen_stack) < 2 # assumes the first one on the stack is the launcher
 
 
 class App:
