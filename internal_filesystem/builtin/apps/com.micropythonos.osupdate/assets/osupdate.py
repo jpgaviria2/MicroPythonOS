@@ -11,18 +11,18 @@ import mpos.ui
 
 class OSUpdate(Activity):
 
-    status_label = None
     install_button = None
     main_screen = None
     keep_running = True
 
     def onCreate(self):
         self.main_screen = lv.obj()
-        install_button = lv.button(self.main_screen)
-        install_button.align(lv.ALIGN.TOP_RIGHT, 0, mpos.ui.NOTIFICATION_BAR_HEIGHT)
-        install_button.add_flag(lv.obj.FLAG.HIDDEN) # button will be shown if there is an update available
-        install_button.set_size(lv.SIZE_CONTENT, lv.pct(20))
-        install_label = lv.label(install_button)
+        self.main_screen.set_style_pad_all(mpos.ui.pct_of_display_width(2), 0)
+        self.install_button = lv.button(self.main_screen)
+        self.install_button.align(lv.ALIGN.TOP_RIGHT, 0, mpos.ui.NOTIFICATION_BAR_HEIGHT)
+        self.install_button.add_state(lv.STATE.DISABLED) # button will be enabled if there is an update available
+        self.install_button.set_size(lv.SIZE_CONTENT, lv.pct(25))
+        install_label = lv.label(self.install_button)
         install_label.set_text("Update OS")
         install_label.center()
         self.status_label = lv.label(self.main_screen)
@@ -78,7 +78,7 @@ class OSUpdate(Activity):
         label = f"Installed OS version: {mpos.info.CURRENT_OS_VERSION}\n"
         if compare_versions(version, mpos.info.CURRENT_OS_VERSION):
             label += "Available new"
-            self.install_button.remove_flag(lv.obj.FLAG.HIDDEN)
+            self.install_button.remove_state(lv.STATE.DISABLED)
             self.install_button.add_event_cb(lambda e, u=download_url: self.install_button_click(u), lv.EVENT.CLICKED, None)
         else:
             label += "isn't older than latest"
