@@ -101,7 +101,7 @@ class WiFi(Activity):
         if self.keep_running:
             # Schedule UI updates because different thread
             lv.async_call(lambda l: self.scan_button_label.set_text(self.scan_button_scan_text), None)
-            lv.async_call(lambda l: self.scan_button.add_flag(lv.obj.FLAG.CLICKABLE), None)
+            lv.async_call(lambda l: self.scan_button.remove_state(lv.STATE.DISABLED), None)
             lv.async_call(lambda l: self.refresh_list(), None)
 
     def start_scan_networks(self):
@@ -112,7 +112,7 @@ class WiFi(Activity):
             return
         else:
             self.busy_scanning = True
-            self.scan_button.remove_flag(lv.obj.FLAG.CLICKABLE)
+            self.scan_button.add_state(lv.STATE.DISABLED)
             self.scan_button_label.set_text(self.scan_button_scanning_text)
             _thread.stack_size(mpos.apps.good_stack_size())
             _thread.start_new_thread(self.scan_networks_thread, ())
@@ -162,8 +162,8 @@ class WiFi(Activity):
 
     def start_attempt_connecting(self, ssid, password):
         print(f"start_attempt_connecting: Attempting to connect to SSID '{ssid}' with password '{password}'")
-        self.scan_button.remove_flag(lv.obj.FLAG.CLICKABLE)
-        self.scan_button_label.set_text(f"Connecting to {ssid}...")
+        self.scan_button.add_state(lv.STATE.DISABLED)
+        self.scan_button_label.set_text(f"Connecting to '{ssid}'")
         if self.busy_connecting:
             print("Not attempting connect because busy_connecting.")
         else:
@@ -202,7 +202,7 @@ class WiFi(Activity):
         if self.keep_running:
             # Schedule UI updates because different thread
             lv.async_call(lambda l: self.scan_button_label.set_text(self.scan_button_scan_text), None)
-            lv.async_call(lambda l: self.scan_button.add_flag(lv.obj.FLAG.CLICKABLE), None)
+            lv.async_call(lambda l: self.scan_button.remove_state(lv.STATE.DISABLED), None)
             lv.async_call(lambda l: self.refresh_list(), None)
 
 
@@ -268,7 +268,7 @@ class PasswordPage(Activity):
     def hide_keyboard(self):
         print("keyboard_cb: READY or CANCEL or RETURN clicked, hiding keyboard")
         self.keyboard.set_height(0)
-        self.keyboard.remove_flag(lv.obj.FLAG.CLICKABLE)
+        self.keyboard.remove_state(lv.STATE.DISABLED)
         print("keyboard_cb: Showing Connect and Cancel buttons")
         self.connect_button.remove_flag(lv.obj.FLAG.HIDDEN)
         self.cancel_button.remove_flag(lv.obj.FLAG.HIDDEN)
