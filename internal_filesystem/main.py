@@ -1,8 +1,22 @@
 import task_handler
 
-
 import mpos.ui
-mpos.ui.create_rootscreen()
+
+
+RED = lv.palette_main(lv.PALETTE.RED)
+
+DARKPINK = lv.color_hex(0xEC048C);
+MEDIUMPINK = lv.color_hex(0xF480C5);
+LIGHTPINK = lv.color_hex(0xF9E9F2);
+DARKYELLOW = lv.color_hex(0xFBDC05);
+LIGHTYELLOW = lv.color_hex(0xFBE499);
+
+theme = lv.theme_default_init(display._disp_drv, DARKPINK, DARKYELLOW, False, lv.font_montserrat_12)
+#theme = lv.theme_default_init(display._disp_drv, DARKPINK, DARKYELLOW, True, lv.font_montserrat_12)
+
+#display.set_theme(theme)
+
+mpos.ui.init_rootscreen()
 mpos.ui.create_notification_bar()
 mpos.ui.create_drawer(display)
 mpos.ui.handle_back_swipe()

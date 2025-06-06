@@ -16,8 +16,6 @@ MEMFREE_UPDATE_INTERVAL = 5000 # not too frequent because there's a forced gc.co
 DRAWER_ANIM_DURATION=300
 
 drawer=None
-rootscreen = None
-
 drawer_open=False
 bar_open=False
 
@@ -96,7 +94,6 @@ def open_bar():
         #print("not open so opening...")
         bar_open=True
         hide_bar_animation.current_value = hide_bar_animation_end_value
-        #show_bar_animation.current_value = hide_bar_animation_start_value
         show_bar_animation.start()
     else:
         print("bar already open")
@@ -106,20 +103,12 @@ def close_bar():
     if bar_open:
         bar_open=False
         show_bar_animation.current_value = show_bar_animation_end_value
-        #hide_bar_animation.current_value = hide_bar_animation_start_value
         hide_bar_animation.start()
 
 def show_launcher():
     mpos.apps.restart_launcher()
-    #global rootscreen
-    #set_foreground_app("com.example.launcher")
-    #open_bar()
-    #prevscreen = screen_stack[0] # load previous screen
-    #lv.screen_load(prevscreen)
-    #lv.screen_load(rootscreen)
 
-def create_rootscreen():
-    global rootscreen
+def init_rootscreen():
     rootscreen = lv.screen_active()
     # Create a style for the undecorated screen
     style = lv.style_t()
@@ -134,10 +123,10 @@ def create_rootscreen():
     # Apply the style to the screen
     rootscreen.add_style(style, 0)
     rootscreen.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
-    #rootscreen.set_scroll_mode(lv.SCROLL_MODE.OFF)
+    rootscreen.set_scroll_dir(lv.DIR.NONE)
     rootlabel = lv.label(rootscreen)
-    rootlabel.set_text("Welcome!")
-    rootlabel.align(lv.ALIGN.CENTER, 0, 0)
+    rootlabel.set_text("Welcome to MicroPythonOS")
+    rootlabel.center()
 
 
 timer1 = None
