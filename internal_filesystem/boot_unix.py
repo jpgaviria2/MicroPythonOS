@@ -8,6 +8,8 @@ import sdl_display
 import sys
 sys.path.append('lib/')
 
+import mpos.ui
+
 #TFT_HOR_RES=640
 #TFT_VER_RES=480
 TFT_HOR_RES=320
@@ -23,9 +25,24 @@ display.init()
 import sdl_pointer
 mouse = sdl_pointer.SDLPointer()
 
-import sdl_keyboard
-keyboard = sdl_keyboard.SDLKeyboard()
+def catch_escape_key(indev, indev_data):
+    global sdlkeyboard
+    #print(f"keypad_cb {indev} {indev_data}")
+    #key = indev.get_key() # always 0
+    #print(f"key {key}")
+    #key = indev_data.key
+    #state = indev_data.state
+    #print(f"indev_data: {state} and {key}") # this catches the previous key release instead of the next key press
+    pressed, code = sdlkeyboard._get_key() # get the current key and state
+    print(f"catch_escape_key caught: {pressed}, {code}")
+    if pressed == 1 and code == 27:
+        mpos.ui.back_screen()
+    sdlkeyboard._read(indev, indev_data)
 
+
+import sdl_keyboard
+sdlkeyboard = sdl_keyboard.SDLKeyboard()
+sdlkeyboard._indev_drv.set_read_cb(catch_escape_key) # check for escape
 
 #def keyboard_cb(event):
  #   global canvas
