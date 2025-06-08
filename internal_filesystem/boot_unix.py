@@ -9,6 +9,7 @@ import sys
 sys.path.append('lib/')
 
 import mpos.ui
+import mpos.clipboard
 
 #TFT_HOR_RES=640
 #TFT_VER_RES=480
@@ -43,6 +44,7 @@ def catch_escape_key(indev, indev_data):
 import sdl_keyboard
 sdlkeyboard = sdl_keyboard.SDLKeyboard()
 sdlkeyboard._indev_drv.set_read_cb(catch_escape_key) # check for escape
+sdlkeyboard.set_paste_text_callback(mpos.clipboard.paste_text)
 
 #def keyboard_cb(event):
  #   global canvas
