@@ -8,8 +8,6 @@ import sdl_display
 import sys
 sys.path.append('lib/')
 
-import mpos.ui
-
 #TFT_HOR_RES=640
 #TFT_VER_RES=480
 TFT_HOR_RES=320
@@ -25,8 +23,8 @@ display.init()
 import sdl_pointer
 mouse = sdl_pointer.SDLPointer()
 
-#import sdl_keyboard
-#keyboard = sdl_keyboard.SDLKeyboard()
+import sdl_keyboard
+keyboard = sdl_keyboard.SDLKeyboard()
 
 
 #def keyboard_cb(event):
