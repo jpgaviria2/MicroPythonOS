@@ -39,7 +39,7 @@ class ImageView(Activity):
                 fullname = f"{self.imagedir}/{item}"
                 size = os.stat(fullname)[6]
                 print(f"size: {size}")
-                if size > 1024*1024:
+                if size > 10 * 1024*1024:
                 #if size > 60000:
                     print(f"Skipping file of size {size}")
                     continue
