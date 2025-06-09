@@ -13,7 +13,6 @@ class ImageView(Activity):
     image_nr = 0
     image_timer = None
     image = None
-    image_dsc = None
 
     def onCreate(self):
         screen = lv.obj()
@@ -23,8 +22,6 @@ class ImageView(Activity):
         self.image = lv.image(screen)
         self.image.set_size(128, 128)
         self.image.align(lv.ALIGN.BOTTOM_MID,0,0)
-        self.image_dsc = lv.image_dsc_t()
-        self.image.set_src(self.image_dsc)
         self.setContentView(screen)
 
     def onResume(self, screen):
@@ -68,26 +65,15 @@ class ImageView(Activity):
     def show_image(self, name):
         try:
             self.label.set_text(name)
-            f = open(name, 'rb')
-            image_data = f.read()
-            print(f"loaded {len(image_data)} bytes")
-            f.close()
-            #self.image_dsc.data_size = len(image_data)
-            #self.image_dsc.data = image_data
-            self.image_dsc = None
-            #self.image.set_src(self.image_dsc)
-            self.image_dsc = lv.image_dsc_t({
-                'data_size': len(image_data),
-                'data': image_data 
-            })
-            h = lv.image_header_t()
-            lv.image.decoder_get_info(self.image_dsc, h)
-            print("image info:")
-            print(h)
-            print(f"widthxheight: {h.w}x{h.h}")
-            self.image.set_src(self.image_dsc)
+            self.image.set_src(f"P:{name}")
+            w = self.image.get_width()
+            h = self.image.get_height()
+            print(f"the LVGL image has size: {w}x{h}")
+            header = lv.image_header_t()
+            self.image.decoder_get_info(self.image.get_src(), header)
+            print(f"the real image has size: {header.w}x{header.h}")
             #image.set_size(128, 128)
-            #image.set_scale(512)
-            print(f"done with show_image({name})")
+            self.image.set_scale(512)
+            print(f"done with show_image({name}) got {w}x{h}")
         except Exception as e:
             print(f"show_image got exception: {e}")
