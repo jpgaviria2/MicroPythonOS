@@ -677,3 +677,27 @@ img = lv.image(lv.screen_active())
 #img.set_src("P:/data/images/icon_64x64.jpg")
 img.set_src("P:../artwork/icon_64x64.jpg")
 
+
+
+group = sdlkeyboard.get_group()
+#group.remove_all_objs()
+group = lv.group_create()
+#group.set_default()
+
+group = lv.group_get_default()
+group.get_focused()
+
+group.remove_all_objs()
+
+screen = lv.obj()
+lv.screen_load(screen)
+
+ta1 = lv.textarea(screen)
+ta1.align(lv.ALIGN.TOP_MID,0,0)
+#group.add_obj(ta1)
+
+b = lv.button(screen)
+b.center()
+
+import task_handler
+task_handler.TaskHandler(duration=5) # 5ms is recommended for MicroPython+LVGL on desktop

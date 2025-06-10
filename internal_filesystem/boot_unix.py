@@ -40,7 +40,6 @@ def catch_escape_key(indev, indev_data):
         mpos.ui.back_screen()
     sdlkeyboard._read(indev, indev_data)
 
-
 import sdl_keyboard
 sdlkeyboard = sdl_keyboard.SDLKeyboard()
 sdlkeyboard._indev_drv.set_read_cb(catch_escape_key) # check for escape
@@ -50,9 +49,6 @@ sdlkeyboard.set_paste_text_callback(mpos.clipboard.paste_text)
  #   global canvas
   #  event_code=event.get_code()
    # print(f"boot_unix: code={event_code}") # target={event.get_target()}, user_data={event.get_user_data()}, param={event.get_param()}
-
 #keyboard.add_event_cb(keyboard_cb, lv.EVENT.ALL, None)
 
-
 print("boot_unix.py finished")
-

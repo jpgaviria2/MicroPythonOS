@@ -2,6 +2,7 @@ import os
 import time
 
 from mpos.apps import Activity
+import mpos.ui
 
 class ImageView(Activity):
 
@@ -19,20 +20,27 @@ class ImageView(Activity):
         screen = lv.obj()
         self.image = lv.image(screen)
         self.image.set_size(128, 128)
-        self.image.align(lv.ALIGN.BOTTOM_MID,0,0)
+        self.image.center()
         self.label = lv.label(screen)
         self.label.set_text('Hello Images!')
         self.label.align(lv.ALIGN.TOP_MID,0,0)
-        self.next_button = lv.button(screen)
-        self.next_button.align(lv.ALIGN.BOTTOM_RIGHT,0,0)
-        self.next_button.add_event_cb(lambda e: self.show_next_image(),lv.EVENT.CLICKED,None)
-        next_label = lv.label(self.next_button)
-        next_label.set_text(">")
         self.prev_button = lv.button(screen)
         self.prev_button.align(lv.ALIGN.BOTTOM_LEFT,0,0)
         self.prev_button.add_event_cb(lambda e: self.show_prev_image(),lv.EVENT.CLICKED,None)
         prev_label = lv.label(self.prev_button)
-        prev_label.set_text("<")
+        prev_label.set_text(lv.SYMBOL.LEFT)
+        self.play_button = lv.button(screen)
+        self.play_button.align(lv.ALIGN.BOTTOM_MID,0,0)
+        self.play_button.add_event_cb(lambda e: self.play(),lv.EVENT.CLICKED,None)
+        play_label = lv.label(self.play_button)
+        play_label.set_text(lv.SYMBOL.PLAY)
+        self.next_button = lv.button(screen)
+        self.next_button.align(lv.ALIGN.BOTTOM_RIGHT,0,0)
+        self.next_button.add_event_cb(lambda e: self.show_next_image(),lv.EVENT.CLICKED,None)
+        #self.next_button.add_event_cb(self.touch_cb, lv.EVENT.ALL, None)
+        next_label = lv.label(self.next_button)
+        next_label.set_text(lv.SYMBOL.RIGHT)
+        #screen.add_event_cb(self.touch_cb, lv.EVENT.ALL, None)
         self.setContentView(screen)
 
     def onResume(self, screen):
@@ -55,6 +63,27 @@ class ImageView(Activity):
         if self.image_timer:
             print("ImageView: deleting image_timer")
             self.image_timer.delete()
+    
+    def touch_cb(self, event):
+        global canvas
+        event_code=event.get_code()
+        #print(f"got event {event_code}")
+        # Ignore:
+        # =======
+        # 19: HIT_TEST
+        # COVER_CHECK
+        # DRAW_MAIN
+        # DRAW_MAIN_BEGIN
+        # DRAW_MAIN_END
+        # DRAW_POST
+        # DRAW_POST_BEGIN
+        # DRAW_POST_END
+        # 39: CHILD_CHANGED
+        # GET_SELF_SIZE
+        if event_code not in [19,23,25,26,27,28,29,30,39,49]:
+            name = mpos.ui.get_event_name(event_code)
+            print(f"lv_event_t: code={event_code}, name={name}") # target={event.get_target()}, user_data={event.get_user_data()}, param={event.get_param()}
+
 
     def show_prev_image(self, event=None):
         print("showing previous image...")
@@ -67,6 +96,9 @@ class ImageView(Activity):
         name = self.images[self.image_nr]
         print(f"show_prev_image showing {name}")
         self.show_image(name)
+
+    def play(self, event=None):
+        print("playing...")
 
     def show_next_image(self, event=None):
         print("showing next image...")
