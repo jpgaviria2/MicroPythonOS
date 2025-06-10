@@ -6,7 +6,8 @@ from mpos.apps import Activity
 class ImageView(Activity):
 
     #imagedir = "../icons/"
-    imagedir = "../artwork/"
+    #imagedir = "../artwork/"
+    imagedir = "data/images"
     #imagedir = "/home/user/Downloads/"
     #imagedir = "/home/user/images/"
     images = []
@@ -82,13 +83,13 @@ class ImageView(Activity):
     def show_image(self, name):
         try:
             self.label.set_text(name)
-            self.image.set_src(f"P:{name}")
+            self.image.set_src(f"M:{name}")
             print(f"the LVGL image has size: {self.image.get_width()}x{self.image.get_height()}")
             header = lv.image_header_t()
             self.image.decoder_get_info(self.image.get_src(), header)
             print(f"the real image has size: {header.w}x{header.h}")
             #image.set_size(128, 128)
-            self.image.set_scale(512)
+            #self.image.set_scale(512)
             print(f"after set_scale, the LVGL image has size: {self.image.get_width()}x{self.image.get_height()}")
         except Exception as e:
             print(f"show_image got exception: {e}")

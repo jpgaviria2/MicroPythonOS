@@ -1,16 +1,18 @@
 import task_handler
 
+# Allow LVGL M:/path/to/file or M:relative/path/to/file to work for image set_src etc
+import fs_driver
+fs_drv = lv.fs_drv_t()
+fs_driver.fs_register(fs_drv, 'M')
+
 import mpos.ui
 
-
 RED = lv.palette_main(lv.PALETTE.RED)
-
 DARKPINK = lv.color_hex(0xEC048C)
 MEDIUMPINK = lv.color_hex(0xF480C5)
 LIGHTPINK = lv.color_hex(0xF9E9F2)
 DARKYELLOW = lv.color_hex(0xFBDC05)
 LIGHTYELLOW = lv.color_hex(0xFBE499)
-
 theme = lv.theme_default_init(display._disp_drv, DARKPINK, DARKYELLOW, False, lv.font_montserrat_12)
 #theme = lv.theme_default_init(display._disp_drv, DARKPINK, DARKYELLOW, True, lv.font_montserrat_12)
 

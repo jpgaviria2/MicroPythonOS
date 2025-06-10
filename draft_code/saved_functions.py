@@ -89,26 +89,28 @@ def show_block_height():
 
 
 
-
 # Create file explorer widget
-file_explorer = lv.file_explorer(subwindow)
-file_explorer.set_root_path("/")
-file_explorer.explorer_open_dir('/')
+file_explorer = lv.file_explorer(lv.screen_active())
+#file_explorer.set_root_path("/")
+#file_explorer.explorer_open_dir('/')
+file_explorer.explorer_open_dir('P:.') # POSIX works, fs_driver doesn't because it doesn't have dir_open, dir_read, dir_close
+#file_explorer.explorer_open_dir('S:/')
 file_explorer.set_size(210, 210)
-file_explorer.set_mode(lv.FILE_EXPLORER.MODE.DEFAULT)  # Default browsing mode
-file_explorer.set_sort(lv.FILE_EXPLORER.SORT.NAME_ASC)  # Sort by name, ascending
+#file_explorer.set_mode(lv.FILE_EXPLORER.MODE.DEFAULT)  # Default browsing mode
+#file_explorer.set_sort(lv.FILE_EXPLORER.SORT.NAME_ASC)  # Sort by name, ascending
 file_explorer.align(lv.ALIGN.CENTER, 0, 0)
 def file_explorer_event_cb(e):
     code = e.get_code()
+    print(f"file_explorer_event_cb {code}")
     obj = e.get_target_obj()
     if code == lv.EVENT.VALUE_CHANGED:
         #selected_path = obj.get_selected_file_name()
-        selected_path = file_explorer.explorer_get_selected_file_name
+        selected_path = file_explorer.explorer_get_selected_file_name()
         print("Selected:", selected_path)
-        if obj.is_selected_dir():
-            print("This is a directory")
-        else:
-            print("This is a file")
+        #if obj.is_selected_dir():
+        #    print("This is a directory")
+        #else:
+        #    print("This is a file")
 
 
 # Attach event callback
@@ -664,3 +666,14 @@ mem32[0] = 0xDEADBEEF
 
 import _thread
 _thread.stack_size(0)
+
+
+
+import fs_driver
+fs_drv = lv.fs_drv_t()
+fs_driver.fs_register(fs_drv, 'M')
+
+img = lv.image(lv.screen_active())
+#img.set_src("P:/data/images/icon_64x64.jpg")
+img.set_src("P:../artwork/icon_64x64.jpg")
+
