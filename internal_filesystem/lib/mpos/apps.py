@@ -345,6 +345,8 @@ class ActivityNavigator:
         activity.intent = intent
         activity._result_callback = result_callback  # Pass callback to activity
         start_time = utime.ticks_ms()
+        # Remove objects from previous screens from the focus group:
+        lv.group_get_default().remove_all_objs() #  might be better to save and restore the group for "back" actions
         activity.onCreate()
         end_time = utime.ticks_diff(utime.ticks_ms(), start_time)
         print(f"apps.py _launch_activity: activity.onCreate took {end_time}ms")
