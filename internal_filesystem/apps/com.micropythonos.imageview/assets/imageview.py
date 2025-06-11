@@ -15,16 +15,24 @@ class ImageView(Activity):
     images = []
     image_nr = None
     image_timer = None
-    image = None
     fullscreen = False
+
+    # Widgets
+    image = None
+    gif = None
 
     def onCreate(self):
         screen = lv.obj()
         self.image = lv.image(screen)
         self.image.center()
         self.image.add_flag(lv.obj.FLAG.CLICKABLE)
-        #self.image.add_event_cb(self.print_events, lv.EVENT.ALL, None)
         self.image.add_event_cb(lambda e: self.toggle_fullscreen(),lv.EVENT.CLICKED,None)
+        self.gif = lv.gif(screen)
+        self.gif.center()
+        self.gif.add_flag(lv.obj.FLAG.CLICKABLE)
+        self.gif.add_flag(lv.obj.FLAG.HIDDEN)
+        self.gif.add_event_cb(lambda e: self.toggle_fullscreen(),lv.EVENT.CLICKED,None)
+        #self.image.add_event_cb(self.print_events, lv.EVENT.ALL, None)
         self.label = lv.label(screen)
         self.label.set_text('Loading images from\n{self.imagedir}')
         self.label.align(lv.ALIGN.TOP_MID,0,0)
@@ -57,7 +65,8 @@ class ImageView(Activity):
         self.images.clear()
         for item in os.listdir(self.imagedir):
             print(item)
-            if item.endswith(".jpg") or item.endswith(".jpeg") or item.endswith(".png") or item.endswith(".raw"):
+            lowercase = item.lower()
+            if lowercase.endswith(".jpg") or lowercase.endswith(".jpeg") or lowercase.endswith(".png") or lowercase.endswith(".raw") or lowercase.endswith(".gif"):
                 fullname = f"{self.imagedir}/{item}"
                 size = os.stat(fullname)[6]
                 print(f"size: {size}")
@@ -189,7 +198,17 @@ class ImageView(Activity):
     def show_image(self, name):
         try:
             self.label.set_text(name)
-            if name.endswith(".raw"):
+            if name.lower().endswith(".gif"):
+                print("switching to gif mode...")
+                self.image.add_flag(lv.obj.FLAG.HIDDEN)
+                self.gif.remove_flag(lv.obj.FLAG.HIDDEN)
+                self.gif.set_src(f"M:{name}")
+            else:
+                self.gif.add_flag(lv.obj.FLAG.HIDDEN)
+                self.image.remove_flag(lv.obj.FLAG.HIDDEN)
+                self.image.set_src(f"M:{name}")
+
+            if name.lower().endswith(".raw"):
                 f = open(name, 'rb')
                 image_data = f.read()
                 print(f"loaded {len(image_data)} bytes from .raw file")
@@ -212,8 +231,6 @@ class ImageView(Activity):
                     'data': image_data
                 })
                 self.image.set_src(image_dsc)
-            else:
-                self.image.set_src(f"M:{name}")
             self.scale_image()
         except OSError as e:
             print(f"show_image got exception: {e}")
@@ -235,6 +252,7 @@ class ImageView(Activity):
         scale_factor_h = round(lvgl_h * 256 / image_h)
         print(f"scale_factors: {scale_factor_w},{scale_factor_h}")
         self.image.set_size(lvgl_w, lvgl_h)
+        #self.gif.set_size(lvgl_w, lvgl_h) doesn't seem to do anything. get_style_transform_scale_x/y works but then it needs get_style_translate_x/y
         #self.image.set_scale(max(scale_factor_w,scale_factor_h)) # fills the entire screen but cuts off borders
         self.image.set_scale(min(scale_factor_w,scale_factor_h))
         print(f"after set_scale, the LVGL image has size: {self.image.get_width()}x{self.image.get_height()}")

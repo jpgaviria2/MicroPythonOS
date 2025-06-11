@@ -277,6 +277,12 @@ with open("../icons/big-buck-bunny_320x180.gif", 'rb') as f: # works
     print("done")
 
 
+screen = lv.obj()
+gif = lv.gif(screen)
+gif.set_src("M:data/images/tunnel_160x107.gif")
+gif.center()
+#gif.set_size(320,240)
+lv.screen_load(screen)
 
 # BIN
 with open("/icon_64x64.bin", 'rb') as f:
@@ -618,6 +624,8 @@ def log_callback(level, log_str):
 # Register log callback
 lv.log_register_print_cb(log_callback)
 
+
+lv.log_register_print_cb(None)
 
 # Function to get FPS
 def get_fps():
