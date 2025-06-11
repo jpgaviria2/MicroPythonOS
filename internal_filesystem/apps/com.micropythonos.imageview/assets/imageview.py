@@ -1,3 +1,4 @@
+import gc
 import os
 import time
 
@@ -21,6 +22,7 @@ class ImageView(Activity):
     # Widgets
     image = None
     gif = None
+    current_image_dsc = None  # Track current image descriptor
 
     def onCreate(self):
         screen = lv.obj()
@@ -208,6 +210,7 @@ class ImageView(Activity):
     def show_image(self, name):
         try:
             self.label.set_text(name)
+            self.clear_image()
             if name.lower().endswith(".gif"):
                 print("switching to gif mode...")
                 self.image.add_flag(lv.obj.FLAG.HIDDEN)
@@ -233,7 +236,7 @@ class ImageView(Activity):
                 cf = lv.COLOR_FORMAT.RGB565
                 if color_format != "RGB565":
                     print(f"WARNING: unknown color format {color_format}, assuming RGB565...")
-                image_dsc = lv.image_dsc_t({
+                self.current_image_dsc = lv.image_dsc_t({
                     "header": {
                         "magic": lv.IMAGE_HEADER_MAGIC,
                         "w": width,
@@ -244,7 +247,7 @@ class ImageView(Activity):
                     'data_size': len(image_data),
                     'data': image_data
                 })
-                self.image.set_src(image_dsc)
+                self.image.set_src(self.current_image_dsc)
             self.scale_image()
         except OSError as e:
             print(f"show_image got exception: {e}")
@@ -261,6 +264,8 @@ class ImageView(Activity):
         self.image.decoder_get_info(self.image.get_src(), header)
         image_w = header.w
         image_h = header.h
+        if image_w == 0 or image_h == 0:
+            return
         print(f"the real image has size: {header.w}x{header.h}")
         scale_factor_w = round(lvgl_w * 256 / image_w)
         scale_factor_h = round(lvgl_h * 256 / image_h)
@@ -270,3 +275,15 @@ class ImageView(Activity):
         #self.image.set_scale(max(scale_factor_w,scale_factor_h)) # fills the entire screen but cuts off borders
         self.image.set_scale(min(scale_factor_w,scale_factor_h))
         print(f"after set_scale, the LVGL image has size: {self.image.get_width()}x{self.image.get_height()}")
+
+
+    def clear_image(self):
+        """Clear current image or GIF source to free memory."""
+        if self.current_image_dsc:
+            self.current_image_dsc = None  # Release reference to descriptor
+        self.image.set_src(None)  # Clear image source
+        self.gif.set_src(None)  # Clear GIF source
+        #self.gif.add_flag(lv.obj.FLAG.HIDDEN)
+        #self.image.remove_flag(lv.obj.FLAG.HIDDEN)
+        #lv.image_cache_invalidate_src(None)  # Invalidate LVGL image cache
+        gc.collect()  # Force garbage collection
