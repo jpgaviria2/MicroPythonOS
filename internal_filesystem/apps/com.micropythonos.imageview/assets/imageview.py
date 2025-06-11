@@ -16,6 +16,7 @@ class ImageView(Activity):
     image_nr = None
     image_timer = None
     fullscreen = False
+    stopping = False
 
     # Widgets
     image = None
@@ -62,6 +63,7 @@ class ImageView(Activity):
         self.setContentView(screen)
 
     def onResume(self, screen):
+        self.stopping = False
         self.images.clear()
         for item in os.listdir(self.imagedir):
             print(item)
@@ -80,6 +82,8 @@ class ImageView(Activity):
         #self.image_timer = lv.timer_create(self.show_next_image, 1000, None)
 
     def onStop(self, screen):
+        print("ImageView stopping")
+        self.stopping = True
         if self.image_timer:
             print("ImageView: deleting image_timer")
             self.image_timer.delete()
@@ -145,28 +149,34 @@ class ImageView(Activity):
         self.unfocus() # focus on the invisible center button, not previous or next
 
     def show_prev_image_if_fullscreen(self, event=None):
+        if self.stopping: # closing the window results in a focus shift, which can trigger the next action in fullscreen
+            return
         if self.fullscreen:
             self.unfocus()
             self.show_prev_image()
 
     def show_next_image_if_fullscreen(self, event=None):
+        if self.stopping: # closing the window results in a focus shift, which can trigger the next action in fullscreen
+            return
         if self.fullscreen:
             self.unfocus()
             self.show_next_image()
 
     def unfocus(self):
         group = lv.group_get_default()
+        if not group:
+            return
         print("got focus group")
         # group.focus_obj(self.play_button) would be better but appears missing?!
-        b = group.get_focused()
+        focused = group.get_focused()
         print("got focus button")
-        #b.remove_state(lv.STATE.FOCUSED) # this doesn't seem to work to remove focus
-        if b:
+        #focused.remove_state(lv.STATE.FOCUSED) # this doesn't seem to work to remove focus
+        if focused:
             print("checking which button is focused")
-            if b == self.next_button:
+            if focused == self.next_button:
                 print("next is focused")
                 group.focus_prev()
-            elif b == self.prev_button:
+            elif focused == self.prev_button:
                 print("prev is focused")
                 group.focus_next()
             else:
@@ -213,7 +223,11 @@ class ImageView(Activity):
                 image_data = f.read()
                 print(f"loaded {len(image_data)} bytes from .raw file")
                 f.close()
-                width, height, color_format = self.extract_dimensions_and_format(name)
+                try:
+                    width, height, color_format = self.extract_dimensions_and_format(name)
+                except ValueError as e:
+                    print(f"Warning: could not extract dimensions and format from raw image: {e}")
+                    return
                 print(f"Raw image has width: {width}, Height: {height}, Color Format: {color_format}")
                 stride = width * 2
                 cf = lv.COLOR_FORMAT.RGB565
