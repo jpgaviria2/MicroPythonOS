@@ -3,6 +3,7 @@ import time
 
 from mpos.apps import Activity
 import mpos.ui
+import mpos.ui.anim
 
 class ImageView(Activity):
 
@@ -15,32 +16,35 @@ class ImageView(Activity):
     image_nr = None
     image_timer = None
     image = None
+    fullscreen = False
 
     def onCreate(self):
         screen = lv.obj()
         self.image = lv.image(screen)
-        self.image.set_size(128, 128)
         self.image.center()
+        self.image.add_flag(lv.obj.FLAG.CLICKABLE)
+        #self.image.add_event_cb(self.print_events, lv.EVENT.ALL, None)
+        self.image.add_event_cb(lambda e: self.play(),lv.EVENT.CLICKED,None)
         self.label = lv.label(screen)
-        self.label.set_text('Hello Images!')
+        self.label.set_text('Loading images from\n{self.imagedir}')
         self.label.align(lv.ALIGN.TOP_MID,0,0)
         self.prev_button = lv.button(screen)
         self.prev_button.align(lv.ALIGN.BOTTOM_LEFT,0,0)
         self.prev_button.add_event_cb(lambda e: self.show_prev_image(),lv.EVENT.CLICKED,None)
         prev_label = lv.label(self.prev_button)
         prev_label.set_text(lv.SYMBOL.LEFT)
-        self.play_button = lv.button(screen)
-        self.play_button.align(lv.ALIGN.BOTTOM_MID,0,0)
-        self.play_button.add_event_cb(lambda e: self.play(),lv.EVENT.CLICKED,None)
-        play_label = lv.label(self.play_button)
-        play_label.set_text(lv.SYMBOL.PLAY)
+        #self.play_button = lv.button(screen)
+        #self.play_button.align(lv.ALIGN.BOTTOM_MID,0,0)
+        #self.play_button.add_event_cb(lambda e: self.play(),lv.EVENT.CLICKED,None)
+        #play_label = lv.label(self.play_button)
+        #play_label.set_text(lv.SYMBOL.PLAY)
         self.next_button = lv.button(screen)
         self.next_button.align(lv.ALIGN.BOTTOM_RIGHT,0,0)
         self.next_button.add_event_cb(lambda e: self.show_next_image(),lv.EVENT.CLICKED,None)
-        #self.next_button.add_event_cb(self.touch_cb, lv.EVENT.ALL, None)
+        self.next_button.add_event_cb(self.print_events, lv.EVENT.ALL, None)
         next_label = lv.label(self.next_button)
         next_label.set_text(lv.SYMBOL.RIGHT)
-        #screen.add_event_cb(self.touch_cb, lv.EVENT.ALL, None)
+        #screen.add_event_cb(self.print_events, lv.EVENT.ALL, None)
         self.setContentView(screen)
 
     def onResume(self, screen):
@@ -64,7 +68,7 @@ class ImageView(Activity):
             print("ImageView: deleting image_timer")
             self.image_timer.delete()
     
-    def touch_cb(self, event):
+    def print_events(self, event):
         global canvas
         event_code=event.get_code()
         #print(f"got event {event_code}")
@@ -99,6 +103,21 @@ class ImageView(Activity):
 
     def play(self, event=None):
         print("playing...")
+        if self.fullscreen:
+            print("stopping fullscreen")
+            self.fullscreen = False
+            mpos.ui.anim.smooth_show(self.label)
+            mpos.ui.anim.smooth_show(self.prev_button)
+            #mpos.ui.anim.smooth_show(self.play_button)
+            mpos.ui.anim.smooth_show(self.next_button)
+        else:
+            print("starting fullscreen")
+            self.fullscreen = True
+            mpos.ui.anim.smooth_hide(self.label)
+            mpos.ui.anim.smooth_hide(self.prev_button)
+            #mpos.ui.anim.smooth_hide(self.play_button)
+            mpos.ui.anim.smooth_hide(self.next_button)
+        self.scale_image()
 
     def show_next_image(self, event=None):
         print("showing next image...")
@@ -116,12 +135,26 @@ class ImageView(Activity):
         try:
             self.label.set_text(name)
             self.image.set_src(f"M:{name}")
-            print(f"the LVGL image has size: {self.image.get_width()}x{self.image.get_height()}")
-            header = lv.image_header_t()
-            self.image.decoder_get_info(self.image.get_src(), header)
-            print(f"the real image has size: {header.w}x{header.h}")
-            #image.set_size(128, 128)
-            #self.image.set_scale(512)
-            print(f"after set_scale, the LVGL image has size: {self.image.get_width()}x{self.image.get_height()}")
+            self.scale_image()
         except Exception as e:
             print(f"show_image got exception: {e}")
+
+    def scale_image(self):
+        if self.fullscreen:
+            pct = 100
+        else:
+            pct = 90
+        lvgl_w = mpos.ui.pct_of_display_width(pct)
+        lvgl_h = mpos.ui.pct_of_display_height(pct)
+        print(f"scaling to size: {lvgl_w}x{lvgl_h}")
+        header = lv.image_header_t()
+        self.image.decoder_get_info(self.image.get_src(), header)
+        image_w = header.w
+        image_h = header.h
+        print(f"the real image has size: {header.w}x{header.h}")
+        scale_factor_w = round(lvgl_w * 256 / image_w)
+        scale_factor_h = round(lvgl_h * 256 / image_h)
+        print(f"scale_factors: {scale_factor_w},{scale_factor_h}")
+        self.image.set_size(lvgl_w, lvgl_h)
+        self.image.set_scale(max(scale_factor_w,scale_factor_h))
+        print(f"after set_scale, the LVGL image has size: {self.image.get_width()}x{self.image.get_height()}")

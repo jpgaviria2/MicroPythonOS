@@ -632,6 +632,9 @@ def handle_top_swipe():
 def pct_of_display_width(percent):
     return round(horizontal_resolution * percent / 100)
 
+def pct_of_display_height(percent):
+    return round(vertical_resolution * percent / 100)
+
 def min_resolution():
     return min(mpos.ui.horizontal_resolution,mpos.ui.vertical_resolution)
 
