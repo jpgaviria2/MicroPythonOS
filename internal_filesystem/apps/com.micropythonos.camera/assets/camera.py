@@ -177,7 +177,7 @@ class Camera(Activity):
         except OSError:
             pass
         if self.current_cam_buffer is not None:
-            filename=f"data/images/camera_capture_{mpos.time.epoch_seconds()}.raw"
+            filename=f"data/images/camera_capture_{mpos.time.epoch_seconds()}_{self.width}x{self.height}_RGB565.raw"
             try:
                 with open(filename, 'wb') as f:
                     f.write(self.current_cam_buffer)

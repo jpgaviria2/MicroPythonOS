@@ -175,32 +175,47 @@ class ImageView(Activity):
         print(f"show_next_image showing {name}")
         self.show_image(name)
 
+    def extract_dimensions_and_format(self, filename):
+        # Split the filename by '_'
+        parts = filename.split('_')
+        # Get the color format (last part before '.raw')
+        color_format = parts[-1].split('.')[0]  # e.g., "RGB565"
+        # Get the resolution (second-to-last part)
+        resolution = parts[-2]  # e.g., "240x240"
+        # Split resolution by 'x' to get width and height
+        width, height = map(int, resolution.split('x'))
+        return width, height, color_format.upper()
+
     def show_image(self, name):
         try:
             self.label.set_text(name)
             if name.endswith(".raw"):
                 f = open(name, 'rb')
                 image_data = f.read()
-                print(f"loaded {len(image_data)} bytes")
+                print(f"loaded {len(image_data)} bytes from .raw file")
                 f.close()
-                w = 240
-                h = 240
+                width, height, color_format = self.extract_dimensions_and_format(name)
+                print(f"Raw image has width: {width}, Height: {height}, Color Format: {color_format}")
+                stride = width * 2
+                cf = lv.COLOR_FORMAT.RGB565
+                if color_format != "RGB565":
+                    print(f"WARNING: unknown color format {color_format}, assuming RGB565...")
                 image_dsc = lv.image_dsc_t({
                     "header": {
                         "magic": lv.IMAGE_HEADER_MAGIC,
-                        "w": w,
-                        "h": h,
-                        "stride": w * 2,
-                        "cf": lv.COLOR_FORMAT.RGB565
+                        "w": width,
+                        "h": height,
+                        "stride": stride,
+                        "cf": cf
                     },
-                    'data_size': w * h * 2,
+                    'data_size': len(image_data),
                     'data': image_data
                 })
                 self.image.set_src(image_dsc)
             else:
                 self.image.set_src(f"M:{name}")
             self.scale_image()
-        except Exception as e:
+        except OSError as e:
             print(f"show_image got exception: {e}")
 
     def scale_image(self):
