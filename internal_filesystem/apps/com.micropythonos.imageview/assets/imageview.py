@@ -24,7 +24,7 @@ class ImageView(Activity):
         self.image.center()
         self.image.add_flag(lv.obj.FLAG.CLICKABLE)
         #self.image.add_event_cb(self.print_events, lv.EVENT.ALL, None)
-        self.image.add_event_cb(lambda e: self.play(),lv.EVENT.CLICKED,None)
+        #self.image.add_event_cb(lambda e: self.toggle_fullscreen(),lv.EVENT.CLICKED,None)
         self.label = lv.label(screen)
         self.label.set_text('Loading images from\n{self.imagedir}')
         self.label.align(lv.ALIGN.TOP_MID,0,0)
@@ -36,8 +36,8 @@ class ImageView(Activity):
         prev_label.set_text(lv.SYMBOL.LEFT)
         self.play_button = lv.button(screen)
         self.play_button.align(lv.ALIGN.BOTTOM_MID,0,0)
-        self.play_button.add_flag(lv.obj.FLAG.HIDDEN)
         self.play_button.set_style_opa(lv.OPA.TRANSP, 0)
+        #self.play_button.add_flag(lv.obj.FLAG.HIDDEN)
         #self.play_button.add_event_cb(lambda e: self.unfocus_if_not_fullscreen(),lv.EVENT.FOCUSED,None)
         #self.play_button.set_style_shadow_opa(lv.OPA.TRANSP, 0)
         #self.play_button.add_event_cb(lambda e: self.play(),lv.EVENT.CLICKED,None)
@@ -67,6 +67,7 @@ class ImageView(Activity):
                 self.images.append(fullname)
         # Begin with one image:
         self.show_next_image()
+        self.stop_fullscreen()
         #self.image_timer = lv.timer_create(self.show_next_image, 1000, None)
 
     def onStop(self, screen):
@@ -107,49 +108,60 @@ class ImageView(Activity):
         print(f"show_prev_image showing {name}")
         self.show_image(name)
 
-    def play(self, event=None):
+    def toggle_fullscreen(self, event=None):
         print("playing...")
         if self.fullscreen:
-            print("stopping fullscreen")
             self.fullscreen = False
-            mpos.ui.anim.smooth_show(self.label)
-            mpos.ui.anim.smooth_show(self.prev_button)
-            #mpos.ui.anim.smooth_show(self.play_button)
-            self.play_button.add_flag(lv.obj.FLAG.HIDDEN)
-            mpos.ui.anim.smooth_show(self.next_button)
+            self.stop_fullscreen()
         else:
-            print("starting fullscreen")
             self.fullscreen = True
-            mpos.ui.anim.smooth_hide(self.label)
-            mpos.ui.anim.smooth_hide(self.prev_button, hide=False)
-            #mpos.ui.anim.smooth_hide(self.play_button, hide=False)
-            self.play_button.remove_flag(lv.obj.FLAG.HIDDEN)
-            mpos.ui.anim.smooth_hide(self.next_button, hide=False)
+            self.start_fullscreen()
         self.scale_image()
+
+    def stop_fullscreen(self):
+        print("stopping fullscreen")
+        mpos.ui.anim.smooth_show(self.label)
+        mpos.ui.anim.smooth_show(self.prev_button)
+        #mpos.ui.anim.smooth_show(self.play_button)
+        self.play_button.add_flag(lv.obj.FLAG.HIDDEN) # make it not accepting focus
+        mpos.ui.anim.smooth_show(self.next_button)
+
+    def start_fullscreen(self):
+        print("starting fullscreen")
+        mpos.ui.anim.smooth_hide(self.label)
+        mpos.ui.anim.smooth_hide(self.prev_button, hide=False)
+        #mpos.ui.anim.smooth_hide(self.play_button, hide=False)
+        self.play_button.remove_flag(lv.obj.FLAG.HIDDEN) # make it accepting focus
+        mpos.ui.anim.smooth_hide(self.next_button, hide=False)
+        self.unfocus() # focus on the invisible center button, not previous or next
 
     def show_prev_image_if_fullscreen(self, event=None):
         if self.fullscreen:
-            self.unfocus(True)
+            self.unfocus()
             self.show_prev_image()
 
     def show_next_image_if_fullscreen(self, event=None):
         if self.fullscreen:
-            self.unfocus(False)
+            self.unfocus()
             self.show_next_image()
 
-    def unfocus_if_not_fullscreen(self, event=None):
-        if not self.fullscreen:
-            self.unfocus(False)
-
-    def unfocus(self, next):
+    def unfocus(self):
         group = lv.group_get_default()
-        # This doesn't work, and group.focus_obj() is missing, so need to do this hack:
-        #b = group.get_focused()
-        #b.remove_state(lv.STATE.FOCUSED)
-        if next:
-            group.focus_next()
-        else:
-            group.focus_prev()
+        print("got focus group")
+        # group.focus_obj(self.play_button) would be better but appears missing?!
+        b = group.get_focused()
+        print("got focus button")
+        #b.remove_state(lv.STATE.FOCUSED) # this doesn't seem to work to remove focus
+        if b:
+            print("checking which button is focused")
+            if b == self.next_button:
+                print("next is focused")
+                group.focus_prev()
+            elif b == self.prev_button:
+                print("prev is focused")
+                group.focus_next()
+            else:
+                print("focus isn't on next or previous, leaving it...")
 
     def show_next_image(self, event=None):
         print("showing next image...")
@@ -188,5 +200,6 @@ class ImageView(Activity):
         scale_factor_h = round(lvgl_h * 256 / image_h)
         print(f"scale_factors: {scale_factor_w},{scale_factor_h}")
         self.image.set_size(lvgl_w, lvgl_h)
-        self.image.set_scale(max(scale_factor_w,scale_factor_h))
+        #self.image.set_scale(max(scale_factor_w,scale_factor_h)) # fills the entire screen but cuts off borders
+        self.image.set_scale(min(scale_factor_w,scale_factor_h))
         print(f"after set_scale, the LVGL image has size: {self.image.get_width()}x{self.image.get_height()}")
