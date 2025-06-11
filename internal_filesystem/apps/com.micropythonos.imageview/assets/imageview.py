@@ -30,18 +30,24 @@ class ImageView(Activity):
         self.label.align(lv.ALIGN.TOP_MID,0,0)
         self.prev_button = lv.button(screen)
         self.prev_button.align(lv.ALIGN.BOTTOM_LEFT,0,0)
+        self.prev_button.add_event_cb(lambda e: self.show_prev_image_if_fullscreen(),lv.EVENT.FOCUSED,None)
         self.prev_button.add_event_cb(lambda e: self.show_prev_image(),lv.EVENT.CLICKED,None)
         prev_label = lv.label(self.prev_button)
         prev_label.set_text(lv.SYMBOL.LEFT)
-        #self.play_button = lv.button(screen)
-        #self.play_button.align(lv.ALIGN.BOTTOM_MID,0,0)
+        self.play_button = lv.button(screen)
+        self.play_button.align(lv.ALIGN.BOTTOM_MID,0,0)
+        self.play_button.add_flag(lv.obj.FLAG.HIDDEN)
+        self.play_button.set_style_opa(lv.OPA.TRANSP, 0)
+        #self.play_button.add_event_cb(lambda e: self.unfocus_if_not_fullscreen(),lv.EVENT.FOCUSED,None)
+        #self.play_button.set_style_shadow_opa(lv.OPA.TRANSP, 0)
         #self.play_button.add_event_cb(lambda e: self.play(),lv.EVENT.CLICKED,None)
         #play_label = lv.label(self.play_button)
         #play_label.set_text(lv.SYMBOL.PLAY)
         self.next_button = lv.button(screen)
         self.next_button.align(lv.ALIGN.BOTTOM_RIGHT,0,0)
+        #self.next_button.add_event_cb(self.print_events, lv.EVENT.ALL, None)
+        self.next_button.add_event_cb(lambda e: self.show_next_image_if_fullscreen(),lv.EVENT.FOCUSED,None)
         self.next_button.add_event_cb(lambda e: self.show_next_image(),lv.EVENT.CLICKED,None)
-        self.next_button.add_event_cb(self.print_events, lv.EVENT.ALL, None)
         next_label = lv.label(self.next_button)
         next_label.set_text(lv.SYMBOL.RIGHT)
         #screen.add_event_cb(self.print_events, lv.EVENT.ALL, None)
@@ -109,15 +115,41 @@ class ImageView(Activity):
             mpos.ui.anim.smooth_show(self.label)
             mpos.ui.anim.smooth_show(self.prev_button)
             #mpos.ui.anim.smooth_show(self.play_button)
+            self.play_button.add_flag(lv.obj.FLAG.HIDDEN)
             mpos.ui.anim.smooth_show(self.next_button)
         else:
             print("starting fullscreen")
             self.fullscreen = True
             mpos.ui.anim.smooth_hide(self.label)
-            mpos.ui.anim.smooth_hide(self.prev_button)
-            #mpos.ui.anim.smooth_hide(self.play_button)
-            mpos.ui.anim.smooth_hide(self.next_button)
+            mpos.ui.anim.smooth_hide(self.prev_button, hide=False)
+            #mpos.ui.anim.smooth_hide(self.play_button, hide=False)
+            self.play_button.remove_flag(lv.obj.FLAG.HIDDEN)
+            mpos.ui.anim.smooth_hide(self.next_button, hide=False)
         self.scale_image()
+
+    def show_prev_image_if_fullscreen(self, event=None):
+        if self.fullscreen:
+            self.unfocus(True)
+            self.show_prev_image()
+
+    def show_next_image_if_fullscreen(self, event=None):
+        if self.fullscreen:
+            self.unfocus(False)
+            self.show_next_image()
+
+    def unfocus_if_not_fullscreen(self, event=None):
+        if not self.fullscreen:
+            self.unfocus(False)
+
+    def unfocus(self, next):
+        group = lv.group_get_default()
+        # This doesn't work, and group.focus_obj() is missing, so need to do this hack:
+        #b = group.get_focused()
+        #b.remove_state(lv.STATE.FOCUSED)
+        if next:
+            group.focus_next()
+        else:
+            group.focus_prev()
 
     def show_next_image(self, event=None):
         print("showing next image...")
