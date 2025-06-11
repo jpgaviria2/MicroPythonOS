@@ -24,7 +24,7 @@ class ImageView(Activity):
         self.image.center()
         self.image.add_flag(lv.obj.FLAG.CLICKABLE)
         #self.image.add_event_cb(self.print_events, lv.EVENT.ALL, None)
-        #self.image.add_event_cb(lambda e: self.toggle_fullscreen(),lv.EVENT.CLICKED,None)
+        self.image.add_event_cb(lambda e: self.toggle_fullscreen(),lv.EVENT.CLICKED,None)
         self.label = lv.label(screen)
         self.label.set_text('Loading images from\n{self.imagedir}')
         self.label.align(lv.ALIGN.TOP_MID,0,0)
@@ -57,7 +57,7 @@ class ImageView(Activity):
         self.images.clear()
         for item in os.listdir(self.imagedir):
             print(item)
-            if item.endswith(".jpg") or item.endswith(".jpeg") or item.endswith(".png"):
+            if item.endswith(".jpg") or item.endswith(".jpeg") or item.endswith(".png") or item.endswith(".raw"):
                 fullname = f"{self.imagedir}/{item}"
                 size = os.stat(fullname)[6]
                 print(f"size: {size}")
@@ -178,7 +178,27 @@ class ImageView(Activity):
     def show_image(self, name):
         try:
             self.label.set_text(name)
-            self.image.set_src(f"M:{name}")
+            if name.endswith(".raw"):
+                f = open(name, 'rb')
+                image_data = f.read()
+                print(f"loaded {len(image_data)} bytes")
+                f.close()
+                w = 240
+                h = 240
+                image_dsc = lv.image_dsc_t({
+                    "header": {
+                        "magic": lv.IMAGE_HEADER_MAGIC,
+                        "w": w,
+                        "h": h,
+                        "stride": w * 2,
+                        "cf": lv.COLOR_FORMAT.RGB565
+                    },
+                    'data_size': w * h * 2,
+                    'data': image_data
+                })
+                self.image.set_src(image_dsc)
+            else:
+                self.image.set_src(f"M:{name}")
             self.scale_image()
         except Exception as e:
             print(f"show_image got exception: {e}")
