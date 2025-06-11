@@ -13,8 +13,16 @@ import mpos.clipboard
 
 #TFT_HOR_RES=640
 #TFT_VER_RES=480
-TFT_HOR_RES=320
-TFT_VER_RES=240
+
+#TFT_HOR_RES=320
+#TFT_VER_RES=240
+
+TFT_HOR_RES=1024
+TFT_VER_RES=576
+
+# Works:
+#TFT_HOR_RES=1920
+#TFT_VER_RES=1080
 
 bus = lcd_bus.SDLBus(flags=0)
 

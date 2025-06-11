@@ -279,11 +279,14 @@ class ImageView(Activity):
 
     def clear_image(self):
         """Clear current image or GIF source to free memory."""
-        if self.current_image_dsc:
-            self.current_image_dsc = None  # Release reference to descriptor
-        self.image.set_src(None)  # Clear image source
-        self.gif.set_src(None)  # Clear GIF source
+        #if self.current_image_dsc:
+        #    self.current_image_dsc = None  # Release reference to descriptor
+        #self.image.set_src(None)  # Clear image source
+        #self.gif.set_src(None)  # Clear GIF source causes crash!
         #self.gif.add_flag(lv.obj.FLAG.HIDDEN)
         #self.image.remove_flag(lv.obj.FLAG.HIDDEN)
         #lv.image_cache_invalidate_src(None)  # Invalidate LVGL image cache
-        gc.collect()  # Force garbage collection
+        # These 2 are needed to enable infinite slides with just 10MB RAM:
+        lv.image.cache_drop(None) # This helps a lot!
+        gc.collect()  # Force garbage collection seems to fix memory alloc issues!
+        
