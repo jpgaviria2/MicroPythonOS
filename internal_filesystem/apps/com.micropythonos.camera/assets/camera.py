@@ -108,14 +108,14 @@ class Camera(Activity):
         if self.cam:
             self.image.set_rotation(900) # internal camera is rotated 90 degrees
         else:
-            print("camera.py: no internal camera found, trying webcam on /dev/video0")
+            print("camera app: no internal camera found, trying webcam on /dev/video0")
             try:
                 self.cam = webcam.init("/dev/video0")
                 self.use_webcam = True
             except Exception as e:
-                print(f"camera.py: webcam exception: {e}")
+                print(f"camera app: webcam exception: {e}")
         if self.cam:
-            print("Camera initialized, continuing...")
+            print("Camera app initialized, continuing...")
             self.capture_timer = lv.timer_create(self.try_capture, 100, None)
             self.status_label_cont.add_flag(lv.obj.FLAG.HIDDEN)
             if self.scanqr_mode:
@@ -124,20 +124,20 @@ class Camera(Activity):
                 self.qr_button.remove_flag(lv.obj.FLAG.HIDDEN)
                 self.snap_button.remove_flag(lv.obj.FLAG.HIDDEN)
         else:
-            print("No camera found, stopping camera.py")
+            print("No camera found, stopping camera app")
             if self.scanqr_mode:
                 self.finish()
 
 
     def onStop(self, screen):
-        print("camera.py backgrounded, cleaning up...")
+        print("camera app backgrounded, cleaning up...")
         if self.capture_timer:
             self.capture_timer.delete()
         if self.use_webcam:
             webcam.deinit(self.cam)
         elif self.cam:
             self.cam.deinit()
-        print("camera.py cleanup done.")
+        print("camera app cleanup done.")
 
     def qrdecode_one(self):
         try:
@@ -223,7 +223,6 @@ class Camera(Activity):
                     self.qrdecode_one()
         except Exception as e:
             print(f"Camera capture exception: {e}")
-
 
 
 # Non-class functions:
