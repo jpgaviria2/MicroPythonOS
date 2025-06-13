@@ -1,0 +1,5 @@
+p = lv.ffmpeg_player(lv.screen_active())
+p.player_set_src("../artwork/Big_Buck_Bunny_extract.ogv")
+p.player_set_auto_restart(True)
+p.player_set_cmd(p.PLAYER_CMD.START)
+p.center()
