@@ -13,6 +13,10 @@ if [ -z "$target" -o -z "$buildtype" ]; then
 	exit 1
 fi
 
+if [ "$buildtype" == "prod" ]; then
+	./scripts/freezefs_mount_builtin.sh
+fi
+
 pushd ~/sources/lvgl_micropython
 
 manifest=""
