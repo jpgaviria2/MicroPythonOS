@@ -219,17 +219,6 @@ def parse_manifest(manifest_path):
     except OSError:
         print(f"parse_manifest: error loading manifest_path: {manifest_path}")
         return default_app
-        
-
-
-def auto_connect():
-    builtin_auto_connect = "builtin/system/WifiService.py"
-    try:
-        print(f"Starting {builtin_auto_connect}...")
-        stat = uos.stat(builtin_auto_connect)
-        execute_script_new_thread(builtin_auto_connect, True)
-    except Exception as e:
-        print("Couldn't execute {builtin_auto_connect} because exception {e}, continuing...")
 
 
 class Activity:

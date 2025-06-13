@@ -10,6 +10,9 @@ import time
 import mpos.config
 import mpos.time
 
+# crude lock on wifi:
+wifi_busy = False
+
 def auto_connect():
     networks = wlan.scan()
     for n in networks:
@@ -48,7 +51,6 @@ def attempt_connecting(ssid,password):
         print(f"auto_connect.py attempt_connecting: Connection error: {e}")
         return False
 
-
 print("WifiService.py running")
 
 have_network=True
@@ -65,12 +67,15 @@ if not have_network:
     print("WifiService.py: no network module found, exiting...")
 elif len(access_points):
     wlan=network.WLAN(network.STA_IF)
-    wlan.active(False) # restart WiFi hardware in case it's in a bad state
-    wlan.active(True)
-    if auto_connect():
-        print("WifiService.py managed to connect.")
-    else:
-        print("WifiService.py did not manage to connect.")
-        wlan.active(False) # disable to conserve power
+    if not wifi_busy:
+        wifi_busy = True
+        wlan.active(False) # restart WiFi hardware in case it's in a bad state
+        wlan.active(True)
+        if auto_connect():
+            print("WifiService.py managed to connect.")
+        else:
+            print("WifiService.py did not manage to connect.")
+            wlan.active(False) # disable to conserve power
+        wifi_busy = False
 else:
     print("WifiService.py: not access points configured, exiting...")

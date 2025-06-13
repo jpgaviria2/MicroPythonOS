@@ -8,6 +8,7 @@ from mpos.apps import Activity, Intent
 
 import mpos.config
 import mpos.ui.anim
+import mpos.wifi
 
 have_network = True
 try:
@@ -46,8 +47,8 @@ class WiFi(Activity):
         self.aplist.align(lv.ALIGN.TOP_MID,0,0)
         print("create_ui: Creating error label")
         self.error_label=lv.label(main_screen)
-        self.error_label.set_text("")
-        self.error_label.align(lv.ALIGN.BOTTOM_MID,0,-40)
+        self.error_label.set_text("THIS IS ERROR TEXT THAT WILL BE SET LATER")
+        self.error_label.align_to(self.aplist, lv.ALIGN.OUT_BOTTOM_MID,0,0)
         self.error_label.add_flag(lv.obj.FLAG.HIDDEN)
         print("create_ui: Creating Scan button")
         self.scan_button=lv.button(main_screen)
@@ -63,8 +64,12 @@ class WiFi(Activity):
         global access_points
         access_points = mpos.config.SharedPreferences("com.micropythonos.system.wifiservice").get_dict("access_points")
         self.keep_running = True
-        if len(self.ssids) == 0:
-            self.start_scan_networks()
+        if mpos.wifi.WifiService.wifi_busy == False:
+            mpos.wifi.WifiService.wifi_busy = True
+            if len(self.ssids) == 0:
+                self.start_scan_networks()
+        else:
+            self.show_error("Wifi is busy, please try again later.")
 
     def onStop(self, screen):
         self.keep_running = False
@@ -75,7 +80,7 @@ class WiFi(Activity):
             print(f"show_error: Displaying error: {message}")
             lv.async_call(lambda l: self.error_label.set_text(message), None)
             lv.async_call(lambda l: self.error_label.remove_flag(lv.obj.FLAG.HIDDEN), None)
-            timer=lv.timer_create(lambda t: self.error_label.add_flag(lv.obj.FLAG.HIDDEN),3000,None)
+            timer=lv.timer_create(lambda t: self.error_label.add_flag(lv.obj.FLAG.HIDDEN),5000,None)
             timer.set_repeat_count(1)
 
     def scan_networks_thread(self):
@@ -99,6 +104,7 @@ class WiFi(Activity):
             self.show_error("Wi-Fi scan failed")
         # scan done:
         self.busy_scanning = False
+        mpos.wifi.WifiService.wifi_busy = False
         if self.keep_running:
             # Schedule UI updates because different thread
             lv.async_call(lambda l: self.scan_button_label.set_text(self.scan_button_scan_text), None)
@@ -147,7 +153,7 @@ class WiFi(Activity):
     def scan_cb(self, event):
         print("scan_cb: Scan button clicked, refreshing list")
         self.start_scan_networks()
-    
+
     def select_ssid_cb(self,ssid):
         print(f"select_ssid_cb: SSID selected: {ssid}")
         intent = Intent(activity_class=PasswordPage)

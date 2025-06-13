@@ -1,4 +1,5 @@
 import task_handler
+import _thread
 
 # Allow LVGL M:/path/to/file or M:relative/path/to/file to work for image set_src etc
 import fs_driver
@@ -35,7 +36,13 @@ from mpos import apps
 
 apps.execute_script("builtin/system/button.py", True) # Install button handler through IRQ
 
-apps.auto_connect()
+try:
+    import mpos.wifi
+    import mpos.apps
+    _thread.stack_size(mpos.apps.good_stack_size())
+    _thread.start_new_thread(mpos.wifi.WifiService.auto_connect, ())
+except Exception as e:
+    print(f"Couldn't start mpos.wifi.WifiService.auto_connect thread because: {e}")
 
 apps.restart_launcher()
 

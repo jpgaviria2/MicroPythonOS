@@ -2,6 +2,7 @@ import utime # for timing calls
 
 import lvgl as lv
 import mpos.apps
+import mpos.wifi
 from mpos.ui.anim import WidgetAnimator
 
 th = None
@@ -197,7 +198,7 @@ def create_notification_bar():
         print("Warning: could not check WLAN status:", str(e))
     
     def update_wifi_icon(timer):
-        if not can_check_network or network.WLAN(network.STA_IF).isconnected():
+        if mpos.wifi.WifiService.is_connected():
             wifi_icon.remove_flag(lv.obj.FLAG.HIDDEN)
         else:
             wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
