@@ -31,6 +31,7 @@ class WiFi(Activity):
     keep_running = True
     busy_scanning = False
     busy_connecting = False
+    error_timer = None
 
     # Widgets:
     aplist = None
@@ -43,7 +44,7 @@ class WiFi(Activity):
         main_screen.set_style_pad_all(15, 0)
         print("create_ui: Creating list widget")
         self.aplist=lv.list(main_screen)
-        self.aplist.set_size(lv.pct(100),lv.pct(80))
+        self.aplist.set_size(lv.pct(100),lv.pct(75))
         self.aplist.align(lv.ALIGN.TOP_MID,0,0)
         print("create_ui: Creating error label")
         self.error_label=lv.label(main_screen)
@@ -64,15 +65,17 @@ class WiFi(Activity):
         global access_points
         access_points = mpos.config.SharedPreferences("com.micropythonos.system.wifiservice").get_dict("access_points")
         self.keep_running = True
-        if mpos.wifi.WifiService.wifi_busy == False:
-            mpos.wifi.WifiService.wifi_busy = True
-            if len(self.ssids) == 0:
+        if len(self.ssids) == 0:
+            if mpos.wifi.WifiService.wifi_busy == False:
+                mpos.wifi.WifiService.wifi_busy = True
                 self.start_scan_networks()
-        else:
-            self.show_error("Wifi is busy, please try again later.")
+            else:
+                self.show_error("Wifi is busy, please try again later.")
 
     def onStop(self, screen):
         self.keep_running = False
+        if self.error_timer:
+            self.error_timer.delete()
 
     def show_error(self, message):
         if self.keep_running: # called from slow threads so might already have stopped
@@ -80,8 +83,12 @@ class WiFi(Activity):
             print(f"show_error: Displaying error: {message}")
             lv.async_call(lambda l: self.error_label.set_text(message), None)
             lv.async_call(lambda l: self.error_label.remove_flag(lv.obj.FLAG.HIDDEN), None)
-            timer=lv.timer_create(lambda t: self.error_label.add_flag(lv.obj.FLAG.HIDDEN),5000,None)
-            timer.set_repeat_count(1)
+            self.error_timer = lv.timer_create(self.hide_error,5000,None)
+            self.error_timer.set_repeat_count(1)
+
+    def hide_error(self, timer):
+        if self.keep_running:
+            self.error_label.add_flag(lv.obj.FLAG.HIDDEN)
 
     def scan_networks_thread(self):
         global have_network
@@ -268,11 +275,15 @@ class PasswordPage(Activity):
         self.keyboard=lv.keyboard(password_page)
         self.keyboard.align(lv.ALIGN.BOTTOM_MID,0,0)
         self.keyboard.set_textarea(self.password_ta)
+        self.keyboard.set_style_min_height(160, 0)
         self.keyboard.add_event_cb(lambda *args: mpos.ui.anim.smooth_hide(self.keyboard), lv.EVENT.READY, None)
         self.keyboard.add_event_cb(lambda *args: mpos.ui.anim.smooth_hide(self.keyboard), lv.EVENT.CANCEL, None)
         self.keyboard.add_flag(lv.obj.FLAG.HIDDEN)
         print("PasswordPage: Loading password page")
         self.setContentView(password_page)
+
+    def onStop(self, screen):
+        mpos.ui.anim.smooth_hide(self.keyboard)
 
     def connect_cb(self, event):
         global access_points
