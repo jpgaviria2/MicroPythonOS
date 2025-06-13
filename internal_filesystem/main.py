@@ -6,6 +6,7 @@ import fs_driver
 fs_drv = lv.fs_drv_t()
 fs_driver.fs_register(fs_drv, 'M')
 
+import mpos.apps
 import mpos.ui
 
 RED = lv.palette_main(lv.PALETTE.RED)
@@ -26,10 +27,10 @@ mpos.ui.handle_back_swipe()
 mpos.ui.handle_top_swipe()
 mpos.ui.th = task_handler.TaskHandler(duration=5) # 5ms is recommended for MicroPython+LVGL on desktop
 
-# Maybe this should only be done if there is not already a "builtin" folder... with the expected apps/4apps
 try:
     import freezefs_mount_builtin
 except Exception as e:
+    # This will throw an exception if there is already a "/builtin" folder present
     print("main.py: WARNING: could not import/run freezefs_mount_builtin: ", e)
 
 from mpos import apps
