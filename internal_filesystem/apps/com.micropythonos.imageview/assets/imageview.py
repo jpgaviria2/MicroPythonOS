@@ -37,7 +37,7 @@ class ImageView(Activity):
         self.gif.add_event_cb(lambda e: self.toggle_fullscreen(),lv.EVENT.CLICKED,None)
         #self.image.add_event_cb(self.print_events, lv.EVENT.ALL, None)
         self.label = lv.label(screen)
-        self.label.set_text('Loading images from\n{self.imagedir}')
+        self.label.set_text(f"Loading images from\n{self.imagedir}")
         self.label.align(lv.ALIGN.TOP_MID,0,0)
         self.prev_button = lv.button(screen)
         self.prev_button.align(lv.ALIGN.BOTTOM_LEFT,0,0)
