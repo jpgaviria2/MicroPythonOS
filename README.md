@@ -103,11 +103,8 @@ Release checklist
 - tag MicroPythonOS and external apps like LightningPiggy
 - ./scripts/bundle_apps.sh
 - ./scripts/build_lvgl_micropython.sh esp32 prod
-- copy_apps_to_server.sh
-- copy_build_to_server.sh
-- copy ~/sources/lvgl_micropython/build/lvgl_micropy_ESP32_GENERIC_S3-SPIRAM_OCT-16.bin to webinstaller
-- update manifest of webinstaller
-- push webinstaller
+- ./scripts/release_to_updates.sh
+- ./scripts/release_to_install.sh
 
 Building for desktop
 ====================
