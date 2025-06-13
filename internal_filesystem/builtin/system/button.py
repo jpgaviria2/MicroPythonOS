@@ -1,10 +1,17 @@
 print("button.py running")
 
+import lvgl as lv
+
 from machine import Pin, Timer
 import time
 import _thread
 
-import mpos.apps
+from mpos.apps import Activity, ActivityNavigator, Intent
+
+#import mpos.config
+#import mpos.ui
+
+#import mpos.apps
 
 # Configure IO0 as input with pull-up resistor
 button = Pin(0, Pin.IN, Pin.PULL_UP)
@@ -17,19 +24,26 @@ is_pressed = False
 # Timer for checking long press
 timer = Timer(-1)
 
-message = "Bootloader mode activated.\nYou can now install firmware over USB.\n\n"
+message = "Bootloader mode activated.\nYou can now install firmware over USB.\n\nReset the device to cancel."
 
-def handle_long_press():
-    print(message)
-    import lvgl as lv
-    screen = lv.obj()
-    label = lv.label(screen)
-    label.set_text(message)
-    label.center()
-    lv.screen_load(screen)
-    time.sleep(1)
-    import machine
-    machine.bootloader()
+class Bootloader(Activity):
+
+    def onCreate(self):
+        print(message)
+        screen = lv.obj()
+        label = lv.label(screen)
+        label.set_text(message)
+        label.center()
+        self.setContentView(screen)
+
+    def onResume(self, screen):
+        # Use a timer, otherwise the UI won't have time to update:
+        timer = lv.timer_create(self.start_bootloader, 1000, None) # give it some time (at least 500ms) for the new screen animation
+        timer.set_repeat_count(1)
+
+    def start_bootloader(self, timer):
+        import machine
+        machine.bootloader()
 
 def on_long_press(t): # Callback for when long press duration is reached.
     print("button.py: long press detected")
@@ -37,8 +51,11 @@ def on_long_press(t): # Callback for when long press duration is reached.
     timer.deinit()  # Stop the timer
     global is_pressed
     if is_pressed and button.value() == 0:  # Ensure button is still pressed
-        _thread.stack_size(mpos.apps.good_stack_size())
-        _thread.start_new_thread(handle_long_press, ())
+        #_thread.stack_size(mpos.apps.good_stack_size())
+        #_thread.start_new_thread(handle_long_press, ())
+        #lv.async_call(lambda l: handle_long_press(), None)
+        intent = Intent(activity_class=Bootloader)
+        ActivityNavigator.startActivity(intent)
     else:
         is_pressed = False
 
