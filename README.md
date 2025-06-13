@@ -98,6 +98,7 @@ Release checklist
 	# manifests that might have already had their version number incremented:
 	git diff 0.0.4 -- internal_filesystem/apps/*/META-INF/*
 	git diff 0.0.4 -- internal_filesystem/builtin/apps/*/META-INF/*
+- Update CHANGELOG
 - commit and push all code
 - tag MicroPythonOS and external apps like LightningPiggy
 - ./scripts/bundle_apps.sh
