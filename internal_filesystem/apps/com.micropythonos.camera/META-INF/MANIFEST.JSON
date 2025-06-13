@@ -10,8 +10,8 @@
 "category": "camera",
 "activities": [
     {
-      "entrypoint": "assets/camera.py",
-      "classname": "Camera",
+      "entrypoint": "assets/camera_app.py",
+      "classname": "CameraApp",
       "intent_filters": [
         {
           "action": "main",
