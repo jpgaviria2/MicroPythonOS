@@ -7,7 +7,6 @@
 "download_url": "https://apps.micropythonos.com/apps/com.micropythonos.helloworld/mpks/com.micropythonos.helloworld_0.0.2.mpk",
 "fullname": "com.micropythonos.helloworld",
 "version": "0.0.2",
-"entrypoint": "assets/hello.py",
 "category": "development",
 "activities": [
     {
