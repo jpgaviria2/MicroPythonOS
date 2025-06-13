@@ -1,0 +1,20 @@
+diff --git a/ext_mod/lcd_bus/sdl_bus/sdl_bus.c b/ext_mod/lcd_bus/sdl_bus/sdl_bus.c
+index 9378148..d31ef20 100644
+--- a/ext_mod/lcd_bus/sdl_bus/sdl_bus.c
++++ b/ext_mod/lcd_bus/sdl_bus/sdl_bus.c
+@@ -182,6 +182,15 @@
+         self->panel_io_config.bytes_per_pixel = bpp / 8;
+         self->texture = SDL_CreateTexture(self->renderer, (SDL_PixelFormatEnum)buffer_size, SDL_TEXTUREACCESS_STREAMING, width, height);
+         SDL_SetTextureBlendMode(self->texture, SDL_BLENDMODE_BLEND);
++
++        // Check for SDL_WINDOW_FULLSCREEN environment variable
++        if (getenv("SDL_WINDOW_FULLSCREEN") != NULL) {
++            SDL_SetWindowFullscreen(self->window, SDL_WINDOW_FULLSCREEN);
++        }
++        // Set arrow cursor
++        SDL_Cursor* cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
++        SDL_SetCursor(cursor);
++
+         SDL_SetWindowSize(self->window, width, height);
+ 
+         self->rgb565_byte_swap = false;
