@@ -1,10 +1,11 @@
 0.0.5
 =====
-- Lock WiFi while connecting at boot to prevent conflict with WiFi app
 - Improve focus group handling while in deskop keyboard mode
 - Add filesystem driver for LVGL
 - Implement CTRL-V to paste on desktop
 - Implement Escape key for back button on desktop
+- WiFi: increase size of on-screen keyboard for easier password entry
+- WiFi: prevent concurrent operation of auto-connect and Wifi app
 
 0.0.4
 =====
