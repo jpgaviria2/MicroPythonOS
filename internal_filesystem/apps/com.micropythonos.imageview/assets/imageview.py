@@ -288,5 +288,4 @@ class ImageView(Activity):
         #lv.image_cache_invalidate_src(None)  # Invalidate LVGL image cache
         # These 2 are needed to enable infinite slides with just 10MB RAM:
         lv.image.cache_drop(None) # This helps a lot!
-        gc.collect()  # Force garbage collection seems to fix memory alloc issues!
-        
+        gc.collect() # Force garbage collection seems to fix memory alloc issues!
