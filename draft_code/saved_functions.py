@@ -279,10 +279,26 @@ with open("../icons/big-buck-bunny_320x180.gif", 'rb') as f: # works
 
 screen = lv.obj()
 gif = lv.gif(screen)
+gif = lv.gif(lv.screen_active())
 gif.set_src("M:data/images/tunnel_160x107.gif")
 gif.center()
 #gif.set_size(320,240)
 lv.screen_load(screen)
+
+# floating image:
+img = lv.image(lv.screen_active())
+img.set_src("M:data/images/icon_64x64.png")
+img.set_pos(50,50)
+#img.move_foreground()
+#img.set_flags(lv.LAYOUT.NONE)
+#img.center()
+
+gif = lv.gif(lv.screen_active())
+gif.set_pos(150,150)
+#gif.set_src("M:data/images/tunnel_160x107.gif")
+gif.set_src("M:data/images/graphics-snakes-834669.gif")
+
+
 
 # BIN
 with open("/icon_64x64.bin", 'rb') as f:
