@@ -81,6 +81,7 @@ class OSUpdate(Activity):
     def handle_update_info(self, version, download_url, changelog):
         label = f"Installed OS version: {mpos.info.CURRENT_OS_VERSION}\n"
         if compare_versions(version, mpos.info.CURRENT_OS_VERSION):
+        #if True: # for testing
             label += "Available new"
             self.install_button.remove_state(lv.STATE.DISABLED)
             self.install_button.add_event_cb(lambda e, u=download_url: self.install_button_click(u), lv.EVENT.CLICKED, None)
