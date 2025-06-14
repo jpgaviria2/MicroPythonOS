@@ -68,7 +68,7 @@ class AppStore(Activity):
                 self.apps = [app for app in self.apps if not (app.name in seen or seen.add(app.name))]
                 # Sort apps by app.name
                 self.apps.sort(key=lambda x: x.name.lower())  # Use .lower() for case-insensitive sorting
-                time.sleep_ms(100)
+                time.sleep_ms(200)
                 lv.async_call(lambda l: self.please_wait_label.add_flag(lv.obj.FLAG.HIDDEN), None)
                 lv.async_call(lambda l: self.create_apps_list(), None)
             except Exception as e:
@@ -134,7 +134,7 @@ class AppStore(Activity):
             image_dsc = self.download_icon(app.icon_url)
             app.image_dsc = image_dsc # save it for the app detail page
             lv.async_call(lambda l: app.image.set_src(image_dsc), None)
-            time.sleep_ms(100) # not waiting here will result in some async_calls() not being executed
+            time.sleep_ms(200) # not waiting here will result in some async_calls() not being executed
         print("Finished downloading icons...")
 
     def show_app_detail(self, app):
@@ -320,16 +320,13 @@ class AppDetail(Activity):
         self.install_label.set_text("Please wait...") # TODO: Put "Cancel" if cancellation is possible
         self.progress_bar.remove_flag(lv.obj.FLAG.HIDDEN)
         self.progress_bar.set_value(33, lv.ANIM.ON)
-        time.sleep_ms(500)
         try:
             import shutil
             shutil.rmtree(app_folder)
             self.progress_bar.set_value(66, lv.ANIM.ON)
-            time.sleep_ms(500)
         except Exception as e:
             print(f"Removing app_folder {app_folder} got error: {e}")
         self.progress_bar.set_value(100, lv.ANIM.OFF)
-        time.sleep(1)
         self.progress_bar.add_flag(lv.obj.FLAG.HIDDEN)
         self.progress_bar.set_value(0, lv.ANIM.OFF)
         self.set_install_label(app_fullname)
@@ -344,7 +341,6 @@ class AppDetail(Activity):
         self.install_label.set_text("Please wait...") # TODO: Put "Cancel" if cancellation is possible
         self.progress_bar.remove_flag(lv.obj.FLAG.HIDDEN)
         self.progress_bar.set_value(20, lv.ANIM.ON)
-        time.sleep_ms(500)
         try:
             # Step 1: Download the .mpk file
             print(f"Downloading .mpk file from: {zip_url}")
@@ -354,7 +350,6 @@ class AppDetail(Activity):
                 response.close()
                 self.set_install_label(app_fullname)
             self.progress_bar.set_value(40, lv.ANIM.ON)
-            time.sleep_ms(500)
             # Save the .mpk file to a temporary location
             try:
                 os.remove(temp_zip_path)
@@ -370,7 +365,6 @@ class AppDetail(Activity):
             with open(temp_zip_path, "wb") as f:
                 f.write(response.content)
             self.progress_bar.set_value(60, lv.ANIM.ON)
-            time.sleep_ms(500)
             response.close()
             print("Downloaded .mpk file, size:", os.stat(temp_zip_path)[6], "bytes")
         except Exception as e:
@@ -385,7 +379,6 @@ class AppDetail(Activity):
             with zipfile.ZipFile(temp_zip_path, "r") as zip_ref:
                 zip_ref.extractall(dest_folder)
             self.progress_bar.set_value(80, lv.ANIM.ON)
-            time.sleep_ms(500)
             print("Unzipped successfully")
             # Step 3: Clean up
             os.remove(temp_zip_path)
@@ -395,7 +388,6 @@ class AppDetail(Activity):
             # Would be good to show error message here if it fails...
         # Success:
         self.progress_bar.set_value(100, lv.ANIM.OFF)
-        time.sleep(1)
         self.progress_bar.add_flag(lv.obj.FLAG.HIDDEN)
         self.progress_bar.set_value(0, lv.ANIM.OFF)
         self.set_install_label(app_fullname)
