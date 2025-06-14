@@ -74,8 +74,6 @@ class WiFi(Activity):
 
     def onStop(self, screen):
         self.keep_running = False
-        if self.error_timer:
-            self.error_timer.delete()
 
     def show_error(self, message):
         if self.keep_running: # called from slow threads so might already have stopped
@@ -88,7 +86,10 @@ class WiFi(Activity):
 
     def hide_error(self, timer):
         if self.keep_running:
-            self.error_label.add_flag(lv.obj.FLAG.HIDDEN)
+            try: # self.error_label might be None
+                self.error_label.add_flag(lv.obj.FLAG.HIDDEN)
+            except Exception as e:
+                print(f"self.error_label.add_flag(lv.obj.FLAG.HIDDEN) got exception: {e}")
 
     def scan_networks_thread(self):
         global have_network
