@@ -11,6 +11,8 @@ if [ -z "$appname" ]; then
 	sleep 2
 fi
 
+mpremote=~/MicroPythonOS/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py
+
 pushd internal_filesystem/
 
 if [ ! -z "$appname" ]; then
@@ -26,32 +28,32 @@ if [ ! -z "$appname" ]; then
 			exit 1
 		fi
 	fi
-        ~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py mkdir "/apps"
-        ~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py mkdir "/builtin"
-        ~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py mkdir "/builtin/apps"
-	~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py fs cp -r "$appdir" :/"$target"
+        $mpremote mkdir "/apps"
+        $mpremote mkdir "/builtin"
+        $mpremote mkdir "/builtin/apps"
+	$mpremote fs cp -r "$appdir" :/"$target"
 	echo "start_app(\"/$appdir\")"
-	~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py
+	$mpremote
 	popd
 	exit
 fi
 
 
-~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py fs cp boot.py :/boot.py
-~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py fs cp main.py :/main.py
+$mpremote fs cp boot.py :/boot.py
+$mpremote fs cp main.py :/main.py
 
-#~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py fs cp main.py :/system/button.py
-#~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py fs cp autorun.py :/autorun.py
-#~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py fs cp -r system :/
+#$mpremote fs cp main.py :/system/button.py
+#$mpremote fs cp autorun.py :/autorun.py
+#$mpremote fs cp -r system :/
 
-~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py fs cp -r apps :/
-~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py fs cp -r builtin :/
-~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py fs cp -r lib :/
-~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py fs cp -r resources :/
+$mpremote fs cp -r apps :/
+$mpremote fs cp -r builtin :/
+$mpremote fs cp -r lib :/
+$mpremote fs cp -r resources :/
 
-#~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py fs cp -r data :/
-#~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py fs cp -r data/images :/data/
+#$mpremote fs cp -r data :/
+#$mpremote fs cp -r data/images :/data/
 
 popd
 
-~/sources/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py reset
+$mpremote reset

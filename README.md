@@ -68,10 +68,9 @@ cd ~/MicroPythonOS
 git clone https://github.com/MicroPythonOS/MicroPythonOS.git
 
 git clone https://github.com/MicroPythonOS/freezeFS
-~/sources/MicroPythonOS/scripts/freezefs_mount_builtin.sh
 
 git clone https://github.com/cnadler86/micropython-camera-API
-echo 'include("~/sources/lvgl_micropython/build/manifest.py")' >> micropython-camera-API/src/manifest.py
+echo 'include("~/MicroPythonOS/lvgl_micropython/build/manifest.py")' >> micropython-camera-API/src/manifest.py
 
 git clone https://github.com/MicroPythonOS/lvgl_micropython
 

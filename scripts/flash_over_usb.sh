@@ -1,4 +1,4 @@
-fwfile="/home/user/sources/lvgl_micropython/build/lvgl_micropy_ESP32_GENERIC_S3-SPIRAM_OCT-16.bin"
+fwfile="/home/user/projects/MicroPythonOS/lvgl_micropython/build/lvgl_micropy_ESP32_GENERIC_S3-SPIRAM_OCT-16.bin"
 ls -al $fwfile
 echo "Add --erase-all if needed"
 sleep 5
