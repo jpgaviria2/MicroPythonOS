@@ -1,3 +1,3 @@
-pushd ~/sources/freezeFS
+pushd ~/projects/MicroPythonOS/freezeFS
 python3 -m freezefs --target /builtin --on-import mount ~/sources/MicroPythonOS/internal_filesystem/builtin freezefs_mount_builtin.py
 popd
