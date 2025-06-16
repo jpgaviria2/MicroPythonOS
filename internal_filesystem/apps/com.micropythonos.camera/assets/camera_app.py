@@ -162,7 +162,6 @@ class CameraApp(Activity):
             if not result:
                 self.status_label.set_text(self.status_label_text_searching)
             else:
-                self.stop_qr_decoding()
                 result = remove_bom(result)
                 result = print_qr_buffer(result)
                 print(f"QR decoding found: {result}")
@@ -171,6 +170,7 @@ class CameraApp(Activity):
                     self.finish()
                 else:
                     self.status_label.set_text(result) # in the future, the status_label text should be copy-paste-able
+                self.stop_qr_decoding()
         except ValueError as e:
             print("QR ValueError: ", e)
             self.status_label.set_text(self.status_label_text_searching)
