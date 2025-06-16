@@ -78,6 +78,7 @@ class ImageView(Activity):
                     print(f"Skipping file of size {size}")
                     continue
                 self.images.append(fullname)
+        self.images.sort()
         # Begin with one image:
         self.show_next_image()
         self.stop_fullscreen()
