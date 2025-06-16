@@ -27,8 +27,8 @@ import mpos.clipboard
 #TFT_VER_RES=576
 
 # 16:9 good resolution but fairly small icons:
-#TFT_HOR_RES=1280
-#TFT_VER_RES=720
+TFT_HOR_RES=1280
+TFT_VER_RES=720
 
 # Even HD works:
 #TFT_HOR_RES=1920

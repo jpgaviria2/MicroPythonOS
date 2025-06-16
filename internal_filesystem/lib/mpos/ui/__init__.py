@@ -276,49 +276,41 @@ def create_drawer(display=None):
         slider_label.set_text(f"{value}%")
         if display:
             display.set_backlight(value)
-    
     slider.add_event_cb(slider_event,lv.EVENT.VALUE_CHANGED,None)
     wifi_btn=lv.button(drawer)
-    wifi_btn.set_size(lv.pct(40),lv.SIZE_CONTENT)
+    wifi_btn.set_size(lv.pct(40),lv.pct(20))
     wifi_btn.align(lv.ALIGN.LEFT_MID,0,0)
     wifi_label=lv.label(wifi_btn)
     wifi_label.set_text(lv.SYMBOL.WIFI+" WiFi")
     wifi_label.center()
     def wifi_event(e):
-        global drawer_open
         close_drawer()
         mpos.apps.start_app_by_name("com.micropythonos.wifi")
-    
     wifi_btn.add_event_cb(wifi_event,lv.EVENT.CLICKED,None)
-    #
-    #settings_btn=lv.button(drawer)
-    #settings_btn.set_size(BUTTON_WIDTH,BUTTON_HEIGHT)
-    #settings_btn.align(lv.ALIGN.RIGHT_MID,-PADDING_MEDIUM,0)
-    #settings_label=lv.label(settings_btn)
-    #settings_label.set_text(lv.SYMBOL.SETTINGS+" Settings")
-    #settings_label.center()
-    #def settings_event(e):
-    #    global drawer_open
-    #    close_drawer()
     
-    #settings_btn.add_event_cb(settings_event,lv.EVENT.CLICKED,None)
-    #
+    settings_btn=lv.button(drawer)
+    settings_btn.set_size(lv.pct(40),lv.pct(20))
+    settings_btn.align(lv.ALIGN.RIGHT_MID,0,0)
+    settings_label=lv.label(settings_btn)
+    settings_label.set_text(lv.SYMBOL.SETTINGS+" Settings")
+    settings_label.center()
+    def settings_event(e):
+        close_drawer()
+        mpos.apps.start_app_by_name("com.micropythonos.settings")
+    settings_btn.add_event_cb(settings_event,lv.EVENT.CLICKED,None)
     launcher_btn=lv.button(drawer)
-    launcher_btn.set_size(lv.pct(40),lv.SIZE_CONTENT)
+    launcher_btn.set_size(lv.pct(40),lv.pct(20))
     launcher_btn.align(lv.ALIGN.BOTTOM_LEFT,0,0)
     launcher_label=lv.label(launcher_btn)
     launcher_label.set_text(lv.SYMBOL.HOME+" Launcher")
     launcher_label.center()
     def launcher_event(e):
         print("Launcher button pressed!")
-        global drawer_open
         close_drawer(True)
         show_launcher()
-    
     launcher_btn.add_event_cb(launcher_event,lv.EVENT.CLICKED,None)
-    #
     restart_btn=lv.button(drawer)
-    restart_btn.set_size(lv.pct(40),lv.SIZE_CONTENT)
+    restart_btn.set_size(lv.pct(40),lv.pct(20))
     restart_btn.align(lv.ALIGN.BOTTOM_RIGHT,0,0)
     restart_label=lv.label(restart_btn)
     restart_label.set_text(lv.SYMBOL.POWER+" Reset")
