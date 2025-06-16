@@ -111,14 +111,15 @@ Release checklist
 =================
 - Make sure CURRENT_OS_VERSION in main.py is incremented
 - Make sure version numbers of apps that have been changed are incremented:
-	# everything that changed:
-	git diff --stat 0.0.4
-	# manifests that might have already had their version number incremented:
-	git diff 0.0.4 -- internal_filesystem/apps/*/META-INF/*
-	git diff 0.0.4 -- internal_filesystem/builtin/apps/*/META-INF/*
+```
+git diff --stat 0.0.4 # see everything that changed since tag 0.0.4
+git diff 0.0.4 -- internal_filesystem/apps/*/META-INF/* # list manifests that might have already had their version number incremented
+git diff 0.0.4 -- internal_filesystem/builtin/apps/*/META-INF/* # list manifests that might have already had their version number incremented
+```
 - Update CHANGELOG
-- commit and push all code
-- tag MicroPythonOS and external apps like LightningPiggy
+- commit all code
+- tag the main repo and external repo's like LightningPiggy
+- git push --tags
 - ./scripts/bundle_apps.sh
 - ./scripts/build_lvgl_micropython.sh esp32 prod
 - ./scripts/release_to_updates.sh
@@ -132,7 +133,7 @@ To do so, make sure you have the necessary dependencies:
 - see https://github.com/MicroPythonOS/lvgl-micropython/
 - sudo apt install libv4l-dev # for webcam.c
 
-...and then run:
+# Running on desktop
 
 ```
 cd ~/projects/MicroPythonOS/MicroPythonOS/
