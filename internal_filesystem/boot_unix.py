@@ -11,16 +11,26 @@ sys.path.append('lib/')
 import mpos.ui
 import mpos.clipboard
 
+# Same as Waveshare ESP32-S3-Touch-LCD-2
+#TFT_HOR_RES=320
+#TFT_VER_RES=240
+
 #TFT_HOR_RES=640
 #TFT_VER_RES=480
 
-TFT_HOR_RES=320
-TFT_VER_RES=240
+# 4:3 DVD resolution:
+#TFT_HOR_RES=720
+#TFT_VER_RES=576
 
+# 16:9 resolution:
 #TFT_HOR_RES=1024
 #TFT_VER_RES=576
 
-# Works:
+# 16:9 good resolution but fairly small icons:
+#TFT_HOR_RES=1280
+#TFT_VER_RES=720
+
+# Even HD works:
 #TFT_HOR_RES=1920
 #TFT_VER_RES=1080
 
@@ -29,7 +39,9 @@ bus = lcd_bus.SDLBus(flags=0)
 buf1 = bus.allocate_framebuffer(TFT_HOR_RES * TFT_VER_RES * 2, 0)
 
 display = sdl_display.SDLDisplay(data_bus=bus,display_width=TFT_HOR_RES,display_height=TFT_VER_RES,frame_buffer1=buf1,color_space=lv.COLOR_FORMAT.RGB565)
+# display.set_dpi(65) # doesn't seem to change the default 130...
 display.init()
+# display.set_dpi(65) # doesn't seem to change the default 130...
 
 import sdl_pointer
 mouse = sdl_pointer.SDLPointer()
