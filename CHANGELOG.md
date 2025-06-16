@@ -1,3 +1,8 @@
+0.0.6
+=====
+- Tweak button size in drawer and add "Settings" button
+- Show "Brightness" text in drawer
+
 0.0.5
 =====
 - Improve focus group handling while in deskop keyboard mode

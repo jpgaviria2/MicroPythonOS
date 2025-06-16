@@ -264,7 +264,7 @@ def create_drawer(display=None):
     drawer.add_event_cb(drawer_swipe_cb, lv.EVENT.PRESSED, None)
     drawer.add_event_cb(drawer_swipe_cb, lv.EVENT.RELEASED, None)    
     slider_label=lv.label(drawer)
-    slider_label.set_text(f"{100}%") # TODO: restore this from configuration?
+    slider_label.set_text(f"Brightness: {100}%") # should be restored this from configuration by settings manager
     slider_label.align(lv.ALIGN.TOP_MID,0,lv.pct(4))
     slider=lv.slider(drawer)
     slider.set_range(1,100)
@@ -273,7 +273,7 @@ def create_drawer(display=None):
     slider.align_to(slider_label,lv.ALIGN.OUT_BOTTOM_MID,0,10)
     def slider_event(e):
         value=slider.get_value()
-        slider_label.set_text(f"{value}%")
+        slider_label.set_text(f"Brightness: {value}%")
         if display:
             display.set_backlight(value)
     slider.add_event_cb(slider_event,lv.EVENT.VALUE_CHANGED,None)
