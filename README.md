@@ -118,7 +118,7 @@ git diff 0.0.4 -- internal_filesystem/builtin/apps/*/META-INF/* # list manifests
 ```
 - Update CHANGELOG
 - commit all code
-- tag the main repo and external repo's like LightningPiggy
+- tag -a the main repo and external repo's like LightningPiggy
 - git push --tags
 - ./scripts/bundle_apps.sh
 - ./scripts/build_lvgl_micropython.sh esp32 prod
