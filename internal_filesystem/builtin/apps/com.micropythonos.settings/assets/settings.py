@@ -1,15 +1,7 @@
-from mpos.apps import Activity, Intent
+from mpos.apps import Activity, ActivityNavigator, Intent
+
 import mpos.config
 import mpos.ui
-
-class Hello(Activity):
-
-    def onCreate(self):
-        screen = lv.obj()
-        label = lv.label(screen)
-        label.set_text('Hello World!')
-        label.center()
-        self.setContentView(screen)
 
 
 # Used to list and edit all settings:
@@ -20,9 +12,10 @@ class SettingsActivity(Activity):
         self.settings = [
             {"title": "Light/Dark Theme", "key": "theme_light_dark", "value_label": None, "cont": None},
             {"title": "Theme Color", "key": "theme_primary_color", "value_label": None, "cont": None, "placeholder": "HTML hex color, like: EC048C"},
+            {"title": "Restart to Bootloader", "key": "boot_mode", "value_label": None, "cont": None}, # special that doesn't get saved
+            # This is currently only in the drawer but would make sense to have it here for completeness:
             #{"title": "Display Brightness", "key": "display_brightness", "value_label": None, "cont": None, "placeholder": "A value from 0 to 100."},
             # Maybe also add font size (but ideally then all fonts should scale up/down)
-            #{"title": "Reboot into Bootloader", "key": "boot_mode", "value_label": None, "cont": None}, # special that doesn't get saved
             #{"title": "Timezone", "key": "timezone", "value_label": None, "cont": None, "placeholder": "Example: Europe/Prague"},
         ]
 
@@ -238,6 +231,13 @@ class SettingActivity(Activity):
         self.startActivityForResult(Intent(activity_class=CameraApp).putExtra("scanqr_mode", True), self.gotqr_result_callback)
 
     def save_setting(self, setting):
+        if setting["key"] == "boot_mode" and self.radio_container:
+            if self.active_radio_index == 1:
+                from mpos.bootloader import ResetIntoBootloader
+                intent = Intent(activity_class=ResetIntoBootloader)
+                ActivityNavigator.startActivity(intent)
+                return
+
         if ( setting["key"] =="theme_light_dark" or setting["key"] == "boot_mode" ) and self.radio_container:
             if setting["key"] == "boot_mode":
                 options = [("Normal", "normal"), ("Bootloader", "bootloader")]

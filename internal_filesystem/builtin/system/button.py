@@ -8,6 +8,8 @@ import _thread
 
 from mpos.apps import Activity, ActivityNavigator, Intent
 
+from mpos.bootloader import ResetIntoBootloader
+
 #import mpos.config
 #import mpos.ui
 
@@ -24,26 +26,7 @@ is_pressed = False
 # Timer for checking long press
 timer = Timer(-1)
 
-message = "Bootloader mode activated.\nYou can now install firmware over USB.\n\nReset the device to cancel."
 
-class Bootloader(Activity):
-
-    def onCreate(self):
-        print(message)
-        screen = lv.obj()
-        label = lv.label(screen)
-        label.set_text(message)
-        label.center()
-        self.setContentView(screen)
-
-    def onResume(self, screen):
-        # Use a timer, otherwise the UI won't have time to update:
-        timer = lv.timer_create(self.start_bootloader, 1000, None) # give it some time (at least 500ms) for the new screen animation
-        timer.set_repeat_count(1)
-
-    def start_bootloader(self, timer):
-        import machine
-        machine.bootloader()
 
 def on_long_press(t): # Callback for when long press duration is reached.
     print("button.py: long press detected")
@@ -54,7 +37,7 @@ def on_long_press(t): # Callback for when long press duration is reached.
         #_thread.stack_size(mpos.apps.good_stack_size())
         #_thread.start_new_thread(handle_long_press, ())
         #lv.async_call(lambda l: handle_long_press(), None)
-        intent = Intent(activity_class=Bootloader)
+        intent = Intent(activity_class=ResetIntoBootloader)
         ActivityNavigator.startActivity(intent)
     else:
         is_pressed = False
