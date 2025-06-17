@@ -264,19 +264,32 @@ def create_drawer(display=None):
     drawer.add_event_cb(drawer_swipe_cb, lv.EVENT.PRESSED, None)
     drawer.add_event_cb(drawer_swipe_cb, lv.EVENT.RELEASED, None)    
     slider_label=lv.label(drawer)
-    slider_label.set_text(f"Brightness: {100}%") # should be restored this from configuration by settings manager
+    prefs = mpos.config.SharedPreferences("com.micropythonos.settings")
+    brightness_int = prefs.get_int("display_brightness", 100)
+    if display:
+        display.set_backlight(brightness_int)
+    slider_label.set_text(f"Brightness: {brightness_int}%")
     slider_label.align(lv.ALIGN.TOP_MID,0,lv.pct(4))
     slider=lv.slider(drawer)
     slider.set_range(1,100)
-    slider.set_value(100,False)
+    slider.set_value(int(brightness_int),False)
     slider.set_width(lv.pct(80))
     slider.align_to(slider_label,lv.ALIGN.OUT_BOTTOM_MID,0,10)
-    def slider_event(e):
-        value=slider.get_value()
-        slider_label.set_text(f"Brightness: {value}%")
+    def brightness_slider_changed(e):
+        brightness_int = slider.get_value()
+        slider_label.set_text(f"Brightness: {brightness_int}%")
         if display:
-            display.set_backlight(value)
-    slider.add_event_cb(slider_event,lv.EVENT.VALUE_CHANGED,None)
+            display.set_backlight(brightness_int)
+    def brightness_slider_released(e):
+        brightness_int = slider.get_value()
+        prefs = mpos.config.SharedPreferences("com.micropythonos.settings")
+        old_brightness_int = prefs.get_int("display_brightness")
+        if old_brightness_int != brightness_int:
+            editor = prefs.edit()
+            editor.put_int("display_brightness", brightness_int)
+            editor.commit()
+    slider.add_event_cb(brightness_slider_changed,lv.EVENT.VALUE_CHANGED,None)
+    slider.add_event_cb(brightness_slider_released,lv.EVENT.RELEASED,None)
     wifi_btn=lv.button(drawer)
     wifi_btn.set_size(lv.pct(40),lv.pct(20))
     wifi_btn.align(lv.ALIGN.LEFT_MID,0,0)
