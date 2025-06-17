@@ -2,6 +2,7 @@
 =====
 - Tweak button size in drawer and add "Settings" button
 - Show "Brightness" text in drawer
+- Add builtin "Settings" app with settings for dark/light theme, theme color
 
 0.0.5
 =====
