@@ -133,8 +133,6 @@ To do so, make sure you have the necessary dependencies:
 - see https://github.com/MicroPythonOS/lvgl-micropython/
 - sudo apt install libv4l-dev # for webcam.c
 
-# Running on desktop
-
 ```
 cd ~/projects/MicroPythonOS/MicroPythonOS/
 
@@ -148,8 +146,15 @@ or
 ./scripts/build_lvgl_micropython.sh macOS dev
 ```
 
+# Running on desktop
+
+Either build it yourself, or download the latest release, for example: MicroPythonOS_amd64_Linux_0.0.6 
+
 Then to run it, do:
 
 ```
-./scripts/run_desktop.sh
+cd internal_filesystem/
+/path/to/MicroPythonOS_amd64_Linux_0.0.6 -X heapsize=32M -v -i -c "$(cat boot_unix.py main.py)"
 ```
+
+Also take a look at scripts/run_on_desktop.sh for tips on how to run fullscreen or to immediately start an app, for quick development.

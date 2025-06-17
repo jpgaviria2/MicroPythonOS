@@ -43,7 +43,7 @@ if [ "$target" == "esp32" ]; then
 	python3 make.py --ota --partition-size=4194304 --flash-size=16 esp32 BOARD=ESP32_GENERIC_S3 BOARD_VARIANT=SPIRAM_OCT DISPLAY=st7789 INDEV=cst816s USER_C_MODULE=/home/user/projects/MicroPythonOS/micropython-camera-API/src/micropython.cmake USER_C_MODULE=/home/user/projects/MicroPythonOS/secp256k1-embedded-ecdh/micropython.cmake USER_C_MODULE=/home/user/projects/MicroPythonOS/MicroPythonOS/c_mpos/micropython.cmake CONFIG_FREERTOS_USE_TRACE_FACILITY=y CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID=y CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS=y "$manifest"
 elif [ "$target" == "unix" -o "$target" == "macos" ]; then
 	if [ "$buildtype" == "prod" ]; then
-		manifest="FROZEN_MANIFEST=/home/user/projects/MicroPythonOS/manifest_unix.py"
+		manifest="FROZEN_MANIFEST=/home/user/projects/MicroPythonOS/MicroPythonOS/manifest_unix.py"
 	fi
 	# build for desktop
 	#python3 make.py "$target"  DISPLAY=sdl_display INDEV=sdl_pointer INDEV=sdl_keyboard "$manifest"
