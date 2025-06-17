@@ -24,6 +24,8 @@ manifest=""
 if [ "$target" == "esp32" ]; then
 	if [ "$buildtype" == "prod" ]; then
 		manifest="FROZEN_MANIFEST=/home/user/projects/MicroPythonOS/MicroPythonOS/manifest.py"
+	else
+		echo "Note that you can also prevent the builtin filesystem from being mounted by umounting it and creating a builtin/ folder."
 	fi
 	# Build for https://www.waveshare.com/wiki/ESP32-S3-Touch-LCD-2.
 	# See https://github.com/lvgl-micropython/lvgl_micropython
