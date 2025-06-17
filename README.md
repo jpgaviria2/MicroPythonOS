@@ -109,10 +109,10 @@ If you made a 'devbuild', then you probably want to install all files and apps m
 
 Release checklist
 =================
-- Make sure CURRENT_OS_VERSION in main.py is incremented
+- Make sure CURRENT_OS_VERSION in internal_filesystem/lib/mpos/info.py is incremented
 - Make sure version numbers of apps that have been changed are incremented:
 ```
-git diff --stat 0.0.4 # see everything that changed since tag 0.0.4
+git diff --stat 0.0.4 internal_filesyste/ # see everything that changed since tag 0.0.4
 git diff 0.0.4 -- internal_filesystem/apps/*/META-INF/* # list manifests that might have already had their version number incremented
 git diff 0.0.4 -- internal_filesystem/builtin/apps/*/META-INF/* # list manifests that might have already had their version number incremented
 ```

@@ -1,9 +1,13 @@
 0.0.6
 =====
-- Tweak button size in drawer and add "Settings" button
+- Scale button size in drawer for bigger screens
 - Show "Brightness" text in drawer
-- Save and restore "Brightness" setting
 - Add builtin "Settings" app with settings for Light/Dark Theme, Theme Color, Restart to Bootloader
+- Add "Settings" button to drawer that opens settings app
+- Save and restore "Brightness" setting
+- AppStore: speed up app installs
+- Camera: scale camera image to fit screen on bigger displays
+- Camera: show decoded result on-display if QR decoded
 
 0.0.5
 =====
