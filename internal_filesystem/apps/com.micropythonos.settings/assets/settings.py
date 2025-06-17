@@ -18,11 +18,12 @@ class SettingsActivity(Activity):
         super().__init__()
         self.prefs = None
         self.settings = [
-            {"title": "Light/Dark Theme", "key": "light_dark_theme", "value_label": None, "cont": None},
-            {"title": "Theme Color", "key": "theme_color", "value_label": None, "cont": None, "placeholder": "HTML hex color, like: EC048C"},
-            {"title": "Reboot into Bootloader", "key": "boot_mode", "value_label": None, "cont": None},
-            {"title": "Display Brightness", "key": "display_brightness", "value_label": None, "cont": None, "placeholder": "A value from 0 to 100."},
-            {"title": "Timezone", "key": "timezone", "value_label": None, "cont": None, "placeholder": "Example: Europe/Prague"},
+            {"title": "Light/Dark Theme", "key": "theme_light_dark", "value_label": None, "cont": None},
+            {"title": "Theme Color", "key": "theme_primary_color", "value_label": None, "cont": None, "placeholder": "HTML hex color, like: EC048C"},
+            #{"title": "Display Brightness", "key": "display_brightness", "value_label": None, "cont": None, "placeholder": "A value from 0 to 100."},
+            # Maybe also add font size (but ideally then all fonts should scale up/down)
+            #{"title": "Reboot into Bootloader", "key": "boot_mode", "value_label": None, "cont": None}, # special that doesn't get saved
+            #{"title": "Timezone", "key": "timezone", "value_label": None, "cont": None, "placeholder": "Example: Europe/Prague"},
         ]
 
     def onCreate(self):
@@ -105,7 +106,7 @@ class SettingActivity(Activity):
         setting_label.align(lv.ALIGN.TOP_LEFT,0,0)
         setting_label.set_style_text_font(lv.font_montserrat_26, 0)
 
-        if setting["key"] == "light_dark_theme" or setting["key"] == "boot_mode":
+        if setting["key"] == "theme_light_dark" or setting["key"] == "boot_mode":
             # Create container for radio buttons
             self.radio_container = lv.obj(settings_screen_detail)
             self.radio_container.set_width(lv.pct(100))
@@ -237,7 +238,7 @@ class SettingActivity(Activity):
         self.startActivityForResult(Intent(activity_class=CameraApp).putExtra("scanqr_mode", True), self.gotqr_result_callback)
 
     def save_setting(self, setting):
-        if ( setting["key"] =="light_dark_theme" or setting["key"] == "boot_mode" ) and self.radio_container:
+        if ( setting["key"] =="theme_light_dark" or setting["key"] == "boot_mode" ) and self.radio_container:
             if setting["key"] == "boot_mode":
                 options = [("Normal", "normal"), ("Bootloader", "bootloader")]
             else:
