@@ -343,7 +343,7 @@ def create_drawer(display=None):
         print("Warning: could not import machine, not adding reset callback")
     
     '''
-    Doesn't do anything on ESP32, not much use:
+    On ESP32, there's no power off but there's a hundred-year deepsleep.
     poweroff_btn=lv.button(drawer)
     poweroff_btn.set_size(lv.pct(40),lv.SIZE_CONTENT)
     poweroff_btn.align(lv.ALIGN.BOTTOM_RIGHT,0,0)
