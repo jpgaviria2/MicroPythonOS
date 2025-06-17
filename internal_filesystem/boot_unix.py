@@ -12,8 +12,8 @@ import mpos.ui
 import mpos.clipboard
 
 # Same as Waveshare ESP32-S3-Touch-LCD-2
-#TFT_HOR_RES=320
-#TFT_VER_RES=240
+TFT_HOR_RES=320
+TFT_VER_RES=240
 
 #TFT_HOR_RES=640
 #TFT_VER_RES=480
@@ -27,8 +27,8 @@ import mpos.clipboard
 #TFT_VER_RES=576
 
 # 16:9 good resolution but fairly small icons:
-TFT_HOR_RES=1280
-TFT_VER_RES=720
+#TFT_HOR_RES=1280
+#TFT_VER_RES=720
 
 # Even HD works:
 #TFT_HOR_RES=1920
