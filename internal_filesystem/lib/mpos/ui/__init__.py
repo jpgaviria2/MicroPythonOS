@@ -322,6 +322,7 @@ def create_drawer(display=None):
         close_drawer(True)
         show_launcher()
     launcher_btn.add_event_cb(launcher_event,lv.EVENT.CLICKED,None)
+    '''
     sleep_btn=lv.button(drawer)
     sleep_btn.set_size(lv.pct(drawer_button_pct),lv.pct(20))
     sleep_btn.align(lv.ALIGN.BOTTOM_LEFT,0,0)
@@ -340,9 +341,10 @@ def create_drawer(display=None):
             close_drawer(True)
             show_launcher()
     sleep_btn.add_event_cb(sleep_event,lv.EVENT.CLICKED,None)
+    '''
     restart_btn=lv.button(drawer)
-    restart_btn.set_size(lv.pct(drawer_button_pct),lv.pct(20))
-    restart_btn.align(lv.ALIGN.BOTTOM_MID,0,0)
+    restart_btn.set_size(lv.pct(45),lv.pct(20))
+    restart_btn.align(lv.ALIGN.BOTTOM_LEFT,0,0)
     restart_label=lv.label(restart_btn)
     restart_label.set_text(lv.SYMBOL.REFRESH+" Reset")
     restart_label.center()
@@ -356,7 +358,7 @@ def create_drawer(display=None):
             print("Warning: machine has no reset or soft_reset method available")
     restart_btn.add_event_cb(reset_cb,lv.EVENT.CLICKED,None)
     poweroff_btn=lv.button(drawer)
-    poweroff_btn.set_size(lv.pct(drawer_button_pct),lv.pct(20))
+    poweroff_btn.set_size(lv.pct(45),lv.pct(20))
     poweroff_btn.align(lv.ALIGN.BOTTOM_RIGHT,0,0)
     poweroff_label=lv.label(poweroff_btn)
     poweroff_label.set_text(lv.SYMBOL.POWER+" Off")
@@ -365,9 +367,9 @@ def create_drawer(display=None):
         print("Power off action...")
         import sys
         if sys.platform == "esp32":
-            #On ESP32, there's no power off but there's a hundred-year deepsleep.
+            #On ESP32, there's no power off but there is a long sleep:
             import machine
-            machine.deepsleep(10000)
+            machine.deepsleep(2^32-1) # max deepsleep is ~24.85 days
         else: # assume unix:
             lv.deinit()  # Deinitialize LVGL (if supported)
             sys.exit(0)
