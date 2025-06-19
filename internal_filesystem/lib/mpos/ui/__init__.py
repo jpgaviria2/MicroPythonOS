@@ -367,9 +367,9 @@ def create_drawer(display=None):
         print("Power off action...")
         import sys
         if sys.platform == "esp32":
-            #On ESP32, there's no power off but there is a long sleep:
+            #On ESP32, there's no power off but there is a forever sleep
             import machine
-            machine.deepsleep(2^32-1) # max deepsleep is ~24.85 days
+            machine.deepsleep() # sleep forever
         else: # assume unix:
             lv.deinit()  # Deinitialize LVGL (if supported)
             sys.exit(0)
