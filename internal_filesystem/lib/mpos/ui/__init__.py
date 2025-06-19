@@ -2,6 +2,7 @@ import utime # for timing calls
 
 import lvgl as lv
 import mpos.apps
+import mpos.battery_voltage
 import mpos.wifi
 from mpos.ui.anim import WidgetAnimator
 
@@ -15,6 +16,7 @@ NOTIFICATION_BAR_HEIGHT=24
 
 CLOCK_UPDATE_INTERVAL = 1000 # 10 or even 1 ms doesn't seem to change the framerate but 100ms is enough
 WIFI_ICON_UPDATE_INTERVAL = 1500
+BATTERY_ICON_UPDATE_INTERVAL = 30000
 TEMPERATURE_UPDATE_INTERVAL = 2000
 MEMFREE_UPDATE_INTERVAL = 5000 # not too frequent because there's a forced gc.collect() to give it a reliable value
 
@@ -157,10 +159,10 @@ def create_notification_bar():
     time_label.align(lv.ALIGN.LEFT_MID, 0, 0)
     temp_label = lv.label(notification_bar)
     temp_label.set_text("00°C")
-    temp_label.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, NOTIFICATION_BAR_HEIGHT	, 0)
+    temp_label.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, mpos.ui.pct_of_display_width(7)	, 0)
     memfree_label = lv.label(notification_bar)
     memfree_label.set_text("")
-    memfree_label.align_to(temp_label, lv.ALIGN.OUT_RIGHT_MID, NOTIFICATION_BAR_HEIGHT, 0)
+    memfree_label.align_to(temp_label, lv.ALIGN.OUT_RIGHT_MID, mpos.ui.pct_of_display_width(7), 0)
     #style = lv.style_t()
     #style.init()
     #style.set_text_font(lv.font_montserrat_8)  # tiny font
@@ -169,19 +171,21 @@ def create_notification_bar():
     #notif_icon = lv.label(notification_bar)
     #notif_icon.set_text(lv.SYMBOL.BELL)
     #notif_icon.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
+    # Battery percentage
+    battery_label = lv.label(notification_bar)
+    battery_label.set_text("100%")
+    battery_label.align(lv.ALIGN.RIGHT_MID, 0, 0)
+    battery_label.add_flag(lv.obj.FLAG.HIDDEN)
     # Battery icon
     battery_icon = lv.label(notification_bar)
     battery_icon.set_text(lv.SYMBOL.BATTERY_FULL)
-    battery_icon.align(lv.ALIGN.RIGHT_MID, 0, 0)
+    battery_icon.align_to(battery_label, lv.ALIGN.OUT_LEFT_MID, 0, 0)
+    battery_icon.add_flag(lv.obj.FLAG.HIDDEN)
     # WiFi icon
     wifi_icon = lv.label(notification_bar)
     wifi_icon.set_text(lv.SYMBOL.WIFI)
-    wifi_icon.align_to(battery_icon, lv.ALIGN.OUT_LEFT_MID, -NOTIFICATION_BAR_HEIGHT, 0)
+    wifi_icon.align_to(battery_icon, lv.ALIGN.OUT_LEFT_MID, -mpos.ui.pct_of_display_width(7), 0)
     wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
-    # Battery percentage - not shown to conserve space
-    #battery_label = lv.label(notification_bar)
-    #battery_label.set_text("100%")
-    #battery_label.align(lv.ALIGN.RIGHT_MID, 0, 0)
     # Update time
     import time
     def update_time(timer):
@@ -197,6 +201,25 @@ def create_notification_bar():
     except Exception as e:
         print("Warning: could not check WLAN status:", str(e))
     
+    def update_battery_icon(timer=None):
+        volt = mpos.battery_voltage.read_battery_voltage()
+        percent = (volt - 3.7) * 100 / (4.2 - 3.7)
+        battery_label.set_text(f"{round(percent)}%")
+        battery_label.remove_flag(lv.obj.FLAG.HIDDEN)
+        # 3.7 - 4.15 => 0.5V diff / 3 = 0.015
+        if volt > 4.15:
+            battery_icon.set_text(lv.SYMBOL.BATTERY_FULL)
+        elif volt > 4:
+            battery_icon.set_text(lv.SYMBOL.BATTERY_3)
+        elif volt > 3.85:
+            battery_icon.set_text(lv.SYMBOL.BATTERY_2)
+        elif volt > 3.75:
+            battery_icon.set_text(lv.SYMBOL.BATTERY_1)
+        else:
+            battery_icon.set_text(lv.SYMBOL.BATTERY_EMPTY)
+        battery_icon.remove_flag(lv.obj.FLAG.HIDDEN)
+    update_battery_icon() # run it immediately instead of waiting for the timer
+
     def update_wifi_icon(timer):
         if mpos.wifi.WifiService.is_connected():
             wifi_icon.remove_flag(lv.obj.FLAG.HIDDEN)
@@ -229,6 +252,7 @@ def create_notification_bar():
     timer2 = lv.timer_create(update_temperature, TEMPERATURE_UPDATE_INTERVAL, None)
     timer3 = lv.timer_create(update_memfree, MEMFREE_UPDATE_INTERVAL, None)
     timer4 = lv.timer_create(update_wifi_icon, WIFI_ICON_UPDATE_INTERVAL, None)
+    timer5 = lv.timer_create(update_battery_icon, BATTERY_ICON_UPDATE_INTERVAL, None)
     
     # hide bar animation
     global hide_bar_animation
@@ -371,7 +395,7 @@ def create_drawer(display=None):
             import machine
             # DON'T configure BOOT button (Pin 0) as wake-up source because it wakes up immediately.
             # Luckily, the RESET button can be used to wake it up.
-            #wake_pin = Pin(0, machine.Pin.IN, machine.Pin.PULL_UP)  # Pull-up enabled, active low
+            #wake_pin = machine.Pin(0, machine.Pin.IN, machine.Pin.PULL_UP)  # Pull-up enabled, active low
             #import esp32
             #esp32.wake_on_ext0(pin=wake_pin, level=esp32.WAKEUP_ALL_LOW)
             print("Entering deep sleep. Press BOOT button to wake up.")

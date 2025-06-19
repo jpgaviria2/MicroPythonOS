@@ -34,7 +34,6 @@ def on_long_press(t): # Callback for when long press duration is reached.
     else:
         is_pressed = False
 
-
 def button_handler(pin):
     """Interrupt handler for button press and release."""
     global press_start_time, is_pressed, timer
@@ -48,7 +47,6 @@ def button_handler(pin):
         print("Button IO0 released")
         timer.deinit()  # Cancel timer if button is released early
         is_pressed = False
-
 
 # Set up interrupt for both falling (press) and rising (release) edges
 button.irq(trigger=Pin.IRQ_FALLING | Pin.IRQ_RISING, handler=button_handler)
