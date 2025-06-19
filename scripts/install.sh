@@ -11,7 +11,7 @@ if [ -z "$appname" ]; then
 	sleep 2
 fi
 
-mpremote=~/MicroPythonOS/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py
+mpremote=~/projects/MicroPythonOS/lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py
 
 pushd internal_filesystem/
 
