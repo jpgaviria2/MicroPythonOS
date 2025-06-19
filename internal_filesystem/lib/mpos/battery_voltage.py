@@ -21,7 +21,12 @@ def read_battery_voltage():
         import random
         return random.randint(370,420) / 100
     # Read raw ADC value
-    raw_value = adc.read()
+    total = 0
+    # Read multiple times to try to reduce variability.
+    # Reading 10 times takes around 3ms so it's fine...
+    for _ in range(10):
+        total = total + adc.read()
+    raw_value = total / 10
     # Convert to voltage, accounting for divider and reference
     voltage = (raw_value / ADC_MAX) * VREF * VOLTAGE_DIVIDER
     # Clamp to 0–4.2V range for LiPo battery
