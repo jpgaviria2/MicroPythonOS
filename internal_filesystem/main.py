@@ -1,5 +1,6 @@
 import task_handler
 import _thread
+import lvgl as lv
 
 # Allow LVGL M:/path/to/file or M:relative/path/to/file to work for image set_src etc
 import fs_driver
