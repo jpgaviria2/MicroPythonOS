@@ -290,8 +290,9 @@ def create_drawer(display=None):
             editor.commit()
     slider.add_event_cb(brightness_slider_changed,lv.EVENT.VALUE_CHANGED,None)
     slider.add_event_cb(brightness_slider_released,lv.EVENT.RELEASED,None)
+    drawer_button_pct = 31
     wifi_btn=lv.button(drawer)
-    wifi_btn.set_size(lv.pct(40),lv.pct(20))
+    wifi_btn.set_size(lv.pct(drawer_button_pct),lv.pct(20))
     wifi_btn.align(lv.ALIGN.LEFT_MID,0,0)
     wifi_label=lv.label(wifi_btn)
     wifi_label.set_text(lv.SYMBOL.WIFI+" WiFi")
@@ -300,9 +301,8 @@ def create_drawer(display=None):
         close_drawer()
         mpos.apps.start_app_by_name("com.micropythonos.wifi")
     wifi_btn.add_event_cb(wifi_event,lv.EVENT.CLICKED,None)
-    
     settings_btn=lv.button(drawer)
-    settings_btn.set_size(lv.pct(40),lv.pct(20))
+    settings_btn.set_size(lv.pct(drawer_button_pct),lv.pct(20))
     settings_btn.align(lv.ALIGN.RIGHT_MID,0,0)
     settings_label=lv.label(settings_btn)
     settings_label.set_text(lv.SYMBOL.SETTINGS+" Settings")
@@ -312,21 +312,39 @@ def create_drawer(display=None):
         mpos.apps.start_app_by_name("com.micropythonos.settings")
     settings_btn.add_event_cb(settings_event,lv.EVENT.CLICKED,None)
     launcher_btn=lv.button(drawer)
-    launcher_btn.set_size(lv.pct(40),lv.pct(20))
-    launcher_btn.align(lv.ALIGN.BOTTOM_LEFT,0,0)
+    launcher_btn.set_size(lv.pct(drawer_button_pct),lv.pct(20))
+    launcher_btn.align(lv.ALIGN.CENTER,0,0)
     launcher_label=lv.label(launcher_btn)
-    launcher_label.set_text(lv.SYMBOL.HOME+" Launcher")
+    launcher_label.set_text(lv.SYMBOL.HOME+" Home")
     launcher_label.center()
     def launcher_event(e):
-        print("Launcher button pressed!")
+        print("Home button pressed!")
         close_drawer(True)
         show_launcher()
     launcher_btn.add_event_cb(launcher_event,lv.EVENT.CLICKED,None)
+    sleep_btn=lv.button(drawer)
+    sleep_btn.set_size(lv.pct(drawer_button_pct),lv.pct(20))
+    sleep_btn.align(lv.ALIGN.BOTTOM_LEFT,0,0)
+    sleep_label=lv.label(sleep_btn)
+    sleep_label.set_text("Zz Sleep")
+    sleep_label.center()
+    def sleep_event(e):
+        print("Sleep button pressed!")
+        import sys
+        if sys.platform == "esp32":
+            #On ESP32, there's no power off but there's a hundred-year deepsleep.
+            import machine
+            machine.deepsleep(10000) # TODO: make it wakeup when it receives an interrupt from the accelerometer or a button press
+        else: # assume unix:
+            # maybe do a system suspend here? or at least show a popup toast "not supported"
+            close_drawer(True)
+            show_launcher()
+    sleep_btn.add_event_cb(sleep_event,lv.EVENT.CLICKED,None)
     restart_btn=lv.button(drawer)
-    restart_btn.set_size(lv.pct(40),lv.pct(20))
-    restart_btn.align(lv.ALIGN.BOTTOM_RIGHT,0,0)
+    restart_btn.set_size(lv.pct(drawer_button_pct),lv.pct(20))
+    restart_btn.align(lv.ALIGN.BOTTOM_MID,0,0)
     restart_label=lv.label(restart_btn)
-    restart_label.set_text(lv.SYMBOL.POWER+" Reset")
+    restart_label.set_text(lv.SYMBOL.REFRESH+" Reset")
     restart_label.center()
     def reset_cb(e):
         import machine
@@ -336,27 +354,24 @@ def create_drawer(display=None):
             machine.soft_reset()
         else:
             print("Warning: machine has no reset or soft_reset method available")
-    
-    try:
-        restart_btn.add_event_cb(reset_cb,lv.EVENT.CLICKED,None)
-    except Exception as e:
-        print("Warning: could not import machine, not adding reset callback")
-    
-    '''
-    On ESP32, there's no power off but there's a hundred-year deepsleep.
+    restart_btn.add_event_cb(reset_cb,lv.EVENT.CLICKED,None)
     poweroff_btn=lv.button(drawer)
-    poweroff_btn.set_size(lv.pct(40),lv.SIZE_CONTENT)
+    poweroff_btn.set_size(lv.pct(drawer_button_pct),lv.pct(20))
     poweroff_btn.align(lv.ALIGN.BOTTOM_RIGHT,0,0)
     poweroff_label=lv.label(poweroff_btn)
-    poweroff_label.set_text(lv.SYMBOL.POWER+" Power Off")
+    poweroff_label.set_text(lv.SYMBOL.POWER+" Off")
     poweroff_label.center()
     def poweroff_cb(e):
-        lv.deinit()  # Deinitialize LVGL (if supported)
+        print("Power off action...")
         import sys
-        sys.exit(0)
+        if sys.platform == "esp32":
+            #On ESP32, there's no power off but there's a hundred-year deepsleep.
+            import machine
+            machine.deepsleep(10000)
+        else: # assume unix:
+            lv.deinit()  # Deinitialize LVGL (if supported)
+            sys.exit(0)
     poweroff_btn.add_event_cb(poweroff_cb,lv.EVENT.CLICKED,None)
-    '''
-
 
 
 EVENT_MAP = {
