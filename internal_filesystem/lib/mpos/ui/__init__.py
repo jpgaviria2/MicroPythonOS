@@ -369,6 +369,12 @@ def create_drawer(display=None):
         if sys.platform == "esp32":
             #On ESP32, there's no power off but there is a forever sleep
             import machine
+            # DON'T configure BOOT button (Pin 0) as wake-up source because it wakes up immediately.
+            # Luckily, the RESET button can be used to wake it up.
+            #wake_pin = Pin(0, machine.Pin.IN, machine.Pin.PULL_UP)  # Pull-up enabled, active low
+            #import esp32
+            #esp32.wake_on_ext0(pin=wake_pin, level=esp32.WAKEUP_ALL_LOW)
+            print("Entering deep sleep. Press BOOT button to wake up.")
             machine.deepsleep() # sleep forever
         else: # assume unix:
             lv.deinit()  # Deinitialize LVGL (if supported)

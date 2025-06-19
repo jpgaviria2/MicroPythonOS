@@ -7,13 +7,7 @@ import time
 import _thread
 
 from mpos.apps import Activity, ActivityNavigator, Intent
-
 from mpos.bootloader import ResetIntoBootloader
-
-#import mpos.config
-#import mpos.ui
-
-#import mpos.apps
 
 # Configure IO0 as input with pull-up resistor
 button = Pin(0, Pin.IN, Pin.PULL_UP)
@@ -25,8 +19,6 @@ is_pressed = False
 
 # Timer for checking long press
 timer = Timer(-1)
-
-
 
 def on_long_press(t): # Callback for when long press duration is reached.
     print("button.py: long press detected")
