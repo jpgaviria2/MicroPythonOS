@@ -34,7 +34,8 @@ def read_battery_voltage():
     return voltage
 
 # Main loop to read and print battery voltage
-while False: # for testing
+if False:
+#for _ in range(10):
     battery_voltage = read_battery_voltage()
     print("Battery Voltage: {:.2f} V".format(battery_voltage))
     time.sleep(1)  # Wait 1 second
