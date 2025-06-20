@@ -1,3 +1,8 @@
+0.0.7
+=====
+- Update battery icon every 5 seconds depending on VBAT/BAT_ADC
+- Add "Power" off button in menu drawer
+
 0.0.6
 =====
 - Scale button size in drawer for bigger screens
