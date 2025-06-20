@@ -16,7 +16,7 @@ NOTIFICATION_BAR_HEIGHT=24
 
 CLOCK_UPDATE_INTERVAL = 1000 # 10 or even 1 ms doesn't seem to change the framerate but 100ms is enough
 WIFI_ICON_UPDATE_INTERVAL = 1500
-BATTERY_ICON_UPDATE_INTERVAL = 30000
+BATTERY_ICON_UPDATE_INTERVAL = 5000
 TEMPERATURE_UPDATE_INTERVAL = 2000
 MEMFREE_UPDATE_INTERVAL = 5000 # not too frequent because there's a forced gc.collect() to give it a reliable value
 
@@ -136,15 +136,8 @@ def init_rootscreen():
     rootlabel.set_text("Welcome to MicroPythonOS")
     rootlabel.center()
 
-
-timer1 = None
-timer2 = None
-timer3 = None
-timer4 = None
-
 def create_notification_bar():
     global notification_bar
-    global timer1, timer2, timer3, timer4
     # Create notification bar
     notification_bar = lv.obj(lv.layer_top())
     notification_bar.set_size(lv.pct(100), NOTIFICATION_BAR_HEIGHT)
@@ -172,15 +165,16 @@ def create_notification_bar():
     #notif_icon.set_text(lv.SYMBOL.BELL)
     #notif_icon.align_to(time_label, lv.ALIGN.OUT_RIGHT_MID, PADDING_TINY, 0)
     # Battery percentage
-    battery_label = lv.label(notification_bar)
-    battery_label.set_text("100%")
-    battery_label.align(lv.ALIGN.RIGHT_MID, 0, 0)
-    battery_label.add_flag(lv.obj.FLAG.HIDDEN)
+    #battery_label = lv.label(notification_bar)
+    #battery_label.set_text("100%")
+    #battery_label.align(lv.ALIGN.RIGHT_MID, 0, 0)
+    #battery_label.add_flag(lv.obj.FLAG.HIDDEN)
     # Battery icon
     battery_icon = lv.label(notification_bar)
     battery_icon.set_text(lv.SYMBOL.BATTERY_FULL)
-    battery_icon.align_to(battery_label, lv.ALIGN.OUT_LEFT_MID, 0, 0)
-    battery_icon.add_flag(lv.obj.FLAG.HIDDEN)
+    #battery_icon.align_to(battery_label, lv.ALIGN.OUT_LEFT_MID, 0, 0)
+    battery_icon.align(lv.ALIGN.RIGHT_MID, 0, 0)
+    battery_icon.add_flag(lv.obj.FLAG.HIDDEN) # keep it hidden until it has a correct value
     # WiFi icon
     wifi_icon = lv.label(notification_bar)
     wifi_icon.set_text(lv.SYMBOL.WIFI)
@@ -202,22 +196,21 @@ def create_notification_bar():
         print("Warning: could not check WLAN status:", str(e))
     
     def update_battery_icon(timer=None):
-        volt = mpos.battery_voltage.read_battery_voltage()
-        percent = (volt - 3.7) * 100 / (4.2 - 3.7)
-        battery_label.set_text(f"{round(percent)}%")
-        battery_label.remove_flag(lv.obj.FLAG.HIDDEN)
-        # 3.7 - 4.15 => 0.5V diff / 3 = 0.015
-        if volt > 4.15:
+        percent = mpos.battery_voltage.get_battery_percentage()
+        if percent > 80: # 4.1V
             battery_icon.set_text(lv.SYMBOL.BATTERY_FULL)
-        elif volt > 4:
+        elif percent > 60: # 4.0V
             battery_icon.set_text(lv.SYMBOL.BATTERY_3)
-        elif volt > 3.85:
+        elif percent > 40: # 3.9V
             battery_icon.set_text(lv.SYMBOL.BATTERY_2)
-        elif volt > 3.75:
+        elif percent > 20: # 3.8V
             battery_icon.set_text(lv.SYMBOL.BATTERY_1)
-        else:
+        else: # > 3.7V
             battery_icon.set_text(lv.SYMBOL.BATTERY_EMPTY)
         battery_icon.remove_flag(lv.obj.FLAG.HIDDEN)
+        # Percentage is not shown for now:
+        #battery_label.set_text(f"{round(percent)}%")
+        #battery_label.remove_flag(lv.obj.FLAG.HIDDEN)
     update_battery_icon() # run it immediately instead of waiting for the timer
 
     def update_wifi_icon(timer):
@@ -248,11 +241,11 @@ def create_notification_bar():
         percentage = round(free * 100 / (free + used))
         memfree_label.set_text(f"{percentage}%")
     
-    timer1 = lv.timer_create(update_time, CLOCK_UPDATE_INTERVAL, None)
-    timer2 = lv.timer_create(update_temperature, TEMPERATURE_UPDATE_INTERVAL, None)
-    timer3 = lv.timer_create(update_memfree, MEMFREE_UPDATE_INTERVAL, None)
-    timer4 = lv.timer_create(update_wifi_icon, WIFI_ICON_UPDATE_INTERVAL, None)
-    timer5 = lv.timer_create(update_battery_icon, BATTERY_ICON_UPDATE_INTERVAL, None)
+    lv.timer_create(update_time, CLOCK_UPDATE_INTERVAL, None)
+    lv.timer_create(update_temperature, TEMPERATURE_UPDATE_INTERVAL, None)
+    lv.timer_create(update_memfree, MEMFREE_UPDATE_INTERVAL, None)
+    lv.timer_create(update_wifi_icon, WIFI_ICON_UPDATE_INTERVAL, None)
+    lv.timer_create(update_battery_icon, BATTERY_ICON_UPDATE_INTERVAL, None)
     
     # hide bar animation
     global hide_bar_animation
