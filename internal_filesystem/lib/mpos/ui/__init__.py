@@ -178,7 +178,7 @@ def create_notification_bar():
     # WiFi icon
     wifi_icon = lv.label(notification_bar)
     wifi_icon.set_text(lv.SYMBOL.WIFI)
-    wifi_icon.align_to(battery_icon, lv.ALIGN.OUT_LEFT_MID, -mpos.ui.pct_of_display_width(7), 0)
+    wifi_icon.align_to(battery_icon, lv.ALIGN.OUT_LEFT_MID, -mpos.ui.pct_of_display_width(1), 0)
     wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
     # Update time
     import time
