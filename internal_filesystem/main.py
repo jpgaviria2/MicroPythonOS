@@ -19,10 +19,13 @@ theme_dark_bool = ( theme_light_dark == "dark" )
 primary_color = lv.theme_get_color_primary(None)
 color_string = prefs.get_string("theme_primary_color")
 if color_string:
-    color_string = color_string.replace("0x", "").replace("#", "").strip().lower()
-    color_int = int(color_string, 16)
-    print(f"Setting primary color: {color_int}")
-    primary_color = lv.color_hex(color_int)
+    try:
+        color_string = color_string.replace("0x", "").replace("#", "").strip().lower()
+        color_int = int(color_string, 16)
+        print(f"Setting primary color: {color_int}")
+        primary_color = lv.color_hex(color_int)
+    except Exception as e:
+        print(f"Converting color setting '{color_string}' to lv_color_hex() got exception: {e}")
 theme = lv.theme_default_init(display._disp_drv, primary_color, lv.color_hex(0xFBDC05), theme_dark_bool, lv.font_montserrat_12)
 
 #display.set_theme(theme)
