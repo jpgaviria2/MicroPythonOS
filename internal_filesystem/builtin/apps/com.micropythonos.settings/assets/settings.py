@@ -271,12 +271,9 @@ class SettingActivity(Activity):
         ui_options = setting.get("ui_options")
         if ui and ui == "radiobuttons" and ui_options:
             selected_idx = self.active_radio_index
-            if selected_idx == 0: # only supports 2 options, could be made more generic
-                new_value = ui_options[0][1]
-            elif selected_idx == 1:
-                new_value = ui_options[1][1]
-            else:
-                return # nothing to save
+            new_value = ""
+            if selected_idx >= 0:
+                new_value = ui_options[selected_idx][1]
         elif ui and ui == "dropdown" and ui_options:
             selected_index = self.dropdown.get_selected()
             print(f"selected item: {selected_index}")
