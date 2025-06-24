@@ -2,6 +2,7 @@
 =====
 - Move wifi icon to the right-hand side
 - Power off camera after boot and before deepsleep to conserve power
+- Properly handle misconfigurations in theme color
 
 0.0.7
 =====

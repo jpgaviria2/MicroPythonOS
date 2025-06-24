@@ -8,9 +8,34 @@ class SettingsActivity(Activity):
     def __init__(self):
         super().__init__()
         self.prefs = None
+        theme_colors = [
+            ("Aqua Blue", "00ffff"),
+            ("Bitcoin Orange", "f0a010"),
+            ("Coral Red", "ff7f50"),
+            ("Dark Slate", "2f4f4f"),
+            ("Forest Green", "228b22"),
+            ("Piggy Pink", "ff69b4"),
+            ("Matrix Green", "00ff00"),
+            ("Midnight Blue", "191970"),
+            ("Nostr Purple", "ff00ff"),
+            ("Saddle Brown", "8b4513"),
+            ("Sky Blue", "87ceeb"),
+            ("Solarized Yellow", "b58900"),
+            ("Vivid Violet", "9f00ff"),
+            ("Amethyst", "9966cc"),
+            ("Burnt Orange", "cc5500"),
+            ("Charcoal Gray", "36454f"),
+            ("Crimson", "dc143c"),
+            ("Emerald", "50c878"),
+            ("Goldenrod", "daa520"),
+            ("Indigo", "4b0082"),
+            ("Lime", "00ff00"),
+            ("Teal", "008080"),
+            ("Turquoise", "40e0d0")
+        ]
         self.settings = [
             {"title": "Light/Dark Theme", "key": "theme_light_dark", "value_label": None, "cont": None, "ui": "radiobuttons", "ui_options":  [("Light", "light"), ("Dark", "dark")]},
-            {"title": "Theme Color", "key": "theme_primary_color", "value_label": None, "cont": None, "placeholder": "HTML hex color, like: EC048C"},
+            {"title": "Theme Color", "key": "theme_primary_color", "value_label": None, "cont": None, "placeholder": "HTML hex color, like: EC048C", "ui": "dropdown", "ui_options": theme_colors},
             {"title": "Restart to Bootloader", "key": "boot_mode", "value_label": None, "cont": None, "ui": "radiobuttons", "ui_options":  [("Normal", "normal"), ("Bootloader", "bootloader")]}, # special that doesn't get saved
             # This is currently only in the drawer but would make sense to have it here for completeness:
             #{"title": "Display Brightness", "key": "display_brightness", "value_label": None, "cont": None, "placeholder": "A value from 0 to 100."},
@@ -69,10 +94,13 @@ class SettingsActivity(Activity):
 # Used to edit one setting:
 class SettingActivity(Activity):
 
+    active_radio_index = 0  # Track active radio button index
+
+    # Widgets:
     keyboard = None
     textarea = None
+    dropdown = None
     radio_container = None
-    active_radio_index = 0  # Track active radio button index
 
     def __init__(self):
         super().__init__()
@@ -100,6 +128,7 @@ class SettingActivity(Activity):
 
         ui = setting.get("ui")
         ui_options = setting.get("ui_options")
+        current_setting = self.prefs.get_string(setting["key"])
         if ui and ui == "radiobuttons" and ui_options:
             # Create container for radio buttons
             self.radio_container = lv.obj(settings_screen_detail)
@@ -107,9 +136,7 @@ class SettingActivity(Activity):
             self.radio_container.set_height(lv.SIZE_CONTENT)
             self.radio_container.set_flex_flow(lv.FLEX_FLOW.COLUMN)
             self.radio_container.add_event_cb(self.radio_event_handler, lv.EVENT.CLICKED, None)
-
             # Create radio buttons
-            current_setting = self.prefs.get_string(setting["key"])
             self.active_radio_index = -1 # none
             # currently only supports 2 options, could be more generic:
             if current_setting == ui_options[0][1]:
@@ -121,15 +148,24 @@ class SettingActivity(Activity):
                 cb = self.create_radio_button(self.radio_container, text, i)
                 if i == self.active_radio_index:
                     cb.add_state(lv.STATE.CHECKED)
+        elif ui and ui == "dropdown" and ui_options:
+            self.dropdown = lv.dropdown(settings_screen_detail)
+            self.dropdown.set_width(lv.pct(100))
+            options_with_newlines = "\n".join(f"{option[0]} ({option[1]})" for option in ui_options)
+            self.dropdown.set_options(options_with_newlines)
+            # select the right one:
+            for i, (option) in enumerate(ui_options):
+                if option[1] == current_setting:
+                    self.dropdown.set_selected(i)
+                    break
         else:
             # Textarea for other settings
             self.textarea = lv.textarea(settings_screen_detail)
             self.textarea.set_width(lv.pct(100))
             self.textarea.set_height(lv.SIZE_CONTENT)
             self.textarea.align_to(top_cont, lv.ALIGN.OUT_BOTTOM_MID, 0, 0)
-            current = self.prefs.get_string(setting["key"])
-            if current:
-                self.textarea.set_text(current)
+            if current_setting:
+                self.textarea.set_text(current_setting)
             placeholder = setting.get("placeholder")
             if placeholder:
                 self.textarea.set_placeholder_text(placeholder)
@@ -237,20 +273,19 @@ class SettingActivity(Activity):
                 return
 
         ui = setting.get("ui")
-        if ui and ui == "radiobuttons" and self.radio_container:
-            ui_options = setting.get("ui_options")
-            if ui_options:
-                options = ui_options
-            else:
-                print("No ui_options are available, not saving...")
-                return
+        ui_options = setting.get("ui_options")
+        if ui and ui == "radiobuttons" and ui_options:
             selected_idx = self.active_radio_index
             if selected_idx == 0: # only supports 2 options, could be made more generic
-                new_value = options[0][1]
+                new_value = ui_options[0][1]
             elif selected_idx == 1:
-                new_value = options[1][1]
+                new_value = ui_options[1][1]
             else:
                 return # nothing to save
+        elif ui and ui == "dropdown" and ui_options:
+            selected_index = self.dropdown.get_selected()
+            print(f"selected item: {selected_index}")
+            new_value = ui_options[selected_index][1]
         elif self.textarea:
             new_value = self.textarea.get_text()
         else:
