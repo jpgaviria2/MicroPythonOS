@@ -15,7 +15,7 @@ class SettingsActivity(Activity):
             ("Dark Slate", "2f4f4f"),
             ("Forest Green", "228b22"),
             ("Piggy Pink", "ff69b4"),
-            ("Matrix Green", "00ff00"),
+            ("Matrix Green", "03a062"),
             ("Midnight Blue", "191970"),
             ("Nostr Purple", "ff00ff"),
             ("Saddle Brown", "8b4513"),
@@ -136,17 +136,12 @@ class SettingActivity(Activity):
             self.radio_container.set_height(lv.SIZE_CONTENT)
             self.radio_container.set_flex_flow(lv.FLEX_FLOW.COLUMN)
             self.radio_container.add_event_cb(self.radio_event_handler, lv.EVENT.CLICKED, None)
-            # Create radio buttons
+            # Create radio buttons and check the right one
             self.active_radio_index = -1 # none
-            # currently only supports 2 options, could be more generic:
-            if current_setting == ui_options[0][1]:
-                self.active_radio_index = 0
-            elif current_setting == ui_options[1][1]:
-                self.active_radio_index = 1
-            # create radio buttons and check the right one
-            for i, (text, _) in enumerate(ui_options):
-                cb = self.create_radio_button(self.radio_container, text, i)
-                if i == self.active_radio_index:
+            for i, (option_text, option_value) in enumerate(ui_options):
+                cb = self.create_radio_button(self.radio_container, option_text, i)
+                if current_setting == option_value:
+                    self.active_radio_index = i
                     cb.add_state(lv.STATE.CHECKED)
         elif ui and ui == "dropdown" and ui_options:
             self.dropdown = lv.dropdown(settings_screen_detail)
@@ -154,10 +149,10 @@ class SettingActivity(Activity):
             options_with_newlines = "\n".join(f"{option[0]} ({option[1]})" for option in ui_options)
             self.dropdown.set_options(options_with_newlines)
             # select the right one:
-            for i, (option) in enumerate(ui_options):
-                if option[1] == current_setting:
+            for i, (option_text, option_value) in enumerate(ui_options):
+                if current_setting == option_value:
                     self.dropdown.set_selected(i)
-                    break
+                    break # no need to check the rest because only one can be selected
         else:
             # Textarea for other settings
             self.textarea = lv.textarea(settings_screen_detail)
