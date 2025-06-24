@@ -75,7 +75,7 @@ sdlkeyboard.set_paste_text_callback(mpos.clipboard.paste_text)
 # so it needs a software power off to prevent it from staying hot all the time and quickly draining the battery.
 # 1) Initialize camera, otherwise it doesn't reply to I2C commands:
 try:
-    from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
+    from camera import Camera
     cam = Camera(data_pins=[12,13,15,11,14,10,7,2],vsync_pin=6,href_pin=4,sda_pin=21,scl_pin=16,pclk_pin=9,xclk_pin=8,xclk_freq=20000000,powerdown_pin=-1,reset_pin=-1,pixel_format=PixelFormat.RGB565,frame_size=FrameSize.R240X240,grab_mode=GrabMode.LATEST)
     cam.deinit()
 except Exception as e:
@@ -84,8 +84,9 @@ except Exception as e:
 try:
     from machine import Pin, I2C
     i2c = I2C(1, scl=Pin(16), sda=Pin(21))  # Adjust pins and frequency
-    #devices = i2c.scan()
-    #print([hex(addr) for addr in devices]) # finds it on 60 = 0x3C after init
+    devices = i2c.scan()
+    print("Scan of I2C bus on scl=16, sda=21:")
+    print([hex(addr) for addr in devices]) # finds it on 60 = 0x3C after init
     camera_addr = 0x3C # for OV5640
     reg_addr = 0x3008
     reg_high = (reg_addr >> 8) & 0xFF  # 0x30
