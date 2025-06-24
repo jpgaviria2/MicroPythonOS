@@ -1,3 +1,8 @@
+0.0.8
+=====
+- Move wifi icon to the right-hand side
+- Power off camera after boot and before deepsleep to conserve power
+
 0.0.7
 =====
 - Update battery icon every 5 seconds depending on VBAT/BAT_ADC

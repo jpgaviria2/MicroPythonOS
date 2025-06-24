@@ -382,6 +382,7 @@ def create_drawer(display=None):
     poweroff_label.center()
     def poweroff_cb(e):
         print("Power off action...")
+        remove_and_stop_current_activity() # make sure current app, like camera, does cleanup, saves progress, stops hardware etc.
         import sys
         if sys.platform == "esp32":
             #On ESP32, there's no power off but there is a forever sleep
@@ -548,6 +549,12 @@ def setContentView(new_activity, new_screen):
         end_time = utime.ticks_diff(utime.ticks_ms(), start_time)
         print(f"ui.py setContentView: new_activity.onResume took {end_time}ms")
 
+def remove_and_stop_current_activity():
+    current_activity, current_screen = screen_stack.pop()  # Remove current screen
+    if current_activity:
+        current_activity.onPause(current_screen)
+        current_activity.onStop(current_screen)
+        current_activity.onDestroy(current_screen)
 
 def back_screen():
     print("back_screen() running")
@@ -556,11 +563,7 @@ def back_screen():
         print("Warning: can't go back because screen_stack is empty.")
         return False  # No previous screen
     #close_top_layer_msgboxes() # would be nicer to "cancel" all input events
-    current_activity, current_screen = screen_stack.pop()  # Remove current screen
-    if current_activity:
-        current_activity.onPause(current_screen)
-        current_activity.onStop(current_screen)
-        current_activity.onDestroy(current_screen)
+    remove_and_stop_current_activity()
     prev_activity, prev_screen = screen_stack[-1] # load previous screen
     print("loading prev_screen with animation")
     lv.screen_load_anim(prev_screen, lv.SCR_LOAD_ANIM.OVER_RIGHT, 500, 0, True) #  True means delete the old screen, which is fine as we're going back and current_activity.onDestroy() was called
