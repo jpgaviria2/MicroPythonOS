@@ -3,16 +3,15 @@ from mpos.apps import Activity, ActivityNavigator, Intent
 import mpos.config
 import mpos.ui
 
-
 # Used to list and edit all settings:
 class SettingsActivity(Activity):
     def __init__(self):
         super().__init__()
         self.prefs = None
         self.settings = [
-            {"title": "Light/Dark Theme", "key": "theme_light_dark", "value_label": None, "cont": None},
+            {"title": "Light/Dark Theme", "key": "theme_light_dark", "value_label": None, "cont": None, "ui": "radiobuttons", "ui_options":  [("Light", "light"), ("Dark", "dark")]},
             {"title": "Theme Color", "key": "theme_primary_color", "value_label": None, "cont": None, "placeholder": "HTML hex color, like: EC048C"},
-            {"title": "Restart to Bootloader", "key": "boot_mode", "value_label": None, "cont": None}, # special that doesn't get saved
+            {"title": "Restart to Bootloader", "key": "boot_mode", "value_label": None, "cont": None, "ui": "radiobuttons", "ui_options":  [("Normal", "normal"), ("Bootloader", "bootloader")]}, # special that doesn't get saved
             # This is currently only in the drawer but would make sense to have it here for completeness:
             #{"title": "Display Brightness", "key": "display_brightness", "value_label": None, "cont": None, "placeholder": "A value from 0 to 100."},
             # Maybe also add font size (but ideally then all fonts should scale up/down)
@@ -99,7 +98,9 @@ class SettingActivity(Activity):
         setting_label.align(lv.ALIGN.TOP_LEFT,0,0)
         setting_label.set_style_text_font(lv.font_montserrat_26, 0)
 
-        if setting["key"] == "theme_light_dark" or setting["key"] == "boot_mode":
+        ui = setting.get("ui")
+        ui_options = setting.get("ui_options")
+        if ui and ui == "radiobuttons" and ui_options:
             # Create container for radio buttons
             self.radio_container = lv.obj(settings_screen_detail)
             self.radio_container.set_width(lv.pct(100))
@@ -108,18 +109,15 @@ class SettingActivity(Activity):
             self.radio_container.add_event_cb(self.radio_event_handler, lv.EVENT.CLICKED, None)
 
             # Create radio buttons
-            if setting["key"] == "boot_mode":
-                options = [("Normal", "normal"), ("Bootloader", "bootloader")]
-            else:
-                options = [("Light", "light"), ("Dark", "dark")]
             current_setting = self.prefs.get_string(setting["key"])
             self.active_radio_index = -1 # none
-            if current_setting == options[0][1]:
+            # currently only supports 2 options, could be more generic:
+            if current_setting == ui_options[0][1]:
                 self.active_radio_index = 0
-            elif current_setting == options[1][1]:
+            elif current_setting == ui_options[1][1]:
                 self.active_radio_index = 1
-
-            for i, (text, _) in enumerate(options):
+            # create radio buttons and check the right one
+            for i, (text, _) in enumerate(ui_options):
                 cb = self.create_radio_button(self.radio_container, text, i)
                 if i == self.active_radio_index:
                     cb.add_state(lv.STATE.CHECKED)
@@ -231,20 +229,23 @@ class SettingActivity(Activity):
         self.startActivityForResult(Intent(activity_class=CameraApp).putExtra("scanqr_mode", True), self.gotqr_result_callback)
 
     def save_setting(self, setting):
-        if setting["key"] == "boot_mode" and self.radio_container:
+        if setting["key"] == "boot_mode" and self.radio_container: # special case that isn't saved
             if self.active_radio_index == 1:
                 from mpos.bootloader import ResetIntoBootloader
                 intent = Intent(activity_class=ResetIntoBootloader)
                 ActivityNavigator.startActivity(intent)
                 return
 
-        if ( setting["key"] =="theme_light_dark" or setting["key"] == "boot_mode" ) and self.radio_container:
-            if setting["key"] == "boot_mode":
-                options = [("Normal", "normal"), ("Bootloader", "bootloader")]
+        ui = setting.get("ui")
+        if ui and ui == "radiobuttons" and self.radio_container:
+            ui_options = setting.get("ui_options")
+            if ui_options:
+                options = ui_options
             else:
-                options = [("Light", "light"), ("Dark", "dark")]
+                print("No ui_options are available, not saving...")
+                return
             selected_idx = self.active_radio_index
-            if selected_idx == 0:
+            if selected_idx == 0: # only supports 2 options, could be made more generic
                 new_value = options[0][1]
             elif selected_idx == 1:
                 new_value = options[1][1]
