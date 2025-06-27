@@ -34,19 +34,22 @@ class IMU(Activity):
             from qmi8658 import QMI8658
             import machine
             self.sensor = QMI8658(I2C(0, sda=machine.Pin(48), scl=machine.Pin(47)))
+            print("IMU sensor initialized")
+            #print(f"{self.sensor.temperature=} {self.sensor.acceleration=} {self.sensor.gyro=}")
         except Exception as e:
             warning = f"Warning: could not initialize IMU hardware:\n{e}"
             print(warning)
             self.templabel.set_text(warning)
         self.setContentView(screen)
 
-        def onStart(self, screen):
-            self.refresh_timer = lv.timer_create(self.refresh, 100, None)
+    def onStart(self, screen):
+        print("starting imu refresh_timer")
+        self.refresh_timer = lv.timer_create(self.refresh, 100, None)
 
-        def onStop(self, screen):
-            if self.refresh_timer:
-                self.refresh_timer.delete()
-
+    def onStop(self, screen):
+        if self.refresh_timer:
+            print("stopping imu refresh_timer")
+            self.refresh_timer.delete()
 
     def map_nonlinear(self, value: float) -> int:
         # Preserve sign and work with absolute value
@@ -62,8 +65,9 @@ class IMU(Activity):
         return int(50.0 + (sign * scaled))  # Shift to [0, 100]
     
     def refresh(self, timer):
+        #print("refresh timer")
         if self.sensor:
-            #print(f"""{sensor.temperature=} {sensor.acceleration=} {sensor.gyro=}""")
+            #print(f"{self.sensor.temperature=} {self.sensor.acceleration=} {self.sensor.gyro=}")
             temp = self.sensor.temperature
             ax = self.sensor.acceleration[0]
             axp = int((ax * 100 + 100)/2)
