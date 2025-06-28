@@ -51,7 +51,9 @@ class IMU(Activity):
             print("stopping imu refresh_timer")
             self.refresh_timer.delete()
 
-    def map_nonlinear(self, value: float) -> int:
+    def convert_percentage(self, value: float) -> int:
+        return round(50.0 + value)
+        # non-linear mapping isn't really useful so unused:
         # Preserve sign and work with absolute value
         sign = 1 if value >= 0 else -1
         abs_value = abs(value)
@@ -76,9 +78,9 @@ class IMU(Activity):
             az = self.sensor.acceleration[2]
             azp = int((az * 100 + 100)/2)
             # values between -200 and 200 => /4 becomes -50 and 50 => +50 becomes 0 and 100
-            gx = self.map_nonlinear(self.sensor.gyro[0])
-            gy = self.map_nonlinear(self.sensor.gyro[1])
-            gz = self.map_nonlinear(self.sensor.gyro[2])
+            gx = self.convert_percentage(self.sensor.gyro[0])
+            gy = self.convert_percentage(self.sensor.gyro[1])
+            gz = self.convert_percentage(self.sensor.gyro[2])
             self.templabel.set_text(f"IMU chip temperature: {temp:.2f}°C")
         else:
             #temp = 12.34
