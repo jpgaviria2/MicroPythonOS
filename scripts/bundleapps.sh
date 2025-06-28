@@ -35,7 +35,7 @@ for apprepo in internal_filesystem/apps internal_filesystem/builtin/apps; do
         echo "Setting file modification times to a fixed value..."
         find . -type f -exec touch -t 202501010000.00 {} \;
         echo "Creating $mpkname with deterministic file order..."
-        find . -type f | sort | TZ=CET zip -X "$mpkname" -@
+        find . -type f | sort | TZ=CET zip -X -r0 "$mpkname" -@
         cp res/mipmap-mdpi/icon_64x64.png "$thisappdir"/icons/"$appdir"_"$version"_64x64.png
         popd
     done
