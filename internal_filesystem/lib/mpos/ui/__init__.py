@@ -33,10 +33,12 @@ show_bar_animation_end_value = 0
 hide_bar_animation_start_value = show_bar_animation_end_value
 hide_bar_animation_end_value = show_bar_animation_start_value
 
+down_start_x = 0
 back_start_y = 0
 
 # Widgets:
 notification_bar = None
+downbutton = None
 backbutton = None
 
 foreground_app_name=None
@@ -585,7 +587,7 @@ def back_swipe_cb(event):
 
     global backbutton, back_start_y
     event_code = event.get_code()
-    name = mpos.ui.get_event_name(event_code)
+    #name = mpos.ui.get_event_name(event_code)
     indev = lv.indev_active()
     if indev:
         point = lv.point_t()
@@ -640,37 +642,34 @@ def handle_back_swipe():
 
 # Would be better to somehow save other events, like clicks, and pass them down to the layers below if released with x < 60
 def top_swipe_cb(event):
-    #global rect
+    if drawer_open:
+        print("ignoring top swipe gesture because drawer is open")
+        return
 
+    global downbutton, down_start_x
     event_code = event.get_code()
     name = mpos.ui.get_event_name(event_code)
-    print(f"top_swipe_cb {event_code} and {name}")
-
-    #xa = rect.get_x_aligned()
-    #ya = rect.get_y_aligned()
-    #print(f"xa, ya: {xa},{ya}")
-
-    #obj = e.get_target()
-    #lvobj = lv.obj(obj)
-    #pos = lvobj.get_pos()  # Get current position
-    #print(f"pos: {lvobj.get_x()}, {lvobj.get_y()}")
-
     indev = lv.indev_active()
     if indev:
         point = lv.point_t()
         indev.get_point(point)
         x = point.x
         y = point.y
-        print(f"pos: {x}, {y}")
-        #rect.set_pos(x, 0)
-        if event_code == lv.EVENT.RELEASED and y > 60: # TODO: use display_height / 3 here, or better: an animation for more feedback
-            mpos.ui.open_drawer()
-            #rect.set_pos(0,0)
-        #rect.set_pos(xa + point.x, ya + point.y)
-        #rect.set_pos(point.x, point.y)
+        print(f"visual_back_swipe_cb event_code={event_code} and event_name={name} and pos: {x}, {y}")
+        if event_code == lv.EVENT.PRESSED:
+            mpos.ui.anim.smooth_show(downbutton)
+            down_start_x = x
+        elif event_code == lv.EVENT.PRESSING:
+            magnetic_y = round(y/ 10)
+            downbutton.set_pos(down_start_x,magnetic_y)
+        elif event_code == lv.EVENT.RELEASED:
+            mpos.ui.anim.smooth_hide(downbutton)
+            if y > min(80,vertical_resolution / 3):
+                mpos.ui.open_drawer()
 
 
 def handle_top_swipe():
+    global downbutton
     rect = lv.obj(lv.layer_top())
     rect.set_size(lv.pct(100), round(NOTIFICATION_BAR_HEIGHT*2/3))
     rect.set_pos(0, 0)
@@ -686,8 +685,18 @@ def handle_top_swipe():
     rect.add_style(style, 0)
     #rect.add_flag(lv.obj.FLAG.CLICKABLE)  # Make the object clickable
     #rect.add_flag(lv.obj.FLAG.GESTURE_BUBBLE)  # Allow dragging
-    #rect.add_event_cb(drag_event_cb, lv.EVENT.PRESSING, None)
+    rect.add_event_cb(top_swipe_cb, lv.EVENT.PRESSED, None)
+    rect.add_event_cb(top_swipe_cb, lv.EVENT.PRESSING, None)
     rect.add_event_cb(top_swipe_cb, lv.EVENT.RELEASED, None)
+    # button with label that shows up during the dragging:
+    downbutton = lv.button(lv.layer_top())
+    downbutton.set_pos(0, round(lv.layer_top().get_height() / 2))
+    downbutton.add_flag(lv.obj.FLAG.HIDDEN)
+    downbutton.add_state(lv.STATE.DISABLED)
+    downlabel = lv.label(downbutton)
+    downlabel.set_text(lv.SYMBOL.DOWN)
+    downlabel.set_style_text_font(lv.font_montserrat_18, 0)
+    downlabel.center()
 
 
 def pct_of_display_width(percent):
