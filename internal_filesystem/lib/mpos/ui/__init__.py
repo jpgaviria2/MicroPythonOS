@@ -33,7 +33,11 @@ show_bar_animation_end_value = 0
 hide_bar_animation_start_value = show_bar_animation_end_value
 hide_bar_animation_end_value = show_bar_animation_start_value
 
+back_start_y = 0
+
+# Widgets:
 notification_bar = None
+backbutton = None
 
 foreground_app_name=None
 
@@ -579,52 +583,60 @@ def back_swipe_cb(event):
         print("ignoring back gesture because drawer is open")
         return
 
+    global backbutton, back_start_y
     event_code = event.get_code()
-    #name = mpos.ui.get_event_name(event_code)
-    #print(f"back_swipe_cb {event_code} and {name}")
-
-    #xa = rect.get_x_aligned()
-    #ya = rect.get_y_aligned()
-    #print(f"xa, ya: {xa},{ya}")
-
-    #obj = e.get_target()
-    #lvobj = lv.obj(obj)
-    #pos = lvobj.get_pos()  # Get current position
-    #print(f"pos: {lvobj.get_x()}, {lvobj.get_y()}")
-
+    name = mpos.ui.get_event_name(event_code)
     indev = lv.indev_active()
     if indev:
         point = lv.point_t()
         indev.get_point(point)
         x = point.x
         y = point.y
-        print(f"pos: {x}, {y}")
-        #rect.set_pos(x, 0)
-        if event_code == lv.EVENT.RELEASED and x > 60: # TODO: use display_width / 3 here
-            mpos.ui.back_screen()
-            #rect.set_pos(0,0)
-        #rect.set_pos(xa + point.x, ya + point.y)
-        #rect.set_pos(point.x, point.y)
-
+        #print(f"visual_back_swipe_cb event_code={event_code} and event_name={name} and pos: {x}, {y}")
+        if event_code == lv.EVENT.PRESSED:
+            mpos.ui.anim.smooth_show(backbutton)
+            back_start_y = y
+        elif event_code == lv.EVENT.PRESSING:
+            magnetic_x = round(x / 10)
+            backbutton.set_pos(magnetic_x,back_start_y)
+        elif event_code == lv.EVENT.RELEASED:
+            mpos.ui.anim.smooth_hide(backbutton)
+            if x > min(100,horizontal_resolution / 3):
+                mpos.ui.back_screen()
 
 def handle_back_swipe():
+    global backbutton
     rect = lv.obj(lv.layer_top())
     rect.set_size(round(NOTIFICATION_BAR_HEIGHT/2), lv.layer_top().get_height()-NOTIFICATION_BAR_HEIGHT) # narrow because it overlaps buttons
     rect.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
+    rect.set_scroll_dir(lv.DIR.NONE)
     rect.set_pos(0, NOTIFICATION_BAR_HEIGHT)
     style = lv.style_t()
     style.init()
     style.set_bg_opa(lv.OPA.TRANSP)
-    #style.set_bg_opa(15)
     style.set_border_width(0)
     style.set_radius(0)
-    #style.set_border_color(lv.color_hex(0xFF0000))  # White border for visibility
-    #style.set_border_opa(lv.OPA._50)  # 50% opacity for the border
+    if False: # debug the back swipe zone with a red border
+        style.set_bg_opa(15)
+        style.set_border_width(4)
+        style.set_border_color(lv.color_hex(0xFF0000))  # Red border for visibility
+        style.set_border_opa(lv.OPA._50)  # 50% opacity for the border
     rect.add_style(style, 0)
     #rect.add_flag(lv.obj.FLAG.CLICKABLE)  # Make the object clickable
     #rect.add_flag(lv.obj.FLAG.GESTURE_BUBBLE)  # Allow dragging
-    #rect.add_event_cb(drag_event_cb, lv.EVENT.PRESSING, None)
+    rect.add_event_cb(back_swipe_cb, lv.EVENT.PRESSED, None)
+    rect.add_event_cb(back_swipe_cb, lv.EVENT.PRESSING, None)
     rect.add_event_cb(back_swipe_cb, lv.EVENT.RELEASED, None)
+    #rect.add_event_cb(back_swipe_cb, lv.EVENT.ALL, None)
+    # button with label that shows up during the dragging:
+    backbutton = lv.button(lv.layer_top())
+    backbutton.set_pos(0, round(lv.layer_top().get_height() / 2))
+    backbutton.add_flag(lv.obj.FLAG.HIDDEN)
+    backbutton.add_state(lv.STATE.DISABLED)
+    backlabel = lv.label(backbutton)
+    backlabel.set_text(lv.SYMBOL.LEFT)
+    backlabel.set_style_text_font(lv.font_montserrat_18, 0)
+    backlabel.center()
 
 # Would be better to somehow save other events, like clicks, and pass them down to the layers below if released with x < 60
 def top_swipe_cb(event):
