@@ -1,3 +1,9 @@
+0.0.9
+=====
+- UI: add visual cues during back/top swipe gestures
+- Settings: add Timezone
+
+
 0.0.8
 =====
 - Move wifi icon to the right-hand side
