@@ -2,6 +2,7 @@ from mpos.apps import Activity, ActivityNavigator, Intent
 
 import mpos.config
 import mpos.ui
+import mpos.time
 
 # Used to list and edit all settings:
 class SettingsActivity(Activity):
@@ -37,10 +38,10 @@ class SettingsActivity(Activity):
             {"title": "Light/Dark Theme", "key": "theme_light_dark", "value_label": None, "cont": None, "ui": "radiobuttons", "ui_options":  [("Light", "light"), ("Dark", "dark")]},
             {"title": "Theme Color", "key": "theme_primary_color", "value_label": None, "cont": None, "placeholder": "HTML hex color, like: EC048C", "ui": "dropdown", "ui_options": theme_colors},
             {"title": "Restart to Bootloader", "key": "boot_mode", "value_label": None, "cont": None, "ui": "radiobuttons", "ui_options":  [("Normal", "normal"), ("Bootloader", "bootloader")]}, # special that doesn't get saved
+            {"title": "Timezone", "key": "timezone", "value_label": None, "cont": None, "ui": "dropdown", "ui_options": self.get_timezone_tuples(), "changed_callback": lambda : mpos.time.refresh_timezone_preference()},
             # This is currently only in the drawer but would make sense to have it here for completeness:
             #{"title": "Display Brightness", "key": "display_brightness", "value_label": None, "cont": None, "placeholder": "A value from 0 to 100."},
             # Maybe also add font size (but ideally then all fonts should scale up/down)
-            #{"title": "Timezone", "key": "timezone", "value_label": None, "cont": None, "placeholder": "Example: Europe/Prague"},
         ]
 
     def onCreate(self):
@@ -59,6 +60,7 @@ class SettingsActivity(Activity):
         # Create settings entries
         screen.clean()
         for setting in self.settings:
+            #print(f"setting {setting.get('title')} has changed_callback {setting.get('changed_callback')}")
             # Container for each setting
             setting_cont = lv.obj(screen)
             setting_cont.set_width(lv.pct(100))
@@ -91,6 +93,10 @@ class SettingsActivity(Activity):
         intent.putExtra("setting", setting)
         self.startActivity(intent)
 
+    @staticmethod
+    def get_timezone_tuples():
+        return [(tz, tz) for tz in mpos.time.get_timezones()]
+
 # Used to edit one setting:
 class SettingActivity(Activity):
 
@@ -109,6 +115,7 @@ class SettingActivity(Activity):
 
     def onCreate(self):
         setting = self.getIntent().extras.get("setting")
+        #print(f"onCreate changed_callback: {setting.get('changed_callback')}")
         settings_screen_detail = lv.obj()
         settings_screen_detail.set_style_pad_all(mpos.ui.pct_of_display_width(2), 0)
         settings_screen_detail.set_flex_flow(lv.FLEX_FLOW.COLUMN)
@@ -146,7 +153,12 @@ class SettingActivity(Activity):
         elif ui and ui == "dropdown" and ui_options:
             self.dropdown = lv.dropdown(settings_screen_detail)
             self.dropdown.set_width(lv.pct(100))
-            options_with_newlines = "\n".join(f"{option[0]} ({option[1]})" for option in ui_options)
+            options_with_newlines = ""
+            for option in ui_options:
+                if option[0] != option[1]:
+                    options_with_newlines += (f"{option[0]} ({option[1]})\n")
+                else: # don't show identical options
+                    options_with_newlines += (f"{option[0]}\n")
             self.dropdown.set_options(options_with_newlines)
             # select the right one:
             for i, (option_text, option_value) in enumerate(ui_options):
@@ -282,8 +294,14 @@ class SettingActivity(Activity):
             new_value = self.textarea.get_text()
         else:
             new_value = ""
+        old_value = self.prefs.get_string(setting["key"])
         editor = self.prefs.edit()
         editor.put_string(setting["key"], new_value)
         editor.commit()
         setting["value_label"].set_text(new_value if new_value else "(not set)")
+        changed_callback = setting.get("changed_callback")
+        #print(f"changed_callback: {changed_callback}")
+        if changed_callback and old_value != new_value:
+            print(f"Setting {setting['key']} changed from {old_value} to {new_value}, calling changed_callback...")
+            changed_callback()
         self.finish()

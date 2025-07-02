@@ -1,6 +1,5 @@
 import gc
 import os
-import time
 
 from mpos.apps import Activity
 import mpos.ui

@@ -3,6 +3,7 @@ import utime # for timing calls
 import lvgl as lv
 import mpos.apps
 import mpos.battery_voltage
+import mpos.time
 import mpos.wifi
 from mpos.ui.anim import WidgetAnimator
 
@@ -189,9 +190,9 @@ def create_notification_bar():
     # Update time
     import time
     def update_time(timer):
-        hours = time.localtime()[3]
-        minutes = time.localtime()[4]
-        seconds = time.localtime()[5]
+        hours = mpos.time.localtime()[3]
+        minutes = mpos.time.localtime()[4]
+        seconds = mpos.time.localtime()[5]
         time_label.set_text(f"{hours:02d}:{minutes:02d}:{seconds:02d}")
     
     can_check_network = False
