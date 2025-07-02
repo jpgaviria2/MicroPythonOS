@@ -1,4 +1,4 @@
-import utime # for timing calls
+#import utime # for time profiling
 
 import lvgl as lv
 import mpos.apps
@@ -188,7 +188,6 @@ def create_notification_bar():
     wifi_icon.align_to(battery_icon, lv.ALIGN.OUT_LEFT_MID, -mpos.ui.pct_of_display_width(1), 0)
     wifi_icon.add_flag(lv.obj.FLAG.HIDDEN)
     # Update time
-    import time
     def update_time(timer):
         hours = mpos.time.localtime()[3]
         minutes = mpos.time.localtime()[4]
@@ -540,21 +539,21 @@ def setContentView(new_activity, new_screen):
     screen_stack.append((new_activity, new_screen))
     close_top_layer_msgboxes() # otherwise they remain
     if new_activity:
-        start_time = utime.ticks_ms()
+        #start_time = utime.ticks_ms()
         new_activity.onStart(new_screen)  # Initialize UI elements
-        end_time = utime.ticks_diff(utime.ticks_ms(), start_time)
-        print(f"ui.py setContentView: new_activity.onStart took {end_time}ms")
+        #end_time = utime.ticks_diff(utime.ticks_ms(), start_time)
+        #print(f"ui.py setContentView: new_activity.onStart took {end_time}ms")
 
-    start_time = utime.ticks_ms()
+    #start_time = utime.ticks_ms()
     lv.screen_load_anim(new_screen, lv.SCR_LOAD_ANIM.OVER_LEFT, 500, 0, False)
-    end_time = utime.ticks_diff(utime.ticks_ms(), start_time)
-    print(f"ui.py setContentView: screen_load took {end_time}ms")
+    #end_time = utime.ticks_diff(utime.ticks_ms(), start_time)
+    #print(f"ui.py setContentView: screen_load took {end_time}ms")
 
     if new_activity:
-        start_time = utime.ticks_ms()
+        #start_time = utime.ticks_ms()
         new_activity.onResume(new_screen)  # Screen is now active
-        end_time = utime.ticks_diff(utime.ticks_ms(), start_time)
-        print(f"ui.py setContentView: new_activity.onResume took {end_time}ms")
+        #end_time = utime.ticks_diff(utime.ticks_ms(), start_time)
+        #print(f"ui.py setContentView: new_activity.onResume took {end_time}ms")
 
 def remove_and_stop_current_activity():
     current_activity, current_screen = screen_stack.pop()  # Remove current screen
