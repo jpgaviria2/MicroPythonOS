@@ -1,7 +1,9 @@
 0.0.9
 =====
 - UI: add visual cues during back/top swipe gestures
-- Settings: add Timezone
+- Settings: add Timezone configuration
+- Draw: new app for simple drawing on a canvas
+- IMU: new app for showing data from the Intertial Measurement Unit ("Accellerometer")
 
 
 0.0.8
