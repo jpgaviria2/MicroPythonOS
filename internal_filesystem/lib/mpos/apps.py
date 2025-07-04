@@ -130,9 +130,9 @@ def start_app(app_dir, is_launcher=False):
     execute_script(start_script_fullpath, True, app_dir + "/assets/", main_launcher_activity.get("classname"))
     # Launchers have the bar, other apps don't have it
     if is_launcher:
-        mpos.ui.open_bar()
+        mpos.ui.topmenu.open_bar()
     else:
-        mpos.ui.close_bar()
+        mpos.ui.topmenu.close_bar()
     end_time = utime.ticks_diff(utime.ticks_ms(), start_time)
     print(f"start_app() took {end_time}ms")
 

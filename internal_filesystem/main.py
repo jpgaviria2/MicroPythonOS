@@ -10,6 +10,7 @@ fs_driver.fs_register(fs_drv, 'M')
 import mpos.apps
 import mpos.config
 import mpos.ui
+import mpos.ui.topmenu
 
 prefs = mpos.config.SharedPreferences("com.micropythonos.settings")
 
@@ -31,8 +32,8 @@ theme = lv.theme_default_init(display._disp_drv, primary_color, lv.color_hex(0xF
 #display.set_theme(theme)
 
 mpos.ui.init_rootscreen()
-mpos.ui.create_notification_bar()
-mpos.ui.create_drawer(display)
+mpos.ui.topmenu.create_notification_bar()
+mpos.ui.topmenu.create_drawer(display)
 mpos.ui.handle_back_swipe()
 mpos.ui.handle_top_swipe()
 mpos.ui.th = task_handler.TaskHandler(duration=5) # 5ms is recommended for MicroPython+LVGL on desktop

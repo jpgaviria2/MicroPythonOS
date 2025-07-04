@@ -22,10 +22,10 @@ class Launcher(mpos.apps.Activity):
         main_screen = lv.obj()
         main_screen.set_style_border_width(0, 0)
         main_screen.set_style_radius(0, 0)
-        main_screen.set_pos(0, mpos.ui.NOTIFICATION_BAR_HEIGHT) # leave some margin for the notification bar
+        main_screen.set_pos(0, mpos.ui.topmenu.NOTIFICATION_BAR_HEIGHT) # leave some margin for the notification bar
         #main_screen.set_size(lv.pct(100), lv.pct(100))
         main_screen.set_style_pad_hor(mpos.ui.pct_of_display_width(2), 0)
-        main_screen.set_style_pad_ver(mpos.ui.NOTIFICATION_BAR_HEIGHT, 0)
+        main_screen.set_style_pad_ver(mpos.ui.topmenu.NOTIFICATION_BAR_HEIGHT, 0)
         main_screen.set_flex_flow(lv.FLEX_FLOW.ROW_WRAP)
         self.setContentView(main_screen)
 
