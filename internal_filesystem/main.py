@@ -44,19 +44,16 @@ except Exception as e:
     # This will throw an exception if there is already a "/builtin" folder present
     print("main.py: WARNING: could not import/run freezefs_mount_builtin: ", e)
 
-from mpos import apps
-
-apps.execute_script("builtin/system/button.py", True) # Install button handler through IRQ
+mpos.apps.execute_script("builtin/system/button.py", True) # Install button handler through IRQ
 
 try:
     import mpos.wifi
-    import mpos.apps
     _thread.stack_size(mpos.apps.good_stack_size())
     _thread.start_new_thread(mpos.wifi.WifiService.auto_connect, ())
 except Exception as e:
     print(f"Couldn't start mpos.wifi.WifiService.auto_connect thread because: {e}")
 
-apps.restart_launcher()
+mpos.apps.restart_launcher()
 
 # If we got this far without crashing, then no need to rollback the update:
 try:

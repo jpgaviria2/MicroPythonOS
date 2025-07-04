@@ -204,6 +204,7 @@ def create_drawer(display=None):
     drawer.set_size(lv.pct(100),lv.pct(90))
     drawer.set_pos(0,NOTIFICATION_BAR_HEIGHT)
     drawer.set_scroll_dir(lv.DIR.VER)
+    drawer.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
     drawer.set_style_pad_all(15, 0)
     drawer.set_style_border_width(0, 0)
     drawer.set_style_radius(0, 0)
