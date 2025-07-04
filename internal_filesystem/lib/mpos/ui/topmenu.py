@@ -39,11 +39,11 @@ def open_drawer():
         drawer.scroll_to(0,0,lv.ANIM.OFF) # make sure it's at the top, not scrolled down
 
 def close_drawer(to_launcher=False):
-    global drawer_open, drawer, foreground_app_name
+    global drawer_open, drawer
     if drawer_open:
         drawer_open=False
         if not to_launcher and not mpos.apps.is_launcher(mpos.ui.foreground_app_name):
-            print(f"close_drawer: also closing bar because to_launcher is {to_launcher} and foreground_app_name is {foreground_app_name}")
+            print(f"close_drawer: also closing bar because to_launcher is {to_launcher} and foreground_app_name is {mpos.ui.foreground_app_name}")
             close_bar()
         WidgetAnimator.hide_widget(drawer, anim_type="slide_up", duration=1000, delay=0)
 
