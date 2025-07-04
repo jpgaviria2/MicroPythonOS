@@ -44,7 +44,7 @@ def close_drawer(to_launcher=False):
         drawer_open=False
         if not to_launcher and not mpos.apps.is_launcher(mpos.ui.foreground_app_name):
             print(f"close_drawer: also closing bar because to_launcher is {to_launcher} and foreground_app_name is {mpos.ui.foreground_app_name}")
-            close_bar()
+            close_bar(False)
         WidgetAnimator.hide_widget(drawer, anim_type="slide_up", duration=1000, delay=0)
 
 def open_bar():
@@ -58,12 +58,15 @@ def open_bar():
     else:
         print("bar already open")
 
-def close_bar():
+def close_bar(animate=True):
     global bar_open, show_bar_animation, hide_bar_animation
     if bar_open:
         bar_open=False
         show_bar_animation.current_value = show_bar_animation_end_value
-        hide_bar_animation.start()
+        if animate:
+            hide_bar_animation.start()
+        else:
+            notification_bar.set_y(hide_bar_animation_end_value)
 
 
 
