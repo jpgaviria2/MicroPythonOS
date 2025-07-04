@@ -27,7 +27,6 @@ bar_open=False
 
 scroll_start_y = None
 
-
 # Widgets:
 notification_bar = None
 
@@ -336,41 +335,6 @@ def create_drawer(display=None):
     l2.set_pos(0,mpos.ui.vertical_resolution)
 
 
-
-
-def drawer_any_event(event):
-    event_code=event.get_code()
-    # Ignore:
-    # =======
-    # 19: HIT_TEST
-    # COVER_CHECK
-    # DRAW_MAIN
-    # DRAW_MAIN_BEGIN
-    # DRAW_MAIN_END
-    # DRAW_POST
-    # DRAW_POST_BEGIN
-    # DRAW_POST_END
-    # GET_SELF_SIZE
-    # 47 STYLE CHANGED
-    if event_code not in [19,23,25,26,27,28,29,30,47,49]:
-        name = mpos.ui.get_event_name(event_code)
-        x, y = mpos.ui.get_pointer_xy()
-        print(f"drawer_any_event: code={event_code}, name={name}, {x}, {y}")
-
-drawer_swipe_start_y = 0
-def drawer_swipe_cb(event):
-    global drawer_swipe_start_y
-    event_code = event.get_code()
-    name = mpos.ui.get_event_name(event_code)
-    print(f"drawer_swipe_cb {event_code} and {name}")
-    if event_code == lv.EVENT.PRESSED:
-        x, drawer_swipe_start_y = mpos.ui.get_pointer_xy()
-    elif event_code == lv.EVENT.RELEASED:
-        x, end_y = mpos.ui.get_pointer_xy()
-        if end_y < drawer_swipe_start_y - NOTIFICATION_BAR_HEIGHT:
-            close_drawer()
-        drawer_swipe_start_y = 0
-
 def drawer_scroll_callback(event):
     global scroll_start_y
     event_code=event.get_code()
@@ -382,10 +346,8 @@ def drawer_scroll_callback(event):
         #print(f"scroll_starts at: {x},{y}")
     elif event_code == lv.EVENT.SCROLL and scroll_start_y != None:
         diff = y - scroll_start_y
-        print(f"scroll distance: {diff}")
+        #print(f"scroll distance: {diff}")
         if diff < -NOTIFICATION_BAR_HEIGHT:
             close_drawer()
-            scroll_start_y = None
-    elif event_code == lv.EVENT.SCROLL_END and scroll_start_y != None:
+    elif event_code == lv.EVENT.SCROLL_END:
         scroll_start_y = None
-

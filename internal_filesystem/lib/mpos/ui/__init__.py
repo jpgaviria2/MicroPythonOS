@@ -317,7 +317,7 @@ def top_swipe_cb(event):
         indev.get_point(point)
         x = point.x
         y = point.y
-        print(f"visual_back_swipe_cb event_code={event_code} and event_name={name} and pos: {x}, {y}")
+        #print(f"visual_back_swipe_cb event_code={event_code} and event_name={name} and pos: {x}, {y}")
         if event_code == lv.EVENT.PRESSED:
             mpos.ui.anim.smooth_show(downbutton)
             down_start_x = x
