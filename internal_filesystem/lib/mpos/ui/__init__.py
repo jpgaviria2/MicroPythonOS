@@ -1,5 +1,3 @@
-#import utime # for time profiling
-
 import lvgl as lv
 import mpos.apps
 import mpos.battery_voltage
