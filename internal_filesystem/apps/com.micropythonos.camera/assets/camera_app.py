@@ -171,11 +171,15 @@ class CameraApp(Activity):
     def qrdecode_one(self):
         try:
             import qrdecode
+            import utime
+            before = utime.ticks_ms()
             result = qrdecode.qrdecode_rgb565(self.current_cam_buffer, self.width, self.height)
+            after = utime.ticks_ms()
             #result = bytearray("INSERT_QR_HERE", "utf-8")
             if not result:
                 self.status_label.set_text(self.status_label_text_searching)
             else:
+                print(f"SUCCESSFUL QR DECODE TOOK: {after-before}ms")
                 result = remove_bom(result)
                 result = print_qr_buffer(result)
                 print(f"QR decoding found: {result}")

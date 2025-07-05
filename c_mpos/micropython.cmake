@@ -21,6 +21,18 @@ target_sources(usermod_c_mpos INTERFACE ${MPOS_C_SOURCES})
 # Add include directories.
 target_include_directories(usermod_c_mpos INTERFACE ${MPOS_C_INCLUDES})
 
+
+target_compile_definitions(usermod_c_mpos INTERFACE
+    # force quirc to use single precision floating point math
+    -DQUIRC_FLOAT_TYPE=float
+    -DQUIRC_USE_TGMATH=1
+)
+
+# Be sure to set the -O2 "optimize" flag!!
+target_compile_options(usermod_c_mpos INTERFACE
+    -O2
+)
+
 # Link our INTERFACE library to the usermod target.
 target_link_libraries(usermod INTERFACE usermod_c_mpos)
 
