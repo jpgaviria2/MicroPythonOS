@@ -7,6 +7,7 @@ import _thread
 from mpos.apps import Activity
 import mpos.info
 import mpos.ui
+import mpos.ui.topmenu
 
 
 class OSUpdate(Activity):
@@ -23,14 +24,14 @@ class OSUpdate(Activity):
         self.main_screen = lv.obj()
         self.main_screen.set_style_pad_all(mpos.ui.pct_of_display_width(2), 0)
         self.install_button = lv.button(self.main_screen)
-        self.install_button.align(lv.ALIGN.TOP_RIGHT, 0, mpos.ui.NOTIFICATION_BAR_HEIGHT)
+        self.install_button.align(lv.ALIGN.TOP_RIGHT, 0, mpos.ui.topmenu.NOTIFICATION_BAR_HEIGHT)
         self.install_button.add_state(lv.STATE.DISABLED) # button will be enabled if there is an update available
         self.install_button.set_size(lv.SIZE_CONTENT, lv.pct(25))
         install_label = lv.label(self.install_button)
         install_label.set_text("Update OS")
         install_label.center()
         self.status_label = lv.label(self.main_screen)
-        self.status_label.align(lv.ALIGN.TOP_LEFT,0,mpos.ui.NOTIFICATION_BAR_HEIGHT)
+        self.status_label.align(lv.ALIGN.TOP_LEFT,0,mpos.ui.topmenu.NOTIFICATION_BAR_HEIGHT)
         self.setContentView(self.main_screen)
 
     def onStart(self, screen):
