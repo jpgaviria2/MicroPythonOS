@@ -5,7 +5,7 @@
 - Settings: add Timezone configuration
 - Draw: new app for simple drawing on a canvas
 - IMU: new app for showing data from the Intertial Measurement Unit ("Accellerometer")
-- Speed up QR decoding 4x - thanks @kdmukai!
+- Camera: speed up QR decoding 4x - thanks @kdmukai!
 
 
 0.0.8
