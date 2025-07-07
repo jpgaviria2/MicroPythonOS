@@ -301,6 +301,7 @@ def create_drawer(display=None):
     restart_label.set_text(lv.SYMBOL.REFRESH+" Reset")
     restart_label.center()
     def reset_cb(e):
+        mpos.ui.remove_and_stop_current_activity() # make sure current app, like camera, does cleanup, saves progress, stops hardware etc.
         import machine
         if hasattr(machine, 'reset'):
             machine.reset()
@@ -317,7 +318,7 @@ def create_drawer(display=None):
     poweroff_label.center()
     def poweroff_cb(e):
         print("Power off action...")
-        remove_and_stop_current_activity() # make sure current app, like camera, does cleanup, saves progress, stops hardware etc.
+        mpos.ui.remove_and_stop_current_activity() # make sure current app, like camera, does cleanup, saves progress, stops hardware etc.
         import sys
         if sys.platform == "esp32":
             #On ESP32, there's no power off but there is a forever sleep
