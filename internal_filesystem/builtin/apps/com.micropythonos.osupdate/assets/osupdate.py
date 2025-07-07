@@ -7,8 +7,6 @@ import _thread
 from mpos.apps import Activity
 import mpos.info
 import mpos.ui
-import mpos.ui.topmenu
-
 
 class OSUpdate(Activity):
 
