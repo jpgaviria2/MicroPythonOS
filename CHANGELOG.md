@@ -1,3 +1,8 @@
+0.0.10
+======
+- Reduce timezones from 400 to 150 to reduce scrolling
+
+
 0.0.9
 =====
 - UI: add visual cues during back/top swipe gestures
