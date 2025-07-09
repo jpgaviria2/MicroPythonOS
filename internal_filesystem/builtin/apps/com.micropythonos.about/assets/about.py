@@ -18,4 +18,18 @@ class About(Activity):
         label3.set_text(f"sys.implementation: {sys.implementation}")
         label4 = lv.label(screen)
         label4.set_text(f"sys.platform: {sys.platform}")
+        try:
+            print("Trying to find out additional board info, not available on every platform...")
+            import machine
+            label5 = lv.label(screen)
+            label5.set_text("") # otherwise it will show the default "Text" if there's an exception below
+            label5.set_text(f"machine.freq: {machine.freq()}")
+            label6 = lv.label(screen)
+            label6.set_text(f"machine.unique_id(): {machine.unique_id()}")
+            label7 = lv.label(screen)
+            label7.set_text(f"machine.wake_reason(): {machine.wake_reason()}")
+            label8 = lv.label(screen)
+            label8.set_text(f"machine.reset_cause(): {machine.reset_cause()}")
+        except Exception as e:
+            print(f"Additional board info got exception: {e}")
         self.setContentView(screen)
