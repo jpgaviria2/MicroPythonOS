@@ -27,7 +27,8 @@ if [ "$target" == "esp32" ]; then
 	else
 		echo "Note that you can also prevent the builtin filesystem from being mounted by umounting it and creating a builtin/ folder."
 	fi
-	# Build for https://www.waveshare.com/wiki/ESP32-S3-Touch-LCD-2.
+	# Build for ESP32-S3 3.5 inch Capacitive Touch Display (320×480 HVGA)
+	# Updated from Waveshare ESP32-S3-Touch-LCD-2 (320×240 QVGA)
 	# See https://github.com/lvgl-micropython/lvgl_micropython
 	# --ota: support Over-The-Air updates
 	# --partition size: both OTA partitions are 4MB
