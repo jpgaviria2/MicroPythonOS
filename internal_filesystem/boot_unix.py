@@ -10,8 +10,15 @@ import i2c
 
 import lvgl as lv
 import task_handler
-
+import sdl_display
+import sdl_pointer
+import sdl_keyboard
 import mpos.ui
+import mpos.clipboard
+
+# Add lib/ to the path for modules, otherwise it will only search in ~/.micropython/lib and /usr/lib/micropython
+import sys
+sys.path.append('lib/')
 
 # Updated resolution for 3.5 inch display
 TFT_HOR_RES=480
@@ -73,12 +80,12 @@ sdlkeyboard.set_paste_text_callback(mpos.clipboard.paste_text)
    # print(f"boot_unix: code={event_code}") # target={event.get_target()}, user_data={event.get_user_data()}, param={event.get_param()}
 #keyboard.add_event_cb(keyboard_cb, lv.EVENT.ALL, None)
 
-# On the Waveshare ESP32-S3-Touch-LCD-2, the camera is hard-wired to power on,
+# On the ESP32-S3 3.5 inch display, the camera is hard-wired to power on,
 # so it needs a software power off to prevent it from staying hot all the time and quickly draining the battery.
 # 1) Initialize camera, otherwise it doesn't reply to I2C commands:
 try:
-    from camera import Camera
-    cam = Camera(data_pins=[12,13,15,11,14,10,7,2],vsync_pin=6,href_pin=4,sda_pin=21,scl_pin=16,pclk_pin=9,xclk_pin=8,xclk_freq=20000000,powerdown_pin=-1,reset_pin=-1,pixel_format=PixelFormat.RGB565,frame_size=FrameSize.R240X240,grab_mode=GrabMode.LATEST)
+    from camera import Camera, PixelFormat, FrameSize, GrabMode
+    cam = Camera(data_pins=[12,13,15,11,14,10,7,2],vsync_pin=6,href_pin=4,sda_pin=21,scl_pin=16,pclk_pin=9,xclk_pin=8,xclk_freq=20000000,powerdown_pin=-1,reset_pin=-1,pixel_format=PixelFormat.RGB565,frame_size=FrameSize.HVGA,grab_mode=GrabMode.LATEST)
     cam.deinit()
 except Exception as e:
     print(f"camera init for power off got exception: {e}")
@@ -98,4 +105,4 @@ try:
 except Exception as e:
     print(f"Warning: powering off camera got exception: {e}")
 
-print("boot_unix.py finished")
+print("boot_unix.py finished - configured for 3.5 inch 320×480 display")

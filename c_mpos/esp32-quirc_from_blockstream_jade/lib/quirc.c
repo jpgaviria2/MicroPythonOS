@@ -48,7 +48,7 @@ void quirc_destroy(struct quirc *q)
     free(q);
 }
 
-//static quirc_pixel_t img_buf[320*240];
+//static quirc_pixel_t img_buf[480*320];
 int quirc_resize(struct quirc *q, int w, int h)
 {
   if (q->image)

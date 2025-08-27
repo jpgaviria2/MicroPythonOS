@@ -17,8 +17,8 @@ import mpos.time
 
 class CameraApp(Activity):
 
-    width = 240
-    height = 240
+    width = 480
+    height = 320
 
     status_label_text = "No camera found."
     status_label_text_searching = "Searching QR codes...\n\nHold still and make them big!\n10cm for simple QR codes,\n20cm for complex."
