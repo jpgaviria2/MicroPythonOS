@@ -262,6 +262,9 @@ class CameraApp(Activity):
 def init_internal_cam():
     try:
         from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
+        # Set camera resolution to match display
+        width = 480
+        height = 320
         cam = Camera(
             data_pins=[12,13,15,11,14,10,7,2],
             vsync_pin=6,
@@ -275,7 +278,8 @@ def init_internal_cam():
             reset_pin=-1,
             pixel_format=PixelFormat.RGB565,
             #pixel_format=PixelFormat.GRAYSCALE,
-            frame_size=FrameSize.R240X240,
+            frame_size=FrameSize.HVGA, # 480x320 for 3.5 inch display
+            #frame_size=FrameSize.R240X240, # 240x240 (old 2.4 inch display)
             grab_mode=GrabMode.LATEST 
         )
         #cam.init() automatically done when creating the Camera()

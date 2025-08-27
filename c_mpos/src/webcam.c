@@ -15,8 +15,8 @@
 #define WIDTH 640
 #define HEIGHT 480
 #define NUM_BUFFERS 1
-#define OUTPUT_WIDTH 240
-#define OUTPUT_HEIGHT 240
+#define OUTPUT_WIDTH 480
+#define OUTPUT_HEIGHT 320
 
 #define WEBCAM_DEBUG_PRINT(...) mp_printf(&mp_plat_print, __VA_ARGS__)
 
@@ -32,7 +32,7 @@ typedef struct _webcam_obj_t {
     uint16_t *rgb565_buffer;   // For RGB565
 } webcam_obj_t;
 
-static void yuyv_to_rgb565_240x240(unsigned char *yuyv, uint16_t *rgb565, int in_width, int in_height) {
+static void yuyv_to_rgb565_480x320(unsigned char *yuyv, uint16_t *rgb565, int in_width, int in_height) {
     int crop_size = 480;
     int crop_x_offset = (in_width - crop_size) / 2;
     int crop_y_offset = (in_height - crop_size) / 2;
@@ -70,7 +70,7 @@ static void yuyv_to_rgb565_240x240(unsigned char *yuyv, uint16_t *rgb565, int in
     }
 }
 
-static void yuyv_to_grayscale_240x240(unsigned char *yuyv, unsigned char *gray, int in_width, int in_height) {
+static void yuyv_to_grayscale_480x320(unsigned char *yuyv, unsigned char *gray, int in_width, int in_height) {
     int crop_size = 480;
     int crop_x_offset = (in_width - crop_size) / 2;
     int crop_y_offset = (in_height - crop_size) / 2;
@@ -241,7 +241,7 @@ static mp_obj_t capture_frame(mp_obj_t self_in, mp_obj_t format) {
 
     const char *fmt = mp_obj_str_get_str(format);
     if (strcmp(fmt, "grayscale") == 0) {
-        yuyv_to_grayscale_240x240(self->buffers[buf.index], self->gray_buffer, WIDTH, HEIGHT);
+        yuyv_to_grayscale_480x320(self->buffers[buf.index], self->gray_buffer, WIDTH, HEIGHT);
         // char filename[32];
         // snprintf(filename, sizeof(filename), "frame_%03d.raw", self->frame_count++);
         // save_raw(filename, self->gray_buffer, OUTPUT_WIDTH, OUTPUT_HEIGHT);
@@ -252,7 +252,7 @@ static mp_obj_t capture_frame(mp_obj_t self_in, mp_obj_t format) {
         }
         return result;
     } else {
-        yuyv_to_rgb565_240x240(self->buffers[buf.index], self->rgb565_buffer, WIDTH, HEIGHT);
+        yuyv_to_rgb565_480x320(self->buffers[buf.index], self->rgb565_buffer, WIDTH, HEIGHT);
         // char filename[32];
         // snprintf(filename, sizeof(filename), "frame_%03d.rgb565", self->frame_count++);
         // save_raw_rgb565(filename, self->rgb565_buffer, OUTPUT_WIDTH, OUTPUT_HEIGHT);

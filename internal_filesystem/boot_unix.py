@@ -1,19 +1,21 @@
-# Hardware initialization for Unix and MacOS systems
+# Hardware initialization for ESP32-S3 3.5 inch Capacitive Touch Display (Unix/Desktop)
+# 320×480 Pixels, IPS Panel, 262K Color, Onboard Camera Interface
 
+from machine import Pin, SPI
+import st7789 
 import lcd_bus
-import lvgl as lv
-import sdl_display
+import machine
+import cst816s
+import i2c
 
-# Add lib/ to the path for modules, otherwise it will only search in ~/.micropython/lib and /usr/lib/micropython
-import sys
-sys.path.append('lib/')
+import lvgl as lv
+import task_handler
 
 import mpos.ui
-import mpos.clipboard
 
-# Same as Waveshare ESP32-S3-Touch-LCD-2
-TFT_HOR_RES=320
-TFT_VER_RES=240
+# Updated resolution for 3.5 inch display
+TFT_HOR_RES=480
+TFT_VER_RES=320
 
 #TFT_HOR_RES=640
 #TFT_VER_RES=480

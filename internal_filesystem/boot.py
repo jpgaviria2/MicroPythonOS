@@ -1,5 +1,5 @@
-# Hardware initialization for ESP32-S3-Touch-LCD-2
-# Manufacturer's website at https://www.waveshare.com/wiki/ESP32-S3-Touch-LCD-2
+# Hardware initialization for ESP32-S3 3.5 inch Capacitive Touch Display
+# 320×480 Pixels, IPS Panel, 262K Color, Onboard Camera Interface
 
 from machine import Pin, SPI
 import st7789 
@@ -13,7 +13,7 @@ import task_handler
 
 import mpos.ui
 
-# Pin configuration
+# Pin configuration for 3.5 inch display
 SPI_BUS = 2
 SPI_FREQ = 40000000
 LCD_SCLK = 39
@@ -30,8 +30,9 @@ TP_SCL = 47
 TP_ADDR = 0x15
 TP_REGBITS = 8
 
-TFT_HOR_RES=320
-TFT_VER_RES=240
+# Updated resolution for 3.5 inch display
+TFT_HOR_RES=480
+TFT_VER_RES=320
 
 spi_bus = machine.SPI.Bus(
     host=SPI_BUS,
@@ -46,14 +47,14 @@ display_bus = lcd_bus.SPIBus(
     cs=LCD_CS,
 )
 
- # lv.color_format_get_size(lv.COLOR_FORMAT.RGB565) = 2 bytes per pixel * 320 * 240 px = 153600 bytes
- # The default was /10 so 15360 bytes.
- # /2 = 76800 shows something on display and then hangs the board
- # /2 = 38400 works and pretty high framerate but camera gets ESP_FAIL
- # /2 = 19200 works, including camera at 9FPS
- # 28800 is between the two and still works with camera!
- # 30720 is /5 and is already too much
-_BUFFER_SIZE = const(28800)
+ # lv.color_format_get_size(lv.COLOR_FORMAT.RGB565) = 2 bytes per pixel * 480 * 320 px = 307200 bytes
+ # The default was /10 so 30720 bytes.
+ # /5 = 61440 shows something on display and then hangs the board
+ # /6 = 51200 works and pretty high framerate but camera gets ESP_FAIL
+ # /8 = 38400 works, including camera at 9FPS
+ # 46080 is /6.67 and still works with camera!
+ # 51200 is /6 and is already too much
+_BUFFER_SIZE = const(46080)
 fb1 = display_bus.allocate_framebuffer(_BUFFER_SIZE, lcd_bus.MEMORY_INTERNAL | lcd_bus.MEMORY_DMA)
 fb2 = display_bus.allocate_framebuffer(_BUFFER_SIZE, lcd_bus.MEMORY_INTERNAL | lcd_bus.MEMORY_DMA)
 
@@ -81,4 +82,4 @@ indev=cst816s.CST816S(touch_dev,startup_rotation=lv.DISPLAY_ROTATION._180) # but
 lv.init()
 display.set_rotation(lv.DISPLAY_ROTATION._90) # must be done after initializing display and creating the touch drivers, to ensure proper handling
 
-print("boot.py finished")
+print("boot.py finished - configured for 3.5 inch 320×480 display")
